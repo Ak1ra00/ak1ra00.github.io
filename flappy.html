@@ -913,6 +913,10 @@ function handleRestart(){
   }
 }
 
+// Tap intro overlay to start
+introOverlay.addEventListener('click', ()=>{ if(state==='intro') handleFlap(); });
+introOverlay.addEventListener('touchstart', (e)=>{ e.preventDefault(); if(state==='intro') handleFlap(); }, { passive:false });
+
 // Click / touch on canvas
 canvas.addEventListener('click', ()=>{
   if(state === 'dead'){
