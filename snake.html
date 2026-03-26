@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bitcoin Snake – Atlas Bitcoin Arcade</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --btc:#F7931A;--btc-glow:rgba(247,147,26,0.55);
+  --eth:#627EEA;--xrp:#00AAE4;--doge:#C2A633;--sol:#9945FF;--pepe:#00BB44;
+  --gold:#FFD700;--green:#00ff88;--red:#ff3355;--cyan:#00ffff;
+  --bg:#060610;--panel:rgba(8,8,24,0.88);--border:rgba(247,147,26,0.2);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Rajdhani',sans-serif;background:var(--bg);min-height:100vh;color:#f0f0f0;display:flex;flex-direction:column;align-items:center;overflow-x:hidden;touch-action:manipulation;}
+.scanlines{position:fixed;inset:0;z-index:300;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.025) 2px,rgba(0,0,0,0.025) 4px);}
+.nav{width:100%;max-width:900px;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);position:relative;z-index:10;}
+.nav-logo{font-family:'Orbitron',monospace;font-size:1rem;color:var(--btc);text-decoration:none;letter-spacing:.06em;text-shadow:0 0 12px var(--btc-glow);}
+.nav-links{display:flex;gap:12px;flex-wrap:wrap;}
+.nav-links a{color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;transition:color .2s;}
+.nav-links a:hover,.nav-links a.active{color:var(--btc);}
+.hdr{text-align:center;padding:6px 0 4px;position:relative;z-index:1;}
+.hdr h1{font-family:'Orbitron',monospace;font-size:1.4rem;font-weight:900;background:linear-gradient(90deg,#F7931A,#FFD700,#F7931A);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 12px var(--btc-glow));}
+.hdr p{color:#4b5563;font-size:.75rem;margin-top:2px;}
+.cwrap{border-radius:14px;overflow:hidden;box-shadow:0 0 0 2px var(--border),0 0 40px var(--btc-glow);position:relative;z-index:1;width:min(560px,100vw);max-width:100vw;}
+canvas{display:block;background:#060610;width:100%;height:auto;}
+.hud{display:flex;gap:8px;width:min(560px,100vw);max-width:100vw;margin-top:8px;position:relative;z-index:1;}
+.hcard{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:6px 10px;text-align:center;backdrop-filter:blur(14px);flex:1;}
+.hlbl{font-size:.58rem;text-transform:uppercase;letter-spacing:.12em;color:#4b5563;margin-bottom:1px;}
+.hval{font-family:'Orbitron',monospace;font-size:.95rem;font-weight:700;color:var(--btc);text-shadow:0 0 8px var(--btc-glow);}
+.hval.g{color:var(--green);}
+.hval.y{color:var(--gold);}
+.ctrl{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:8px 14px 10px;width:min(560px,100vw);max-width:100vw;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px;position:relative;z-index:1;}
+@media(max-width:600px){.ctrl{position:fixed;bottom:0;left:0;right:0;border-radius:16px 16px 0 0;border-bottom:none;z-index:500;padding:8px 10px 14px;max-width:100%;width:100%;box-shadow:0 -6px 30px rgba(0,0,0,.85);}}
+.cbgrid{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);gap:5px;width:145px;}
+.cbtn{background:rgba(247,147,26,.1);border:2px solid rgba(247,147,26,.4);border-radius:10px;width:44px;height:44px;font-size:1.25rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--btc);touch-action:manipulation;user-select:none;-webkit-tap-highlight-color:transparent;transition:background .1s,transform .1s;}
+.cbtn:active{background:rgba(247,147,26,.35);transform:scale(.88);}
+.ctrl-hint{color:#374151;font-size:.63rem;text-align:center;line-height:1.4;}
+@media(max-width:600px){.ctrl-hint{display:none;} body{padding-bottom:80px;}}
+.gstatus{text-align:center;padding:6px 12px;border-radius:8px;font-weight:700;font-size:.8rem;letter-spacing:.04em;width:min(560px,100vw);max-width:100vw;margin-top:6px;position:relative;z-index:1;transition:all .25s;}
+.s-ok{background:rgba(0,255,136,.07);border:1px solid var(--green);color:var(--green);}
+.s-bad{background:rgba(255,51,85,.1);border:1px solid var(--red);color:var(--red);}
+.s-gold{background:rgba(255,215,0,.08);border:1px solid var(--gold);color:var(--gold);}
+.overlay{position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at center,#0d0820 0%,#060610 70%);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;transition:opacity .6s;padding:20px;}
+.overlay.hidden{opacity:0;pointer-events:none;}
+.ov-icon{font-size:3.5rem;}
+.ov-title{font-family:'Orbitron',monospace;font-size:clamp(1.4rem,5vw,2.2rem);font-weight:900;background:linear-gradient(90deg,#F7931A,#FFD700,#F7931A);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 18px rgba(247,147,26,.7));text-align:center;}
+.ov-sub{color:#6b7280;font-size:.83rem;text-align:center;max-width:340px;line-height:1.55;}
+.ov-enemies{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;}
+.ov-enemy{text-align:center;font-size:1.5rem;}
+.ov-enemy span{display:block;font-size:.6rem;font-family:'Orbitron',monospace;letter-spacing:.08em;margin-top:2px;}
+.ov-best{font-family:'Orbitron',monospace;color:var(--gold);font-size:.9rem;}
+.ov-start{font-family:'Orbitron',monospace;font-size:.9rem;color:var(--green);letter-spacing:.12em;animation:blink .9s ease-in-out infinite;text-shadow:0 0 14px rgba(0,255,136,.5);}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.15;}}
+.ov-score{font-family:'Orbitron',monospace;font-size:2rem;font-weight:900;color:#fff;text-shadow:0 0 18px var(--btc-glow);}
+.rbtn{font-family:'Orbitron',monospace;background:linear-gradient(135deg,#00ff88,#00cc6a);border:none;padding:11px 34px;border-radius:10px;color:#000;font-weight:700;font-size:.85rem;cursor:pointer;letter-spacing:.06em;box-shadow:0 4px 20px rgba(0,255,136,.3);transition:all .2s;}
+.rbtn:hover{transform:translateY(-2px);}
+</style>
+</head>
+<body>
+<div class="scanlines"></div>
+
+<!-- INTRO -->
+<div class="overlay" id="intro">
+  <div class="ov-icon">🐍</div>
+  <div class="ov-title">BITCOIN SNAKE</div>
+  <div class="ov-sub">Grow your Bitcoin snake by collecting ₿ coins.<br>Dodge shitcoin obstacles — touching one loses a life!</div>
+  <div class="ov-enemies">
+    <div class="ov-enemy">👻<span style="color:var(--eth)">ETH</span></div>
+    <div class="ov-enemy">👻<span style="color:var(--xrp)">XRP</span></div>
+    <div class="ov-enemy">👻<span style="color:var(--doge)">DOGE</span></div>
+    <div class="ov-enemy">👻<span style="color:var(--sol)">SOL</span></div>
+    <div class="ov-enemy">🐸<span style="color:var(--pepe)">PEPE</span></div>
+  </div>
+  <div class="ov-best" id="introBest">BEST: 0</div>
+  <div class="ov-start">▶ TAP OR PRESS ANY KEY TO START ◀</div>
+</div>
+
+<!-- GAME OVER -->
+<div class="overlay hidden" id="gameOver">
+  <div class="ov-icon">💩</div>
+  <div class="ov-title">REKT BY SHITCOINS</div>
+  <div class="ov-sub">Final Score</div>
+  <div class="ov-score" id="goScore">0</div>
+  <div class="ov-best" id="goBest">BEST: 0</div>
+  <button class="rbtn" id="playAgain">⚡ PLAY AGAIN</button>
+</div>
+
+<nav class="nav">
+  <a class="nav-logo" href="index.html">₿ ATLAS ARCADE</a>
+  <div class="nav-links">
+    <a href="pacman.html">Pac-Man</a>
+    <a href="snake.html" class="active">Snake</a>
+    <a href="pong.html">Pong</a>
+    <a href="invaders.html">Invaders</a>
+    <a href="flappy.html">Flappy</a>
+    <a href="tetris.html">Tetris</a>
+  </div>
+</nav>
+
+<div class="hdr">
+  <h1>🐍 BITCOIN SNAKE</h1>
+  <p>Collect ₿ to grow · Dodge shitcoin obstacles · 3 lives</p>
+</div>
+
+<div class="cwrap"><canvas id="gc" width="560" height="560"></canvas></div>
+
+<div class="hud">
+  <div class="hcard"><div class="hlbl">Score</div><div class="hval" id="hScore">0</div></div>
+  <div class="hcard"><div class="hlbl">Mult</div><div class="hval y" id="hMult">×1</div></div>
+  <div class="hcard"><div class="hlbl">Lives</div><div class="hval" id="hLives">❤️❤️❤️</div></div>
+  <div class="hcard"><div class="hlbl">Coins</div><div class="hval g" id="hCoins">0</div></div>
+  <div class="hcard"><div class="hlbl">Best</div><div class="hval y" id="hHi">0</div></div>
+</div>
+
+<div id="gstat" class="gstatus s-ok">🎮 Collect the Bitcoin!</div>
+
+<div class="ctrl">
+  <div class="cbgrid">
+    <div></div>
+    <button class="cbtn" id="bU">⬆️</button>
+    <div></div>
+    <button class="cbtn" id="bL">⬅️</button>
+    <button class="cbtn" id="bD">⬇️</button>
+    <button class="cbtn" id="bR">➡️</button>
+  </div>
+  <span class="ctrl-hint">Arrow keys to move<br>Grow by collecting ₿</span>
+</div>
+
+<script>
+'use strict';
+const canvas = document.getElementById('gc');
+const ctx = canvas.getContext('2d');
+const CELL = 20, COLS = 28, ROWS = 28;
+const W = COLS * CELL, H = ROWS * CELL; // 560x560
+
+// ── SHITCOIN SPECS ──
+const SHIT = [
+  {label:'ETH', sym:'Ξ', color:'#627EEA'},
+  {label:'XRP', sym:'✕', color:'#00AAE4'},
+  {label:'DOGE',sym:'Ð', color:'#C2A633'},
+  {label:'SOL', sym:'◎', color:'#9945FF'},
+  {label:'PEPE',sym:'🐸',color:'#00BB44'},
+];
+
+// ── STATE ──
+let snake, dir, nextDir, btc, obstacles, pellet;
+let score, coins, lives, streak, mult, hiScore;
+let moveInterval, lastMoveTime, frozenTimer, pelletTimer;
+let gameActive = false, paused = false;
+let floats = [], particles = [];
+let shakeX = 0, shakeY = 0, shakeM = 0;
+let coinSpin = 0;
+
+hiScore = parseInt(localStorage.getItem('btc_snake_hs') || '0');
+document.getElementById('introBest').textContent = 'BEST: ' + hiScore.toLocaleString();
+document.getElementById('hHi').textContent = hiScore.toLocaleString();
+
+// ── INIT ──
+function startGame() {
+  snake = [{x:14,y:14},{x:13,y:14},{x:12,y:14}];
+  dir = {dx:1,dy:0}; nextDir = {dx:1,dy:0};
+  score = 0; coins = 0; lives = 3; streak = 0; mult = 1;
+  moveInterval = 130; lastMoveTime = 0;
+  frozenTimer = 0; pelletTimer = 12000;
+  floats = []; particles = [];
+  obstacles = [];
+  pellet = null;
+  spawnBTC();
+  spawnObstacle();
+  gameActive = true;
+  document.getElementById('intro').classList.add('hidden');
+  document.getElementById('gameOver').classList.add('hidden');
+  updateHUD();
+  stat('🎮 Collect the Bitcoin!','s-ok');
+}
+
+// ── SPAWN ──
+function freeCells(excludeSnake = true) {
+  const used = new Set();
+  if (excludeSnake) snake.forEach(s => used.add(`${s.x},${s.y}`));
+  obstacles.forEach(o => used.add(`${o.x},${o.y}`));
+  if (btc) used.add(`${btc.x},${btc.y}`);
+  const cells = [];
+  for (let y = 1; y < ROWS - 1; y++)
+    for (let x = 1; x < COLS - 1; x++)
+      if (!used.has(`${x},${y}`)) cells.push({x, y});
+  return cells;
+}
+
+function spawnBTC() {
+  const cells = freeCells().filter(c => Math.abs(c.x - snake[0].x) + Math.abs(c.y - snake[0].y) > 5);
+  if (!cells.length) return;
+  btc = cells[Math.floor(Math.random() * cells.length)];
+}
+
+function spawnObstacle() {
+  const types = SHIT;
+  const t = types[obstacles.length % types.length];
+  const cells = freeCells().filter(c => Math.abs(c.x - snake[0].x) + Math.abs(c.y - snake[0].y) > 6);
+  if (!cells.length) return;
+  const pos = cells[Math.floor(Math.random() * cells.length)];
+  obstacles.push({x: pos.x, y: pos.y, ...t});
+}
+
+function spawnPellet() {
+  const corners = [{x:1,y:1},{x:COLS-2,y:1},{x:1,y:ROWS-2},{x:COLS-2,y:ROWS-2}];
+  const free = corners.filter(c => !obstacles.some(o => o.x===c.x && o.y===c.y));
+  if (!free.length) return;
+  pellet = free[Math.floor(Math.random() * free.length)];
+}
+
+// ── MOVEMENT ──
+function moveSnake() {
+  dir = nextDir;
+  const head = snake[0];
+  const nx = head.x + dir.dx, ny = head.y + dir.dy;
+
+  // Wall hit
+  if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) { loseLife(); return; }
+  // Self hit
+  if (snake.slice(1).some(s => s.x === nx && s.y === ny)) { loseLife(); return; }
+  // Obstacle hit
+  if (frozenTimer <= 0 && obstacles.some(o => o.x === nx && o.y === ny)) { loseLife(); return; }
+
+  snake.unshift({x: nx, y: ny});
+
+  // Eat BTC
+  if (btc && nx === btc.x && ny === btc.y) {
+    streak++; mult = streak >= 15 ? 4 : streak >= 10 ? 3 : streak >= 5 ? 2 : 1;
+    const pts = 100 * mult;
+    score += pts; coins++;
+    spawnParticles(nx, ny, '#FFD700', 14);
+    spawnFloat(nx, ny, '+' + pts, pts >= 300 ? '#ff3355' : pts >= 200 ? '#00ff88' : '#FFD700');
+    moveInterval = Math.max(65, moveInterval - 3);
+    if (coins > 0 && coins % 5 === 0 && obstacles.length < 8) spawnObstacle();
+    spawnBTC();
+    updateHUD();
+    if (score > hiScore) { hiScore = score; localStorage.setItem('btc_snake_hs', hiScore); }
+  } else {
+    snake.pop();
+  }
+
+  // Eat pellet
+  if (pellet && nx === pellet.x && ny === pellet.y) {
+    frozenTimer = 5000; pellet = null; pelletTimer = 15000;
+    spawnParticles(nx, ny, '#00ff88', 12);
+    spawnFloat(nx, ny, '💊 FROZEN!', '#00ff88');
+    stat('💊 SHITCOINS FROZEN for 5s!', 's-gold');
+    setTimeout(() => { if (gameActive) stat('🎮 Collect the Bitcoin!', 's-ok'); }, 5100);
+  }
+}
+
+function loseLife() {
+  lives--; streak = 0; mult = 1;
+  shakeM = 16;
+  const hf = document.getElementById('hitFlash');
+  // Flash
+  canvas.style.boxShadow = '0 0 0 4px #ff3355, 0 0 60px rgba(255,51,85,.6)';
+  setTimeout(() => { canvas.style.boxShadow = ''; }, 300);
+  // Reset snake
+  snake = [{x:14,y:14},{x:13,y:14},{x:12,y:14}];
+  dir = {dx:1,dy:0}; nextDir = {dx:1,dy:0};
+  moveInterval = 130;
+  // Rebuild obstacles
+  const count = Math.min(Math.floor(coins / 5) + 1, 8);
+  obstacles = [];
+  for (let i = 0; i < count; i++) spawnObstacle();
+  updateHUD();
+  if (lives <= 0) { endGame(); return; }
+  stat(`💔 OUCH! ${lives} ${lives === 1 ? 'life' : 'lives'} left`, 's-bad');
+  setTimeout(() => { if (gameActive) stat('🎮 Collect the Bitcoin!', 's-ok'); }, 2000);
+}
+
+function endGame() {
+  gameActive = false;
+  if (score > hiScore) { hiScore = score; localStorage.setItem('btc_snake_hs', hiScore); }
+  document.getElementById('goScore').textContent = score.toLocaleString();
+  document.getElementById('goBest').textContent = 'BEST: ' + hiScore.toLocaleString();
+  document.getElementById('gameOver').classList.remove('hidden');
+}
+
+// ── PARTICLES & FLOATS ──
+function spawnParticles(gx, gy, col, n) {
+  for (let i = 0; i < n; i++) {
+    const a = (Math.PI * 2 / n) * i + Math.random() * .5;
+    const s = 1.5 + Math.random() * 3;
+    particles.push({x:gx*CELL+CELL/2, y:gy*CELL+CELL/2, vx:Math.cos(a)*s, vy:Math.sin(a)*s, life:1, col, sz:2+Math.random()*2.5});
+  }
+}
+function spawnFloat(gx, gy, txt, col) {
+  floats.push({x:gx*CELL+CELL/2, y:gy*CELL, txt, col, vy:-1.2, life:1});
+}
+
+// ── HUD ──
+function updateHUD() {
+  document.getElementById('hScore').textContent = score.toLocaleString();
+  document.getElementById('hMult').textContent = '×' + mult;
+  document.getElementById('hCoins').textContent = coins;
+  document.getElementById('hHi').textContent = hiScore.toLocaleString();
+  const h = [0,1,2].map(i => i < lives ? '❤️' : '🖤').join('');
+  document.getElementById('hLives').textContent = h;
+}
+function stat(msg, cls) {
+  const el = document.getElementById('gstat');
+  el.className = 'gstatus ' + cls; el.textContent = msg;
+}
+
+// ── DRAW ──
+let lastTs = 0;
+function loop(ts) {
+  const dt = Math.min(ts - lastTs, 50); lastTs = ts;
+
+  if (gameActive && !paused) {
+    lastMoveTime += dt;
+    if (lastMoveTime >= moveInterval) { lastMoveTime = 0; moveSnake(); }
+    if (frozenTimer > 0) frozenTimer -= dt;
+    pelletTimer -= dt;
+    if (pelletTimer <= 0 && !pellet) { pelletTimer = 15000 + Math.random() * 5000; spawnPellet(); }
+    coinSpin += 0.06;
+    // Particles
+    particles = particles.filter(p => p.life > 0);
+    particles.forEach(p => { p.x+=p.vx; p.y+=p.vy; p.vx*=.9; p.vy*=.9; p.life-=.04; });
+    // Floats
+    floats = floats.filter(f => f.life > 0);
+    floats.forEach(f => { f.y += f.vy; f.life -= .022; });
+    // Shake
+    if (shakeM > .5) { shakeX=(Math.random()-.5)*shakeM; shakeY=(Math.random()-.5)*shakeM; shakeM*=.75; }
+    else { shakeX=0; shakeY=0; shakeM=0; }
+  }
+
+  // DRAW
+  ctx.save();
+  ctx.translate(shakeX, shakeY);
+  ctx.fillStyle = '#060610';
+  ctx.fillRect(-10, -10, W+20, H+20);
+
+  // Grid dots
+  ctx.fillStyle = 'rgba(255,255,255,0.03)';
+  for (let r = 0; r <= ROWS; r++) for (let c = 0; c <= COLS; c++) ctx.fillRect(c*CELL-1, r*CELL-1, 2, 2);
+
+  if (gameActive || !document.getElementById('gameOver').classList.contains('hidden')) {
+    // Pellet
+    if (pellet) {
+      const pulse = Math.sin(Date.now() * .004) * 2;
+      ctx.save();
+      ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 12 + pulse * 4;
+      ctx.fillStyle = '#00ff88';
+      ctx.beginPath(); ctx.arc(pellet.x*CELL+CELL/2, pellet.y*CELL+CELL/2, 5+pulse*.5, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(pellet.x*CELL+CELL/2, pellet.y*CELL+CELL/2, 2, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+
+    // Obstacles
+    obstacles.forEach(o => {
+      const cx = o.x*CELL+CELL/2, cy = o.y*CELL+CELL/2;
+      const frozen = frozenTimer > 0;
+      const col = frozen ? '#00ffff' : o.color;
+      ctx.save();
+      ctx.shadowColor = col; ctx.shadowBlur = 10;
+      ctx.fillStyle = col + '33';
+      ctx.beginPath(); ctx.roundRect(o.x*CELL+2, o.y*CELL+2, CELL-4, CELL-4, 4); ctx.fill();
+      ctx.strokeStyle = col; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.roundRect(o.x*CELL+2, o.y*CELL+2, CELL-4, CELL-4, 4); ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = frozen ? '#00ffff' : 'rgba(255,255,255,.9)';
+      ctx.font = o.sym === '🐸' ? `${CELL*.55}px Arial` : `bold ${CELL*.6}px Arial`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(frozen ? '❄' : o.sym, cx, cy);
+      ctx.restore();
+    });
+
+    // BTC coin
+    if (btc) {
+      const cx = btc.x*CELL+CELL/2, cy = btc.y*CELL+CELL/2, r = CELL/2-2;
+      const sx = Math.abs(Math.cos(coinSpin));
+      ctx.save(); ctx.translate(cx, cy); ctx.scale(sx, 1);
+      ctx.shadowColor = '#FFD700'; ctx.shadowBlur = 18 + Math.sin(coinSpin*2)*5;
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2);
+      const gd = ctx.createRadialGradient(-r*.3,-r*.3,1,0,0,r);
+      gd.addColorStop(0,'#FFF9C4'); gd.addColorStop(.45,'#FFD700'); gd.addColorStop(1,'#A67C00');
+      ctx.fillStyle = gd; ctx.fill();
+      if (sx > .25) {
+        ctx.fillStyle = 'rgba(0,0,0,.75)'; ctx.font = `bold ${Math.round(r*1.1)}px Arial`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('₿', 0, 1);
+      }
+      ctx.restore();
+    }
+
+    // Snake body
+    snake.forEach((seg, i) => {
+      const isHead = i === 0;
+      const t = 1 - i / snake.length;
+      const col = isHead ? '#FFD700' : `hsl(${30 + t*10},100%,${40 + t*20}%)`;
+      ctx.save();
+      if (isHead) { ctx.shadowColor = '#FFD700'; ctx.shadowBlur = 14; }
+      ctx.fillStyle = col;
+      const pad = isHead ? 1 : 2 + (1-t)*2;
+      ctx.beginPath();
+      ctx.roundRect(seg.x*CELL+pad, seg.y*CELL+pad, CELL-pad*2, CELL-pad*2, isHead ? 6 : 4);
+      ctx.fill();
+      if (isHead) {
+        ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.font = `bold ${CELL*.55}px Arial`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('₿', seg.x*CELL+CELL/2, seg.y*CELL+CELL/2+1);
+      }
+      ctx.restore();
+    });
+
+    // Particles
+    particles.forEach(p => {
+      ctx.save(); ctx.globalAlpha = Math.max(0,p.life);
+      ctx.fillStyle = p.col; ctx.shadowColor = p.col; ctx.shadowBlur = 6;
+      const r = Math.max(0, p.sz * p.life);
+      ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+    });
+
+    // Floats
+    floats.forEach(f => {
+      ctx.save(); ctx.globalAlpha = Math.max(0, f.life);
+      ctx.fillStyle = f.col; ctx.shadowColor = f.col; ctx.shadowBlur = 12;
+      ctx.font = `bold 13px 'Orbitron',monospace`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(f.txt, f.x, f.y); ctx.restore();
+    });
+  }
+
+  ctx.restore();
+  requestAnimationFrame(loop);
+}
+
+// ── INPUT ──
+function setDir(dx, dy) {
+  if (!gameActive) return;
+  // No reversing
+  if (dx === -dir.dx && dy === -dir.dy) return;
+  if (dx === -nextDir.dx && dy === -nextDir.dy) return;
+  nextDir = {dx, dy};
+}
+
+document.addEventListener('keydown', e => {
+  if (!gameActive && !document.getElementById('intro').classList.contains('hidden') && e.key !== 'F5' && e.key !== 'F12') {
+    startGame(); return;
+  }
+  switch(e.key) {
+    case 'ArrowUp':    e.preventDefault(); setDir(0,-1); break;
+    case 'ArrowDown':  e.preventDefault(); setDir(0,1);  break;
+    case 'ArrowLeft':  e.preventDefault(); setDir(-1,0); break;
+    case 'ArrowRight': e.preventDefault(); setDir(1,0);  break;
+    case 'p': case 'P': paused = !paused; break;
+  }
+});
+
+// Touch buttons
+document.getElementById('bU').addEventListener('touchstart', e => {e.preventDefault(); setDir(0,-1);}, {passive:false});
+document.getElementById('bD').addEventListener('touchstart', e => {e.preventDefault(); setDir(0,1);},  {passive:false});
+document.getElementById('bL').addEventListener('touchstart', e => {e.preventDefault(); setDir(-1,0);}, {passive:false});
+document.getElementById('bR').addEventListener('touchstart', e => {e.preventDefault(); setDir(1,0);},  {passive:false});
+document.getElementById('bU').addEventListener('click', () => setDir(0,-1));
+document.getElementById('bD').addEventListener('click', () => setDir(0,1));
+document.getElementById('bL').addEventListener('click', () => setDir(-1,0));
+document.getElementById('bR').addEventListener('click', () => setDir(1,0));
+
+// Swipe support
+let swipeX = null, swipeY = null;
+canvas.addEventListener('touchstart', e => { swipeX = e.touches[0].clientX; swipeY = e.touches[0].clientY; }, {passive:true});
+canvas.addEventListener('touchend', e => {
+  if (swipeX === null) return;
+  const dx = e.changedTouches[0].clientX - swipeX;
+  const dy = e.changedTouches[0].clientY - swipeY;
+  if (Math.abs(dx) > Math.abs(dy)) setDir(dx > 0 ? 1 : -1, 0);
+  else setDir(0, dy > 0 ? 1 : -1);
+  swipeX = null; swipeY = null;
+}, {passive:true});
+
+// Intro / game over
+document.getElementById('intro').addEventListener('click', startGame);
+document.getElementById('intro').addEventListener('touchstart', e => {e.preventDefault(); startGame();}, {passive:false});
+document.getElementById('playAgain').addEventListener('click', startGame);
+document.getElementById('playAgain').addEventListener('touchstart', e => {e.preventDefault(); startGame();}, {passive:false});
+
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

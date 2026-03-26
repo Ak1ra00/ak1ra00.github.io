@@ -425,7 +425,7 @@ body::after {
 
   // Input
   const keys = {};
-  let mouseY = H/2;
+  let mouseY = null;
   let touchY = null;
   let mobUpHeld = false, mobDownHeld = false;
 
@@ -769,18 +769,18 @@ body::after {
   }
 
   function movePlayer() {
-    // Mouse
-    player.y = clamp(mouseY - player.h / 2, 0, H - player.h);
-
-    // Arrow keys
+    const usingKeys = keys['ArrowUp'] || keys['ArrowDown'] || keys['w'] || keys['s'] || mobUpHeld || mobDownHeld;
+    // Touch has highest priority
+    if (touchY !== null) {
+      player.y = clamp(touchY - player.h / 2, 0, H - player.h);
+    // Mouse only if no keys pressed and mouse has moved
+    } else if (mouseY !== null && !usingKeys) {
+      player.y = clamp(mouseY - player.h / 2, 0, H - player.h);
+    }
+    // Arrow keys always work
     if (keys['ArrowUp']   || keys['w'] || mobUpHeld)   player.y -= 8;
     if (keys['ArrowDown'] || keys['s'] || mobDownHeld) player.y += 8;
     player.y = clamp(player.y, 0, H - player.h);
-
-    // Touch override
-    if (touchY !== null) {
-      player.y = clamp(touchY - player.h / 2, 0, H - player.h);
-    }
   }
 
   // ─── OVERLAY MANAGEMENT ──────────────────────────────────────────────────
