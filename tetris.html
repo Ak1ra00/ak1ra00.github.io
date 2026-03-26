@@ -162,7 +162,7 @@ const SPEEDS=[800,700,600,500,420,340,270,210,160,120,90];
 const SCORE_TABLE=[0,100,300,500,800];
 
 // ── STATE ──
-let board, cur, nxt, held, canHold;
+let board=newBoard(), cur, nxt, held, canHold;
 let score,level,lines,hiScore,dropT,dropI;
 let floats=[], clearFlash=[], gameActive=false, paused=false;
 let lastTs=0;
@@ -214,8 +214,9 @@ function startGame(){
   updateInfo();
 }
 
-function spawnPiece(){
-  cur=nxt; nxt=randPiece(); canHold=true;
+function spawnPiece(resetHold){
+  cur=nxt; nxt=randPiece();
+  if(resetHold!==false) canHold=true;
   cur.x=Math.floor((COLS-cur.mat[0].length)/2); cur.y=0;
   if(collides(cur.mat,cur.x,cur.y)) endGame();
 }
@@ -266,8 +267,8 @@ function softDrop(){if(!collides(cur.mat,cur.x,cur.y+1)){cur.y++;score+=1;}else 
 function hardDrop(){let d=0;while(!collides(cur.mat,cur.x,cur.y+1)){cur.y++;d++;}score+=d*2;lockPiece();dropT=0;}
 function holdPiece(){
   if(!canHold) return; canHold=false;
-  if(!held){held=cur;held.x=0;held.y=0;spawnPiece();}
-  else{const tmp=cur;cur=held;held=tmp;cur.x=Math.floor((COLS-cur.mat[0].length)/2);cur.y=0;nxt=nxt;}
+  if(!held){held=cur;held.x=0;held.y=0;spawnPiece(false);}
+  else{const tmp=cur;cur=held;held=tmp;cur.x=Math.floor((COLS-cur.mat[0].length)/2);cur.y=0;}
   updateInfo();
 }
 function togglePause(){if(!gameActive)return;paused=!paused;}
