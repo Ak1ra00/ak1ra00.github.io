@@ -271,9 +271,20 @@ function moveRight(){if(!collides(cur.mat,cur.x+1,cur.y))cur.x++;}
 function softDrop(){if(!collides(cur.mat,cur.x,cur.y+1)){cur.y++;score+=1;}else lockPiece();dropT=0;}
 function hardDrop(){let d=0;while(!collides(cur.mat,cur.x,cur.y+1)){cur.y++;d++;}score+=d*2;lockPiece();dropT=0;}
 function holdPiece(){
-  if(!canHold) return; canHold=false;
-  if(!held){held=cur;held.x=0;held.y=0;spawnPiece(false);}
-  else{const tmp=cur;cur=held;held=tmp;cur.x=Math.floor((COLS-cur.mat[0].length)/2);cur.y=0;}
+  if(!gameActive||!canHold) return;
+  canHold=false;
+  const stash={t:cur.t,mat:SHAPES[cur.t].map(r=>[...r]),col:cur.col,shit:cur.shit,x:0,y:0};
+  if(!held){
+    held=stash;
+    spawnPiece(false);
+  } else {
+    const next=held;
+    held=stash;
+    cur=next;
+    cur.x=Math.floor((COLS-cur.mat[0].length)/2);
+    cur.y=0;
+  }
+  dropT=0;
   updateInfo();
 }
 function togglePause(){if(!gameActive)return;paused=!paused;}
