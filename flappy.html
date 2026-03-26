@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flappy Bitcoin — BTC Arcade</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --btc: #F7931A;
+  --btc-glow: rgba(247,147,26,0.55);
+  --eth: #627EEA;
+  --xrp: #00AAE4;
+  --doge: #C2A633;
+  --sol: #9945FF;
+  --pepe: #00BB44;
+  --gold: #FFD700;
+  --green: #00ff88;
+  --red: #ff3355;
+  --cyan: #00ffff;
+  --bg: #060610;
+  --panel: rgba(8,8,24,0.88);
+  --border: rgba(247,147,26,0.2);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: #fff;
+  font-family: 'Rajdhani', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-x: hidden;
+}
+
+/* Scanlines overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.08) 2px,
+    rgba(0,0,0,0.08) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* NAV */
+.nav {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 2rem;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.nav-logo {
+  font-family: 'Orbitron', monospace;
+  font-weight: 900;
+  font-size: 1.25rem;
+  color: var(--btc);
+  text-decoration: none;
+  text-shadow: 0 0 12px var(--btc-glow);
+  letter-spacing: 2px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.nav-links a {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.6);
+  text-decoration: none;
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  letter-spacing: 1px;
+  transition: all 0.2s;
+}
+
+.nav-links a:hover {
+  color: var(--btc);
+  border-color: var(--border);
+  background: rgba(247,147,26,0.08);
+}
+
+.nav-links a.active {
+  color: var(--btc);
+  border-color: rgba(247,147,26,0.5);
+  background: rgba(247,147,26,0.12);
+  text-shadow: 0 0 8px var(--btc-glow);
+}
+
+/* GAME WRAPPER */
+.game-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 1rem;
+}
+
+.canvas-container {
+  position: relative;
+  width: 480px;
+  height: 600px;
+  border: 2px solid rgba(247,147,26,0.45);
+  border-radius: 8px;
+  box-shadow:
+    0 0 24px var(--btc-glow),
+    0 0 60px rgba(247,147,26,0.2),
+    inset 0 0 30px rgba(0,0,0,0.6);
+  overflow: hidden;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* OVERLAY SCREENS */
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6,6,16,0.82);
+  z-index: 10;
+  gap: 0.6rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+.overlay.hidden { display: none; }
+
+.overlay-title {
+  font-family: 'Orbitron', monospace;
+  font-weight: 900;
+  font-size: 2rem;
+  background: linear-gradient(135deg, var(--gold), var(--btc), #fff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+  filter: drop-shadow(0 0 16px var(--btc-glow));
+  line-height: 1.1;
+  letter-spacing: 2px;
+}
+
+.overlay-sub {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  color: rgba(255,255,255,0.7);
+  letter-spacing: 1px;
+}
+
+.overlay-best {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.85rem;
+  color: var(--gold);
+  letter-spacing: 1px;
+}
+
+.tap-to-start {
+  font-family: 'Orbitron', monospace;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--green);
+  letter-spacing: 2px;
+  animation: blink 0.9s ease-in-out infinite;
+  margin-top: 0.5rem;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.1; }
+}
+
+.overlay-score-big {
+  font-family: 'Orbitron', monospace;
+  font-weight: 900;
+  font-size: 3rem;
+  color: #fff;
+  text-shadow: 0 0 20px var(--btc-glow);
+}
+
+.overlay-rekt {
+  font-family: 'Orbitron', monospace;
+  font-weight: 900;
+  font-size: 2.8rem;
+  color: var(--red);
+  text-shadow: 0 0 20px rgba(255,51,85,0.8);
+  letter-spacing: 4px;
+}
+
+.overlay-medal {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.overlay-score-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  color: rgba(255,255,255,0.55);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.overlay-score-val {
+  font-family: 'Orbitron', monospace;
+  font-weight: 700;
+  font-size: 1.4rem;
+  color: var(--gold);
+}
+
+.score-row {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+}
+
+.score-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+/* FLASH overlay */
+.flash {
+  position: absolute;
+  inset: 0;
+  background: rgba(255,51,85,0.55);
+  z-index: 20;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.05s;
+}
+
+.flash.active { opacity: 1; }
+
+/* Bounce coin animation for intro */
+.bounce-coin {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #FFE066, #F7931A 60%, #a05500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #7a3a00;
+  box-shadow: 0 0 18px var(--btc-glow), 0 0 36px rgba(247,147,26,0.3);
+  animation: bounce-anim 0.7s ease-in-out infinite alternate;
+  margin: 0.4rem 0;
+  font-family: 'Orbitron', monospace;
+}
+
+@keyframes bounce-anim {
+  from { transform: translateY(0px); }
+  to   { transform: translateY(-18px); }
+}
+
+/* Divider */
+.overlay-divider {
+  width: 120px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--btc), transparent);
+  margin: 0.3rem 0;
+}
+
+/* Mobile canvas scaling */
+@media (max-width: 520px) {
+  .canvas-container {
+    width: 340px;
+    height: 425px;
+  }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="nav-logo" href="games.html">₿ ARCADE</a>
+  <div class="nav-links">
+    <a href="index.html">Pac-Man</a>
+    <a href="snake.html">Snake</a>
+    <a href="pong.html">Pong</a>
+    <a href="invaders.html">Invaders</a>
+    <a href="flappy.html" class="active">Flappy</a>
+    <a href="tetris.html">Tetris</a>
+  </div>
+</nav>
+
+<div class="game-wrap">
+  <div class="canvas-container" id="canvasContainer">
+    <canvas id="gameCanvas" width="480" height="600"></canvas>
+
+    <!-- Flash effect -->
+    <div class="flash" id="flashEl"></div>
+
+    <!-- INTRO overlay -->
+    <div class="overlay" id="introOverlay">
+      <div class="overlay-title">FLAPPY<br>BITCOIN</div>
+      <div class="bounce-coin">₿</div>
+      <div class="overlay-sub">Tap to flap &nbsp;•&nbsp; Collect ₿ &nbsp;•&nbsp; Dodge shitcoin pipes</div>
+      <div class="overlay-divider"></div>
+      <div class="overlay-best" id="introBest">BEST: 0</div>
+      <div class="tap-to-start">▶ TAP TO START ◀</div>
+    </div>
+
+    <!-- GAME OVER overlay -->
+    <div class="overlay hidden" id="gameoverOverlay">
+      <div style="font-size:2.2rem; line-height:1;">💥</div>
+      <div class="overlay-rekt">REKT!</div>
+      <div class="overlay-medal" id="medalEl"></div>
+      <div class="score-row">
+        <div class="score-col">
+          <div class="overlay-score-label">Score</div>
+          <div class="overlay-score-val" id="goScore">0</div>
+        </div>
+        <div class="score-col">
+          <div class="overlay-score-label">Best</div>
+          <div class="overlay-score-val" id="goBest">0</div>
+        </div>
+      </div>
+      <div class="overlay-divider"></div>
+      <div class="tap-to-start">TAP TO PLAY AGAIN</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+// ─── CANVAS & CTX ────────────────────────────────────────────────────────────
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+const W = canvas.width;  // 480
+const H = canvas.height; // 600
+
+// ─── DOM REFS ────────────────────────────────────────────────────────────────
+const introOverlay   = document.getElementById('introOverlay');
+const gameoverOverlay= document.getElementById('gameoverOverlay');
+const flashEl        = document.getElementById('flashEl');
+const introBest      = document.getElementById('introBest');
+const goScore        = document.getElementById('goScore');
+const goBest         = document.getElementById('goBest');
+const medalEl        = document.getElementById('medalEl');
+
+// ─── COLORS ──────────────────────────────────────────────────────────────────
+const C = {
+  btc:    '#F7931A',
+  btcGlow:'rgba(247,147,26,0.55)',
+  eth:    '#627EEA',
+  gold:   '#FFD700',
+  green:  '#00ff88',
+  red:    '#ff3355',
+  bg:     '#060610',
+  pipe:   '#0a1228',
+};
+
+// ─── GAME STATE ──────────────────────────────────────────────────────────────
+let state     = 'intro'; // 'intro' | 'playing' | 'dead'
+let score     = 0;
+let hiScore   = parseInt(localStorage.getItem('btc_flappy_hs') || '0', 10);
+let frame     = 0;
+let raf       = null;
+
+// ─── DIFFICULTY ──────────────────────────────────────────────────────────────
+let pipeSpeed    = 2.8;
+let spawnInterval= 90;
+let gapSize      = 160;
+let lastDiffLevel= 0;
+
+// ─── PLAYER ──────────────────────────────────────────────────────────────────
+const GRAVITY     = 0.45;
+const FLAP_VEL    = -8;
+const PLAYER_R    = 18;
+const PLAYER_X    = 120;
+
+let player = { x: PLAYER_X, y: 300, vy: 0, angle: 0 };
+
+// Trail positions
+let trail = [];
+
+// ─── PIPES ───────────────────────────────────────────────────────────────────
+let pipes = [];
+// each pipe: { x, gapY, passed, bonusCoin:{collected,y,pulse} }
+
+// ─── PARTICLES ───────────────────────────────────────────────────────────────
+let particles = [];
+// each: { x,y,vx,vy,life,maxLife,color,r }
+
+// ─── FLOATING TEXTS ──────────────────────────────────────────────────────────
+let floatTexts = [];
+// each: { x,y,vy,life,maxLife,text,color }
+
+// ─── BG PARTICLES ────────────────────────────────────────────────────────────
+let bgParticles = [];
+for(let i=0;i<50;i++){
+  bgParticles.push({
+    x: Math.random()*W,
+    y: Math.random()*H,
+    r: Math.random()*1.5+0.3,
+    vx: (Math.random()-0.5)*0.3,
+    vy: (Math.random()-0.5)*0.3,
+    color: Math.random()<0.6 ? 'rgba(247,147,26,' : 'rgba(98,126,234,',
+    alpha: Math.random()*0.25+0.05,
+  });
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+
+function lerp(a, b, t){ return a + (b-a)*t; }
+
+function spawnParticles(x, y, count, color){
+  for(let i=0;i<count;i++){
+    const angle = Math.random()*Math.PI*2;
+    const speed = Math.random()*4+1;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle)*speed,
+      vy: Math.sin(angle)*speed - 1,
+      life: 1,
+      maxLife: 1,
+      color,
+      r: Math.random()*4+2,
+    });
+  }
+}
+
+function spawnFloatText(x, y, text, color){
+  floatTexts.push({ x, y, vy: -1.2, life:1, maxLife:1, text, color });
+}
+
+function triggerFlash(){
+  flashEl.classList.add('active');
+  setTimeout(()=> flashEl.classList.remove('active'), 160);
+}
+
+function getMedal(s){
+  if(s > 30) return '🥇';
+  if(s > 20) return '🥈';
+  if(s > 10) return '🥉';
+  if(s >  5) return '🏅';
+  return '';
+}
+
+// ─── RESET / INIT ─────────────────────────────────────────────────────────────
+function resetGame(){
+  player   = { x: PLAYER_X, y: 300, vy: 0, angle: 0 };
+  trail    = [];
+  pipes    = [];
+  particles= [];
+  floatTexts=[];
+  score    = 0;
+  frame    = 0;
+  pipeSpeed    = 2.8;
+  spawnInterval= 90;
+  gapSize      = 160;
+  lastDiffLevel= 0;
+}
+
+// ─── PIPE SPAWNING ────────────────────────────────────────────────────────────
+function spawnPipe(){
+  if(pipes.length >= 3) return;
+  const minGapY = 100;
+  const maxGapY = H - gapSize - 100;
+  const gapY    = Math.floor(Math.random()*(maxGapY - minGapY + 1)) + minGapY;
+  const bonusCoinY = gapY + gapSize/2;
+  pipes.push({
+    x: W + 30,
+    gapY,
+    passed: false,
+    bonusCoin: { collected: false, y: bonusCoinY, pulse: 0 },
+  });
+}
+
+// ─── COLLISION ────────────────────────────────────────────────────────────────
+const PIPE_W = 64;
+const LENIENCY = 4;
+
+function circleRect(cx, cy, cr, rx, ry, rw, rh){
+  const nearX = clamp(cx, rx, rx+rw);
+  const nearY = clamp(cy, ry, ry+rh);
+  const dx = cx - nearX;
+  const dy = cy - nearY;
+  return dx*dx + dy*dy < (cr - LENIENCY)*(cr - LENIENCY);
+}
+
+function checkCollision(){
+  // Wall hits
+  if(player.y - PLAYER_R < 0 || player.y + PLAYER_R > H) return true;
+  // Pipe hits
+  for(const p of pipes){
+    const pipeX = p.x - PIPE_W/2;
+    // Top pipe rect
+    if(circleRect(player.x, player.y, PLAYER_R, pipeX, 0, PIPE_W, p.gapY)) return true;
+    // Bottom pipe rect
+    if(circleRect(player.x, player.y, PLAYER_R, pipeX, p.gapY + gapSize, PIPE_W, H - (p.gapY + gapSize))) return true;
+  }
+  return false;
+}
+
+// ─── DRAW HELPERS ─────────────────────────────────────────────────────────────
+
+function drawBgParticles(){
+  for(const p of bgParticles){
+    p.x += p.vx; p.y += p.vy;
+    if(p.x < 0) p.x = W;
+    if(p.x > W) p.x = 0;
+    if(p.y < 0) p.y = H;
+    if(p.y > H) p.y = 0;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+    ctx.fillStyle = p.color + p.alpha + ')';
+    ctx.fill();
+  }
+}
+
+function drawPipe(p){
+  const pipeX = p.x - PIPE_W/2;
+
+  // Top pipe
+  drawPipeRect(pipeX, 0, PIPE_W, p.gapY, true);
+  // Bottom pipe
+  const bpY = p.gapY + gapSize;
+  drawPipeRect(pipeX, bpY, PIPE_W, H - bpY, false);
+
+  // Gap edge glow
+  ctx.save();
+  const glowGrad = ctx.createLinearGradient(pipeX, p.gapY-3, pipeX, p.gapY+3);
+  glowGrad.addColorStop(0, 'rgba(98,126,234,0.5)');
+  glowGrad.addColorStop(1, 'transparent');
+  ctx.fillStyle = glowGrad;
+  ctx.fillRect(pipeX, p.gapY-2, PIPE_W, 4);
+
+  const glowGrad2 = ctx.createLinearGradient(pipeX, bpY-3, pipeX, bpY+3);
+  glowGrad2.addColorStop(0, 'transparent');
+  glowGrad2.addColorStop(1, 'rgba(98,126,234,0.5)');
+  ctx.fillStyle = glowGrad2;
+  ctx.fillRect(pipeX, bpY-2, PIPE_W, 4);
+  ctx.restore();
+}
+
+function drawPipeRect(x, y, w, h, isTop){
+  if(h <= 0) return;
+  ctx.save();
+
+  // Body
+  const bodyGrad = ctx.createLinearGradient(x, 0, x+w, 0);
+  bodyGrad.addColorStop(0,   '#0a1228');
+  bodyGrad.addColorStop(0.3, '#0e1a35');
+  bodyGrad.addColorStop(0.7, '#0e1a35');
+  bodyGrad.addColorStop(1,   '#070f1e');
+  ctx.fillStyle = bodyGrad;
+  ctx.fillRect(x, y, w, h);
+
+  // ETH border glow
+  ctx.strokeStyle = 'rgba(98,126,234,0.35)';
+  ctx.lineWidth   = 1.5;
+  ctx.strokeRect(x+0.75, y+0.75, w-1.5, h-1.5);
+
+  // Ξ symbols tiled every 40px
+  ctx.fillStyle   = 'rgba(98,126,234,0.55)';
+  ctx.font        = 'bold 18px Orbitron, monospace';
+  ctx.textAlign   = 'center';
+  ctx.textBaseline= 'middle';
+  const startY = isTop ? y + 20 : y + 20;
+  for(let sy = startY; sy < y+h-10; sy += 40){
+    ctx.fillText('Ξ', x + w/2, sy);
+  }
+
+  ctx.restore();
+}
+
+function drawBonusCoin(p){
+  const bc = p.bonusCoin;
+  if(bc.collected) return;
+  bc.pulse += 0.08;
+  const pulseFactor = 1 + 0.15*Math.sin(bc.pulse);
+  const cr = 8 * pulseFactor;
+  const cx = p.x;
+  const cy = bc.y;
+
+  ctx.save();
+  // Glow
+  ctx.shadowColor = C.gold;
+  ctx.shadowBlur  = 10;
+  // Circle
+  const grad = ctx.createRadialGradient(cx-cr*0.25, cy-cr*0.25, 0, cx, cy, cr);
+  grad.addColorStop(0, '#fff4aa');
+  grad.addColorStop(0.5, C.gold);
+  grad.addColorStop(1, '#a06000');
+  ctx.beginPath();
+  ctx.arc(cx, cy, cr, 0, Math.PI*2);
+  ctx.fillStyle = grad;
+  ctx.fill();
+  // ₿ symbol
+  ctx.fillStyle = 'rgba(100,50,0,0.85)';
+  ctx.font = `bold ${Math.round(cr*1.1)}px Orbitron, monospace`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('₿', cx, cy+0.5);
+  ctx.restore();
+}
+
+function drawPlayer(){
+  const { x, y, vy, angle } = player;
+
+  // Trail
+  ctx.save();
+  for(let i=0;i<trail.length;i++){
+    const t = trail[i];
+    const alpha = (i+1) / trail.length * 0.25;
+    ctx.beginPath();
+    ctx.arc(t.x, t.y, PLAYER_R - 2, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(247,147,26,${alpha})`;
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // Player coin
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+
+  // Glow
+  ctx.shadowColor = C.btc;
+  ctx.shadowBlur  = 20;
+
+  // Coin body
+  const grad = ctx.createRadialGradient(-PLAYER_R*0.3, -PLAYER_R*0.3, 0, 0, 0, PLAYER_R);
+  grad.addColorStop(0, '#FFE566');
+  grad.addColorStop(0.4, C.gold);
+  grad.addColorStop(0.7, C.btc);
+  grad.addColorStop(1, '#7a4000');
+  ctx.beginPath();
+  ctx.arc(0, 0, PLAYER_R, 0, Math.PI*2);
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Outer ring
+  ctx.strokeStyle = 'rgba(255,230,100,0.7)';
+  ctx.lineWidth   = 2;
+  ctx.stroke();
+
+  // ₿ symbol
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = 'rgba(80,35,0,0.9)';
+  ctx.font = 'bold 20px Orbitron, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('₿', 0, 1);
+
+  ctx.restore();
+}
+
+function drawParticles(){
+  for(let i=particles.length-1;i>=0;i--){
+    const p = particles[i];
+    p.x  += p.vx;
+    p.y  += p.vy;
+    p.vy += 0.12; // gravity
+    p.life -= 0.035;
+    if(p.life <= 0){ particles.splice(i,1); continue; }
+    ctx.save();
+    ctx.globalAlpha = p.life;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI*2);
+    ctx.fillStyle = p.color;
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function drawFloatTexts(){
+  for(let i=floatTexts.length-1;i>=0;i--){
+    const t = floatTexts[i];
+    t.y  += t.vy;
+    t.life -= 0.02;
+    if(t.life <= 0){ floatTexts.splice(i,1); continue; }
+    ctx.save();
+    ctx.globalAlpha = t.life;
+    ctx.font = 'bold 18px Orbitron, monospace';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle    = t.color;
+    ctx.shadowColor  = t.color;
+    ctx.shadowBlur   = 8;
+    ctx.fillText(t.text, t.x, t.y);
+    ctx.restore();
+  }
+}
+
+function drawHUD(){
+  ctx.save();
+  // Score
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'top';
+  ctx.font         = 'bold 36px Orbitron, monospace';
+  ctx.fillStyle    = '#ffffff';
+  ctx.shadowColor  = C.btc;
+  ctx.shadowBlur   = 14;
+  ctx.fillText(score, W/2, 18);
+  // Hi-score
+  ctx.font         = '700 13px Orbitron, monospace';
+  ctx.fillStyle    = 'rgba(255,215,0,0.8)';
+  ctx.shadowBlur   = 6;
+  ctx.fillText('BEST ' + hiScore, W/2, 60);
+  ctx.restore();
+}
+
+function drawGround(){
+  ctx.save();
+  ctx.strokeStyle = 'rgba(247,147,26,0.3)';
+  ctx.lineWidth   = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, H-1);
+  ctx.lineTo(W, H-1);
+  ctx.stroke();
+  ctx.restore();
+}
+
+// ─── GAME LOOP ────────────────────────────────────────────────────────────────
+function update(){
+  if(state !== 'playing') return;
+
+  frame++;
+
+  // Difficulty scaling every 5 pipes
+  const diffLevel = Math.floor(score / 5);
+  if(diffLevel > lastDiffLevel){
+    const steps = diffLevel - lastDiffLevel;
+    pipeSpeed     = Math.min(6.0, pipeSpeed + 0.15 * steps);
+    spawnInterval = Math.max(55, spawnInterval - 3 * steps);
+    gapSize       = Math.max(120, gapSize - 5 * steps);
+    lastDiffLevel = diffLevel;
+  }
+
+  // Spawn pipes
+  if(frame % spawnInterval === 0) spawnPipe();
+
+  // Physics
+  player.vy += GRAVITY;
+  player.y  += player.vy;
+
+  // Tilt angle: map vy to angle
+  const targetAngle = clamp(player.vy * 0.055, -0.45, 1.0);
+  player.angle = lerp(player.angle, targetAngle, 0.18);
+
+  // Trail
+  trail.unshift({ x: player.x, y: player.y });
+  if(trail.length > 5) trail.pop();
+
+  // Move pipes
+  for(let i=pipes.length-1;i>=0;i--){
+    const p = pipes[i];
+    p.x -= pipeSpeed;
+
+    // Score when pipe passes player
+    if(!p.passed && p.x + PIPE_W/2 < player.x){
+      p.passed = true;
+      score++;
+    }
+
+    // Check bonus coin collection
+    if(!p.bonusCoin.collected){
+      const dx = player.x - p.x;
+      const dy = player.y - p.bonusCoin.y;
+      if(dx*dx + dy*dy < (PLAYER_R + 8)*(PLAYER_R + 8)){
+        p.bonusCoin.collected = true;
+        score += 5;
+        spawnParticles(p.x, p.bonusCoin.y, 16, C.gold);
+        spawnFloatText(p.x, p.bonusCoin.y - 20, '+5', C.gold);
+        // Update hi-score live
+        if(score > hiScore){
+          hiScore = score;
+          localStorage.setItem('btc_flappy_hs', hiScore);
+        }
+      }
+    }
+
+    // Remove off-screen
+    if(p.x < -80) pipes.splice(i, 1);
+  }
+
+  // Collision
+  if(checkCollision()){
+    killPlayer();
+    return;
+  }
+
+  // Live hi-score update
+  if(score > hiScore){
+    hiScore = score;
+    localStorage.setItem('btc_flappy_hs', hiScore);
+  }
+}
+
+function render(){
+  // BG
+  ctx.fillStyle = C.bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // BG particles
+  drawBgParticles();
+
+  // Pipes & bonus coins
+  for(const p of pipes){
+    drawPipe(p);
+    drawBonusCoin(p);
+  }
+
+  // Ground
+  drawGround();
+
+  // Player
+  if(state === 'playing' || state === 'dead'){
+    drawPlayer();
+  }
+
+  // Particles / floats
+  drawParticles();
+  drawFloatTexts();
+
+  // HUD
+  if(state === 'playing'){
+    drawHUD();
+  }
+}
+
+function gameLoop(){
+  update();
+  render();
+  raf = requestAnimationFrame(gameLoop);
+}
+
+// ─── DEATH ────────────────────────────────────────────────────────────────────
+function killPlayer(){
+  state = 'dead';
+
+  // Save hi-score
+  if(score > hiScore){
+    hiScore = score;
+    localStorage.setItem('btc_flappy_hs', hiScore);
+  }
+
+  triggerFlash();
+  spawnParticles(player.x, player.y, 24, C.btc);
+
+  // Show game over overlay after brief delay
+  setTimeout(()=>{
+    goScore.textContent = score;
+    goBest.textContent  = hiScore;
+    medalEl.textContent = getMedal(score);
+    gameoverOverlay.classList.remove('hidden');
+  }, 600);
+}
+
+// ─── INPUT ────────────────────────────────────────────────────────────────────
+function handleFlap(){
+  if(state === 'intro'){
+    introOverlay.classList.add('hidden');
+    resetGame();
+    state = 'playing';
+    return;
+  }
+  if(state === 'dead'){
+    gameoverOverlay.classList.remove('hidden');
+    // Only accept restart if overlay is visible
+    return;
+  }
+  if(state === 'playing'){
+    player.vy = FLAP_VEL;
+  }
+}
+
+function handleRestart(){
+  if(state === 'dead'){
+    gameoverOverlay.classList.add('hidden');
+    resetGame();
+    state = 'playing';
+  }
+}
+
+// Click / touch on canvas
+canvas.addEventListener('click', ()=>{
+  if(state === 'dead'){
+    handleRestart();
+  } else {
+    handleFlap();
+  }
+});
+
+canvas.addEventListener('touchstart', (e)=>{
+  e.preventDefault();
+  if(state === 'dead'){
+    handleRestart();
+  } else {
+    handleFlap();
+  }
+}, { passive: false });
+
+// Also clicking on game over overlay
+gameoverOverlay.addEventListener('click', handleRestart);
+gameoverOverlay.addEventListener('touchstart', (e)=>{ e.preventDefault(); handleRestart(); }, { passive: false });
+
+// Keyboard
+document.addEventListener('keydown', (e)=>{
+  if(e.code === 'Space'){
+    e.preventDefault();
+    if(state === 'dead'){
+      handleRestart();
+    } else {
+      handleFlap();
+    }
+  }
+});
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+introBest.textContent = 'BEST: ' + hiScore;
+
+// Start rendering immediately (intro screen)
+state = 'intro';
+gameLoop();
+
+// Keep rendering even during intro (show bg particles)
+// The intro overlay sits on top in HTML, so canvas renders behind it
+
+})();
+</script>
+</body>
+</html>
