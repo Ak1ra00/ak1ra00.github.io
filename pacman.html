@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bitcoin Pac-Man – Atlas Bitcoin Arcade</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="scanlines"></div>
+
+<nav style="position:relative;z-index:10;width:100%;max-width:900px;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(247,147,26,0.2);margin:0 auto 4px;">
+    <a href="index.html" style="font-family:'Orbitron',monospace;font-size:1rem;color:#F7931A;text-decoration:none;letter-spacing:.06em;text-shadow:0 0 12px rgba(247,147,26,.55);">₿ ATLAS ARCADE</a>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <a href="pacman.html" style="color:#F7931A;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Pac-Man</a>
+        <a href="snake.html" style="color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Snake</a>
+        <a href="pong.html" style="color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Pong</a>
+        <a href="invaders.html" style="color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Invaders</a>
+        <a href="flappy.html" style="color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Flappy</a>
+        <a href="tetris.html" style="color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Tetris</a>
+    </div>
+</nav>
+<div id="rageRing"></div>
+<div id="hitFlash"></div>
+
+<!-- ── INTRO SCREEN ── -->
+<div id="intro">
+    <div class="intro-logo">🪙</div>
+    <div class="intro-title">BITCOIN PAC-MAN</div>
+    <div class="intro-sub">Collect BTC ∙ Dodge shitcoin ghosts ∙ Find power-ups<br>Use Arrow Keys or touch buttons</div>
+    <div class="intro-enemies">
+        <div class="ie">👻<span style="color:var(--eth)">ETH</span></div>
+        <div class="ie">👻<span style="color:var(--xrp)">XRP</span></div>
+        <div class="ie">👻<span style="color:var(--doge)">DOGE</span></div>
+        <div class="ie">👻<span style="color:var(--sol)">SOL</span></div>
+        <div class="ie">🐸<span style="color:var(--pepe)">PEPE</span></div>
+    </div>
+    <div class="intro-hiscore" id="introHi">Best: 0</div>
+    <div class="intro-start">▶  PRESS ANY KEY TO START  ◀</div>
+</div>
+
+<!-- ── LEVEL TRANSITION ── -->
+<div id="lvlBanner">
+    <div class="lvl-num" id="lvlNum">LEVEL 2</div>
+    <div class="lvl-sub" id="lvlSub">NEW ENEMY UNLOCKED!</div>
+</div>
+
+<canvas id="bgCanvas"></canvas>
+
+<div class="gw">
+    <div class="hdr">
+        <h1>🪙 BITCOIN PAC-MAN</h1>
+        <p>Arrow keys / touch buttons • Catch BTC • Avoid shitcoin ghosts • Find power-ups!</p>
+    </div>
+
+    <div class="cwrap" id="cwrap">
+        <canvas id="gc" width="800" height="600"></canvas>
+        <div id="pauseOverlay">
+            <div class="pause-title">⏸ PAUSED</div>
+            <div class="pause-sub">Press ⏸ or [P] to resume</div>
+        </div>
+    </div>
+
+    <div class="hud">
+        <div class="hcard"><div class="hlbl">Score</div><div class="hval" id="hScore">0</div></div>
+        <div class="hcard"><div class="hlbl">Multiplier</div><div class="hval y" id="hMult">×1</div></div>
+        <div class="hcard"><div class="hlbl">Lives</div><div class="hval" id="hLives">❤️❤️❤️</div></div>
+        <div class="hcard"><div class="hlbl">Coins</div><div class="hval g" id="hCoins">0</div></div>
+        <div class="hcard"><div class="hlbl">Hi-Score</div><div class="hval y" id="hHi">0</div></div>
+        <div class="hcard"><div class="hlbl">Level</div><div class="hval c" id="hLevel">1</div></div>
+    </div>
+
+    <div class="sbar-wrap">
+        <div class="sbar-row">
+            <span id="rageLabel">😎 Streak Power</span>
+            <span id="rageVal">0 / 5</span>
+        </div>
+        <div class="sbar-track"><div class="sbar-fill" id="sbarFill"></div></div>
+    </div>
+
+    <div id="puDisplay">
+        <span class="pu-lbl">⚡ Active:</span>
+        <div id="puBadges"></div>
+    </div>
+
+    <div class="legend">
+        <div class="li"><div class="ld" style="background:var(--gold)"></div>₿ BTC – Catch!</div>
+        <div class="li"><div class="ld" style="background:#00ff88"></div>💊 Power Pellet</div>
+        <div class="li"><div class="ld" style="background:#00ffff"></div>🛡️ Power-Ups</div>
+        <div class="li"><div class="ld" style="background:var(--eth)"></div>ETH</div>
+        <div class="li" id="xrpLi" style="opacity:.3"><div class="ld" style="background:var(--xrp)"></div>XRP</div>
+        <div class="li" id="dogeLi" style="opacity:.3"><div class="ld" style="background:var(--doge)"></div>DOGE</div>
+        <div class="li" id="solLi"  style="opacity:.3"><div class="ld" style="background:var(--sol)"></div>SOL</div>
+        <div class="li" id="pepeLi" style="opacity:.3"><div class="ld" style="background:var(--pepe)"></div>PEPE</div>
+    </div>
+
+    <div id="gstat" class="gstatus s-ok">🎮 Game Active – Catch the Bitcoin!</div>
+
+    <div id="gop" class="gopanel">
+        <div class="poo">💩</div>
+        <div class="gotitle">REKT BY SHITCOINS</div>
+        <div class="gosub">Final Score</div>
+        <div class="goscore" id="gofinal">0</div>
+        <table class="hst">
+            <thead><tr><th>#</th><th>Score</th><th>Coins</th><th>Level</th></tr></thead>
+            <tbody id="hsbody"></tbody>
+        </table>
+        <button class="rbtn" onclick="G.restart()">⚡ PLAY AGAIN</button>
+    </div>
+
+    <div class="ctrl">
+        <div class="ctrl-left">
+            <button class="pause-btn" id="pauseBtn" onclick="G.togglePause()">⏸ PAUSE</button>
+            <button class="snd-btn" id="sndBtn" onclick="toggleSound()">🔊 SFX</button>
+            <p class="ctrl-hint">Arrow keys to move<br>[P] to pause</p>
+        </div>
+        <div class="cbgrid">
+            <div></div>
+            <button class="cbtn" ontouchstart="e(0,-1);return false;" onclick="mv(0,-1)">⬆️</button>
+            <div></div>
+            <button class="cbtn" ontouchstart="e(-1,0);return false;" onclick="mv(-1,0)">⬅️</button>
+            <button class="cbtn" ontouchstart="e(0,1);return false;"  onclick="mv(0,1)">⬇️</button>
+            <button class="cbtn" ontouchstart="e(1,0);return false;"  onclick="mv(1,0)">➡️</button>
+        </div>
+    </div>
+
+    <div class="credits">Made with ❤ by <a href="https://twitter.com/justice__gate" target="_blank">@justice__gate</a></div>
+</div>
+
+
+<script src="game.js"></script>
+</body>
+</html>
