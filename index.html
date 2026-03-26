@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bitcoin Pac-Man Chase - Crypto Maze Game</title>
+    <meta name="description" content="Catch the Bitcoin coins in this Pac-Man style maze chase game!">
+    <meta name="theme-color" content="#F7931A">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
+            min-height: 100vh;
+            color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            overflow-x: hidden;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* WARNING OVERLAY */
+        #warningOverlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.92);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeOut 0.5s ease 3s forwards;
+        }
+
+        @keyframes fadeOut {
+            to { opacity: 0; pointer-events: none; }
+        }
+
+        .warning-box {
+            background: linear-gradient(135deg, #1a0000, #2d0000);
+            border: 3px solid #ef4444;
+            border-radius: 20px;
+            padding: 40px 60px;
+            text-align: center;
+            box-shadow: 0 0 60px rgba(239,68,68,0.5), inset 0 0 40px rgba(239,68,68,0.05);
+            animation: warningPulse 0.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes warningPulse {
+            from { box-shadow: 0 0 40px rgba(239,68,68,0.4), inset 0 0 40px rgba(239,68,68,0.05); }
+            to   { box-shadow: 0 0 80px rgba(239,68,68,0.8), inset 0 0 40px rgba(239,68,68,0.1); }
+        }
+
+        .warning-icon { font-size: 4rem; margin-bottom: 16px; animation: shake 0.3s ease-in-out infinite alternate; }
+
+        @keyframes shake {
+            from { transform: rotate(-5deg); }
+            to   { transform: rotate(5deg); }
+        }
+
+        .warning-title {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #ef4444;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            text-shadow: 0 0 20px rgba(239,68,68,0.8);
+            margin-bottom: 12px;
+        }
+
+        .warning-sub {
+            font-size: 1.2rem;
+            color: #fca5a5;
+            font-weight: 600;
+        }
+
+        /* GAME WRAPPER */
+        .game-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding: 16px;
+            max-width: 100%;
+        }
+
+        .game-header {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .game-header h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, #F7931A, #FFD700, #F7931A);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 6px;
+        }
+
+        .game-header p { color: #9ca3af; font-size: 0.9rem; }
+
+        .game-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .game-canvas {
+            background: #0a0a0a;
+            border: 3px solid #374151;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(247, 147, 26, 0.2);
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .score-board {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(247,147,26,0.3);
+            border-radius: 12px;
+            padding: 12px 16px;
+            backdrop-filter: blur(10px);
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .score-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 1rem;
+            padding: 6px;
+            border-radius: 8px;
+        }
+
+        .score-row:last-child { margin-bottom: 0; }
+        .score-label { color: #9ca3af; font-weight: 500; font-size: 0.9rem; }
+        .score-value { font-size: 1.3rem; font-weight: 700; color: #F7931A; }
+
+        /* LIVES */
+        .lives-display {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 1.5rem;
+        }
+
+        .life-icon { transition: all 0.3s; }
+        .life-icon.lost { opacity: 0.2; filter: grayscale(1); }
+
+        .multiplier-display {
+            background: linear-gradient(90deg, #374151, #1F2937);
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        .multiplier-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, #F7931A, #FFD700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .multiplier-label { color: #9ca3af; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; }
+
+        .speed-meter {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(247,147,26,0.2);
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 8px;
+        }
+
+        .speed-bar-container { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.8rem; }
+        .speed-bar { height: 8px; background: linear-gradient(90deg, #374151, #1F2937); border-radius: 4px; overflow: hidden; margin-top: 6px; }
+        .speed-fill { height: 100%; background: linear-gradient(90deg, #10b981, #F7931A, #ef4444); border-radius: 4px; width: 0%; transition: width 0.3s; }
+
+        /* COINS LEGEND */
+        .coins-legend {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 8px;
+            padding: 8px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            font-size: 0.8rem;
+        }
+
+        .legend-item { display: flex; align-items: center; gap: 4px; color: #9ca3af; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+        .game-status {
+            text-align: center;
+            padding: 10px 16px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .status-active { background: rgba(16,185,129,0.15); border: 1px solid #10b981; color: #10b981; }
+        .status-danger { background: rgba(239,68,68,0.15); border: 1px solid #ef4444; color: #ef4444; animation: dangerPulse 0.4s ease-in-out infinite alternate; }
+
+        @keyframes dangerPulse {
+            from { background: rgba(239,68,68,0.1); }
+            to   { background: rgba(239,68,68,0.3); }
+        }
+
+        .game-over {
+            text-align: center;
+            padding: 16px;
+            background: rgba(239,68,68,0.15);
+            border: 1px solid #ef4444;
+            border-radius: 12px;
+            margin-top: 10px;
+            color: #ef4444;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .poo-display { font-size: 3rem; animation: pooBounce 0.5s ease-in-out infinite alternate; margin: 8px 0; }
+
+        @keyframes pooBounce {
+            from { transform: scale(1) rotate(-5deg); }
+            to   { transform: scale(1.2) rotate(5deg); }
+        }
+
+        .restart-btn {
+            background: linear-gradient(135deg, #10b981, #06d6a0);
+            border: none;
+            padding: 12px 32px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s;
+            min-width: 160px;
+        }
+
+        .restart-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(16,185,129,0.3); }
+
+        .controls-area {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(247,147,26,0.2);
+            border-radius: 12px;
+            padding: 12px;
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .controls-info { color: #F7931A; margin-bottom: 10px; font-size: 1rem; font-weight: 600; }
+
+        .control-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            width: 160px;
+            margin: 10px auto;
+        }
+
+        .control-btn {
+            background: rgba(247,147,26,0.15);
+            border: 2px solid #F7931A;
+            border-radius: 12px;
+            width: 45px;
+            height: 45px;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #F7931A;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            user-select: none;
+        }
+
+        .control-btn:hover, .control-btn:active { background: rgba(247,147,26,0.25); transform: scale(1.05); }
+
+        .game-credits { text-align: center; padding: 8px; color: #9ca3af; font-size: 0.8rem; width: 100%; }
+        .game-credits a { color: #F7931A; text-decoration: none; }
+        .game-credits a:hover { text-decoration: underline; }
+        .game-credits .made-by { font-weight: 600; color: #F7931A; }
+
+        /* Hit flash overlay */
+        #hitFlash {
+            position: fixed;
+            inset: 0;
+            background: rgba(239,68,68,0.4);
+            pointer-events: none;
+            opacity: 0;
+            z-index: 100;
+            transition: opacity 0.1s;
+        }
+
+        @media (max-width: 768px) {
+            .game-wrapper { padding: 12px; gap: 12px; }
+            .game-header h1 { font-size: 1.5rem; }
+            .game-header p { font-size: 0.85rem; }
+            .score-row { font-size: 0.9rem; padding: 5px; }
+            .score-value { font-size: 1.1rem; }
+            .control-buttons { gap: 6px; width: 140px; }
+            .control-btn { width: 42px; height: 42px; font-size: 1.2rem; }
+        }
+
+        @media (max-width: 480px) {
+            .game-header h1 { font-size: 1.3rem; }
+            .game-header p { font-size: 0.8rem; }
+            .score-row { font-size: 0.85rem; }
+            .score-value { font-size: 1rem; }
+            .multiplier-value { font-size: 1.5rem; }
+            .control-buttons { gap: 6px; width: 120px; }
+            .control-btn { width: 38px; height: 38px; font-size: 1.1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- WARNING OVERLAY -->
+    <div id="warningOverlay">
+        <div class="warning-box">
+            <div class="warning-icon">⚠️</div>
+            <div class="warning-title">AVOID SHITCOINS</div>
+            <div class="warning-sub">🪙 ETH &amp; XRP will hunt you down!</div>
+        </div>
+    </div>
+
+    <!-- HIT FLASH -->
+    <div id="hitFlash"></div>
+
+    <div class="game-wrapper">
+        <div class="game-header">
+            <h1>🪙 Bitcoin Pac-Man Chase</h1>
+            <p>Use arrow keys or touch buttons to catch Bitcoin coins!</p>
+        </div>
+
+        <div class="game-section">
+            <canvas id="gameCanvas" width="800" height="600" class="game-canvas"></canvas>
+
+            <div class="score-board">
+                <div class="score-row">
+                    <span class="score-label">Score</span>
+                    <span class="score-value" id="scoreDisplay">0</span>
+                </div>
+
+                <div class="score-row">
+                    <span class="score-label">Lives</span>
+                    <div class="lives-display" id="livesDisplay">
+                        <span class="life-icon" id="life1">❤️</span>
+                        <span class="life-icon" id="life2">❤️</span>
+                        <span class="life-icon" id="life3">❤️</span>
+                    </div>
+                </div>
+
+                <div class="score-row">
+                    <span class="score-label">Coins Collected</span>
+                    <span class="score-value" id="coinCounter">0</span>
+                </div>
+
+                <div class="multiplier-display">
+                    <div class="multiplier-value" id="multiplierDisplay">x1</div>
+                    <div class="multiplier-label">Multiplier</div>
+                </div>
+
+                <div class="speed-meter">
+                    <div class="speed-bar-container">
+                        <span>Game Speed</span>
+                        <span id="speedValue">0%</span>
+                    </div>
+                    <div class="speed-bar">
+                        <div class="speed-fill" id="speedFill" style="width: 0%;"></div>
+                    </div>
+                </div>
+
+                <div class="coins-legend">
+                    <div class="legend-item"><div class="legend-dot" style="background:#FFD700"></div> BTC – Catch me!</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#627EEA"></div> ETH – Avoid!</div>
+                    <div class="legend-item" id="xrpLegend" style="opacity:0.3"><div class="legend-dot" style="background:#00AAE4"></div> XRP – Avoid! (30%)</div>
+                </div>
+            </div>
+
+            <div id="gameStatus" class="game-status status-active">🎮 Game Active – Catch the Bitcoin!</div>
+
+            <div id="gameOver" class="game-over" style="display: none;">
+                <div class="poo-display">💩</div>
+                <h2 style="color:#ef4444;margin-bottom:8px;">Game Over!</h2>
+                <p style="color:#9ca3af;margin-bottom:5px;">You got rekt by shitcoins</p>
+                <p style="color:#9ca3af;margin-bottom:5px;">Final Score</p>
+                <p id="finalScore" style="font-size:1.8rem;font-weight:700;color:#fff;margin-bottom:12px;">0</p>
+                <button class="restart-btn" onclick="game.restart()">🔄 Play Again</button>
+            </div>
+        </div>
+
+        <div class="controls-area">
+            <div class="controls-info">🎮 Touch Controls</div>
+            <div class="control-buttons">
+                <div class="empty"></div>
+                <button class="control-btn" ontouchstart="game.movePlayer(0,-1)" onclick="game.movePlayer(0,-1)">⬆️</button>
+                <div class="empty"></div>
+                <button class="control-btn" ontouchstart="game.movePlayer(-1,0)" onclick="game.movePlayer(-1,0)">⬅️</button>
+                <button class="control-btn" ontouchstart="game.movePlayer(0,1)" onclick="game.movePlayer(0,1)">⬇️</button>
+                <button class="control-btn" ontouchstart="game.movePlayer(1,0)" onclick="game.movePlayer(1,0)">➡️</button>
+            </div>
+            <p style="color:#9ca3af;text-align:center;font-size:0.75rem;margin-top:8px;">
+                <strong>Desktop:</strong> Arrow Keys &bull; <strong>Mobile:</strong> Touch buttons above
+            </p>
+        </div>
+
+        <div class="game-credits">
+            Made with <span class="made-by">❤</span> by <a href="https://twitter.com/justice__gate" target="_blank">@justice__gate</a>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const CELL_SIZE = 20;
+        const COLS = 40;
+        const ROWS = 30;
+
+        // ─── Pac-Man mouth animation ───
+        let mouthAngle = 0.2;
+        let mouthDir = 1;
+
+        // ─── Particles ───
+        let particles = [];
+
+        function spawnParticles(x, y, color) {
+            for (let i = 0; i < 12; i++) {
+                const angle = (Math.PI * 2 / 12) * i;
+                particles.push({
+                    x: x * CELL_SIZE + CELL_SIZE / 2,
+                    y: y * CELL_SIZE + CELL_SIZE / 2,
+                    vx: Math.cos(angle) * (1 + Math.random() * 3),
+                    vy: Math.sin(angle) * (1 + Math.random() * 3),
+                    life: 1,
+                    color
+                });
+            }
+        }
+
+        function updateParticles() {
+            particles = particles.filter(p => p.life > 0);
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.05;
+                p.vx *= 0.92;
+                p.vy *= 0.92;
+            });
+        }
+
+        function drawParticles() {
+            particles.forEach(p => {
+                ctx.save();
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+        }
+
+        // ─── Enemy AI ───
+        function createEnemy(type) {
+            // Spawn away from player
+            let x, y;
+            do {
+                x = 1 + Math.floor(Math.random() * (COLS - 2));
+                y = 1 + Math.floor(Math.random() * (ROWS - 2));
+            } while (
+                game.walls.find(w => w.x === x && w.y === y) ||
+                Math.abs(x - game.player.x) + Math.abs(y - game.player.y) < 12
+            );
+
+            return {
+                type,           // 'eth' | 'xrp'
+                x, y,
+                dx: Math.random() > 0.5 ? 1 : -1,
+                dy: Math.random() > 0.5 ? 1 : -1,
+                moveTimer: 0,
+                moveInterval: type === 'eth' ? 300 : 250,  // XRP moves slightly faster
+            };
+        }
+
+        function moveEnemy(enemy) {
+            // Smart chase: 50% chance to move toward player, 50% random bounce
+            const chanceToChase = 0.55;
+
+            let dx = enemy.dx;
+            let dy = enemy.dy;
+
+            if (Math.random() < chanceToChase) {
+                // Move toward player
+                const diffX = game.player.x - enemy.x;
+                const diffY = game.player.y - enemy.y;
+                if (Math.abs(diffX) > Math.abs(diffY)) {
+                    dx = diffX > 0 ? 1 : -1;
+                    dy = 0;
+                } else {
+                    dx = 0;
+                    dy = diffY > 0 ? 1 : -1;
+                }
+            }
+
+            let newX = enemy.x + dx;
+            let newY = enemy.y + dy;
+
+            // Bounce off boundaries
+            if (newX < 1 || newX >= COLS - 1) { dx *= -1; newX = enemy.x + dx; }
+            if (newY < 1 || newY >= ROWS - 1) { dy *= -1; newY = enemy.y + dy; }
+
+            const wall = game.walls.find(w => w.x === newX && w.y === newY);
+            if (wall) {
+                // Try perpendicular
+                dx = dy;
+                dy = enemy.dx;
+                newX = enemy.x + dx;
+                newY = enemy.y + dy;
+                const wall2 = game.walls.find(w => w.x === newX && w.y === newY);
+                if (wall2 || newX < 1 || newX >= COLS - 1 || newY < 1 || newY >= ROWS - 1) {
+                    // Give up this frame
+                    enemy.dx *= -1;
+                    enemy.dy *= -1;
+                    return;
+                }
+            }
+
+            enemy.x = newX;
+            enemy.y = newY;
+            enemy.dx = dx;
+            enemy.dy = dy;
+        }
+
+        // ─── GAME ───
+        const game = {
+            active: true,
+            score: 0,
+            coinsCollected: 0,
+            lives: 3,
+            multiplier: 1,
+            speed: 1000,
+            coinsInPlay: 1,
+            invincible: false,
+            invincibleTimer: 0,
+            xrpUnlocked: false,
+            player: { x: 19, y: 14 },
+            target: { x: 0, y: 0, dx: 1, dy: 1 },
+            enemies: [],
+            walls: [],
+            flash: false,
+
+            init() {
+                this.active = true;
+                this.score = 0;
+                this.coinsCollected = 0;
+                this.lives = 3;
+                this.multiplier = 1;
+                this.speed = 1000;
+                this.coinsInPlay = 1;
+                this.invincible = false;
+                this.invincibleTimer = 0;
+                this.xrpUnlocked = false;
+                this.player.x = 19;
+                this.player.y = 14;
+                this.enemies = [];
+                particles = [];
+                this.generateMaze();
+                this.spawnBitcoin();
+                // Spawn 1 ETH enemy to start
+                this.enemies.push(createEnemy('eth'));
+                this.updateScore();
+                this.updateSpeed();
+                this.updateLives();
+                document.getElementById('gameStatus').className = 'game-status status-active';
+                document.getElementById('gameStatus').textContent = '🎮 Game Active – Catch the Bitcoin!';
+                document.getElementById('gameOver').style.display = 'none';
+                document.getElementById('xrpLegend').style.opacity = '0.3';
+            },
+
+            generateMaze() {
+                this.walls = [];
+                for (let y = 0; y < ROWS; y++) {
+                    for (let x = 0; x < COLS; x++) {
+                        if (x === 0 || x === COLS - 1 || y === 0 || y === ROWS - 1) {
+                            this.walls.push({ x, y });
+                        }
+                    }
+                }
+                for (let y = 0; y < ROWS; y += 4) {
+                    for (let x = 2; x < COLS - 2; x += 3) {
+                        this.walls.push({ x, y });
+                    }
+                }
+                for (let x = 2; x < COLS - 2; x += 3) {
+                    for (let y = 2; y < ROWS - 2; y += 3) {
+                        this.walls.push({ x, y });
+                    }
+                }
+            },
+
+            spawnBitcoin() {
+                const emptyCells = [];
+                for (let y = 0; y < ROWS; y++) {
+                    for (let x = 0; x < COLS; x++) {
+                        if (!this.walls.find(w => w.x === x && w.y === y)) {
+                            emptyCells.push({ x, y });
+                        }
+                    }
+                }
+                const available = emptyCells.filter(cell => {
+                    const dist = Math.abs(cell.x - this.player.x) + Math.abs(cell.y - this.player.y);
+                    return dist > 10;
+                });
+                if (available.length > 0) {
+                    const pos = available[Math.floor(Math.random() * available.length)];
+                    this.target.x = pos.x;
+                    this.target.y = pos.y;
+                    this.target.dx = Math.random() > 0.5 ? 1 : -1;
+                    this.target.dy = Math.random() > 0.5 ? 1 : -1;
+                }
+            },
+
+            movePlayer(dx, dy) {
+                if (!this.active) return;
+                const newX = this.player.x + dx;
+                const newY = this.player.y + dy;
+                if (!this.walls.find(w => w.x === newX && w.y === newY)) {
+                    this.player.x = newX;
+                    this.player.y = newY;
+                }
+            },
+
+            loseLife() {
+                if (this.invincible) return;
+                this.lives--;
+                this.updateLives();
+
+                // Red flash screen
+                const hitFlash = document.getElementById('hitFlash');
+                hitFlash.style.opacity = '1';
+                setTimeout(() => { hitFlash.style.opacity = '0'; }, 200);
+
+                if (this.lives <= 0) {
+                    this.endGame();
+                } else {
+                    // Brief invincibility after hit
+                    this.invincible = true;
+                    this.invincibleTimer = 2000;
+                    this.player.x = 19;
+                    this.player.y = 14;
+                    document.getElementById('gameStatus').className = 'game-status status-danger';
+                    document.getElementById('gameStatus').textContent = `💔 Ouch! ${this.lives} ${this.lives === 1 ? 'life' : 'lives'} remaining!`;
+                    setTimeout(() => {
+                        if (this.active) {
+                            document.getElementById('gameStatus').className = 'game-status status-active';
+                            document.getElementById('gameStatus').textContent = '🎮 Game Active – Catch the Bitcoin!';
+                        }
+                    }, 1500);
+                }
+            },
+
+            endGame() {
+                this.active = false;
+                document.getElementById('finalScore').textContent = this.score.toLocaleString();
+                document.getElementById('gameOver').style.display = 'block';
+                document.getElementById('gameStatus').className = 'game-status status-danger';
+                document.getElementById('gameStatus').textContent = '💀 Shitcoins got you!';
+            },
+
+            update(deltaTime) {
+                if (!this.active) return;
+
+                // Invincibility countdown
+                if (this.invincible) {
+                    this.invincibleTimer -= deltaTime;
+                    if (this.invincibleTimer <= 0) this.invincible = false;
+                }
+
+                // Animate mouth
+                mouthAngle += 0.05 * mouthDir;
+                if (mouthAngle >= 0.35) mouthDir = -1;
+                if (mouthAngle <= 0.02) mouthDir = 1;
+
+                // Bitcoin target movement
+                let newX = this.target.x + this.target.dx;
+                let newY = this.target.y + this.target.dy;
+                if (newX < 1 || newX >= COLS - 1) { this.target.dx *= -1; newX = this.target.x + this.target.dx; }
+                if (newY < 1 || newY >= ROWS - 1) { this.target.dy *= -1; newY = this.target.y + this.target.dy; }
+                if (!this.walls.find(w => w.x === newX && w.y === newY)) {
+                    this.target.x = newX;
+                    this.target.y = newY;
+                }
+
+                // Catch bitcoin
+                if (this.player.x === this.target.x && this.player.y === this.target.y) {
+                    this.catchBitcoin();
+                }
+
+                // Enemy movement
+                this.enemies.forEach(e => {
+                    e.moveTimer += deltaTime;
+                    if (e.moveTimer >= e.moveInterval) {
+                        e.moveTimer = 0;
+                        moveEnemy(e);
+                    }
+
+                    // Collision with player
+                    if (e.x === this.player.x && e.y === this.player.y) {
+                        this.loseLife();
+                    }
+                });
+
+                // Unlock XRP at 30%+ coins (threshold = 5 coins)
+                if (!this.xrpUnlocked && this.coinsCollected >= 5) {
+                    this.xrpUnlocked = true;
+                    this.enemies.push(createEnemy('xrp'));
+                    document.getElementById('xrpLegend').style.opacity = '1';
+                    document.getElementById('gameStatus').className = 'game-status status-danger';
+                    document.getElementById('gameStatus').textContent = '⚠️ XRP has entered the maze!';
+                    setTimeout(() => {
+                        if (this.active) {
+                            document.getElementById('gameStatus').className = 'game-status status-active';
+                            document.getElementById('gameStatus').textContent = '🎮 Game Active – Catch the Bitcoin!';
+                        }
+                    }, 2000);
+                }
+
+                updateParticles();
+            },
+
+            catchBitcoin() {
+                spawnParticles(this.target.x, this.target.y, '#FFD700');
+                this.score += 100 * this.multiplier;
+                this.coinsCollected++;
+                this.coinsInPlay++;
+                this.multiplier = Math.min(this.coinsInPlay, 32);
+                this.updateScore();
+                this.spawnBitcoin();
+                this.speed = Math.max(200, this.speed * 0.98);
+                this.updateSpeed();
+                this.flash = true;
+            },
+
+            draw() {
+                ctx.fillStyle = '#0a0a0a';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Walls
+                ctx.fillStyle = '#1e3a5f';
+                this.walls.forEach(wall => {
+                    ctx.fillRect(wall.x * CELL_SIZE + 1, wall.y * CELL_SIZE + 1, CELL_SIZE - 2, CELL_SIZE - 2);
+                });
+
+                // Bitcoin target
+                this.drawBitcoin(this.target.x, this.target.y);
+
+                // Enemies
+                this.enemies.forEach(e => this.drawEnemy(e));
+
+                // Player
+                this.drawPlayer();
+
+                // Particles
+                drawParticles();
+
+                // Coin flash
+                if (this.flash) {
+                    ctx.fillStyle = 'rgba(255, 215, 0, 0.08)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    this.flash = false;
+                }
+
+                // Invincible flicker
+                if (this.invincible && Math.floor(Date.now() / 100) % 2 === 0) {
+                    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+                    ctx.fillRect(
+                        this.player.x * CELL_SIZE,
+                        this.player.y * CELL_SIZE,
+                        CELL_SIZE, CELL_SIZE
+                    );
+                }
+            },
+
+            drawPlayer() {
+                const x = this.player.x * CELL_SIZE + CELL_SIZE / 2;
+                const y = this.player.y * CELL_SIZE + CELL_SIZE / 2;
+                const radius = CELL_SIZE / 2 - 2;
+
+                // Invincible = blinking tint
+                if (this.invincible && Math.floor(Date.now() / 150) % 2 === 0) {
+                    ctx.globalAlpha = 0.4;
+                }
+
+                // Glow
+                ctx.shadowColor = '#FFD700';
+                ctx.shadowBlur = 10;
+
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.arc(x, y, radius, mouthAngle * Math.PI, (2 - mouthAngle) * Math.PI);
+                ctx.closePath();
+                ctx.fillStyle = '#FFD700';
+                ctx.fill();
+
+                ctx.shadowBlur = 0;
+                ctx.globalAlpha = 1;
+
+                // Eye
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(x + 2, y - radius / 2.5, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            },
+
+            drawBitcoin(gx, gy) {
+                const x = gx * CELL_SIZE + CELL_SIZE / 2;
+                const y = gy * CELL_SIZE + CELL_SIZE / 2;
+                const radius = CELL_SIZE / 2 - 2;
+
+                ctx.shadowColor = '#FFD700';
+                ctx.shadowBlur = 14;
+
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#FFD700';
+                ctx.fill();
+                ctx.strokeStyle = '#B8860B';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                ctx.shadowBlur = 0;
+
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 12px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('₿', x, y + 1);
+            },
+
+            drawEnemy(enemy) {
+                const x = enemy.x * CELL_SIZE + CELL_SIZE / 2;
+                const y = enemy.y * CELL_SIZE + CELL_SIZE / 2;
+                const radius = CELL_SIZE / 2 - 2;
+
+                const isEth = enemy.type === 'eth';
+                const color = isEth ? '#627EEA' : '#00AAE4';
+                const darkColor = isEth ? '#3B4BA6' : '#007AB0';
+                const symbol = isEth ? 'Ξ' : '✕';
+
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 12;
+
+                // Ghost-like body
+                ctx.beginPath();
+                ctx.arc(x, y - 2, radius, Math.PI, 0);
+                ctx.lineTo(x + radius, y + radius);
+
+                // Wavy bottom
+                const waveCount = 3;
+                const waveWidth = (radius * 2) / waveCount;
+                for (let i = 0; i < waveCount; i++) {
+                    const wx = x + radius - waveWidth * i;
+                    const midWx = wx - waveWidth / 2;
+                    ctx.quadraticCurveTo(midWx, y + radius + (i % 2 === 0 ? 5 : -2), wx - waveWidth, y + radius);
+                }
+
+                ctx.closePath();
+                ctx.fillStyle = color;
+                ctx.fill();
+
+                ctx.shadowBlur = 0;
+
+                // Eyes
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.ellipse(x - 4, y - 3, 3, 4, 0, 0, Math.PI * 2);
+                ctx.ellipse(x + 4, y - 3, 3, 4, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = darkColor;
+                // Eyes look toward player
+                const ex = game.player.x > enemy.x ? 1 : -1;
+                const ey = game.player.y > enemy.y ? 1 : -1;
+                ctx.beginPath();
+                ctx.arc(x - 4 + ex, y - 3 + ey, 1.5, 0, Math.PI * 2);
+                ctx.arc(x + 4 + ex, y - 3 + ey, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Symbol
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 10px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(symbol, x, y + 3);
+            },
+
+            updateScore() {
+                document.getElementById('scoreDisplay').textContent = this.score.toLocaleString();
+                document.getElementById('multiplierDisplay').textContent = 'x' + this.multiplier;
+                document.getElementById('coinCounter').textContent = this.coinsCollected;
+            },
+
+            updateLives() {
+                const icons = ['life1', 'life2', 'life3'];
+                icons.forEach((id, i) => {
+                    const el = document.getElementById(id);
+                    if (i < this.lives) {
+                        el.classList.remove('lost');
+                    } else {
+                        el.classList.add('lost');
+                    }
+                });
+            },
+
+            updateSpeed() {
+                const percentage = ((1000 - this.speed) / 1000 * 100).toFixed(0);
+                document.getElementById('speedFill').style.width = percentage + '%';
+                document.getElementById('speedValue').textContent = percentage + '%';
+                const sf = document.getElementById('speedFill');
+                if (this.speed > 600) sf.style.background = 'linear-gradient(90deg, #10b981, #06d6a0)';
+                else if (this.speed > 400) sf.style.background = 'linear-gradient(90deg, #F7931A, #FFD700)';
+                else sf.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+            },
+
+            restart() {
+                this.init();
+            }
+        };
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            switch (e.key) {
+                case 'ArrowUp':    e.preventDefault(); game.movePlayer(0, -1); break;
+                case 'ArrowDown':  e.preventDefault(); game.movePlayer(0, 1);  break;
+                case 'ArrowLeft':  e.preventDefault(); game.movePlayer(-1, 0); break;
+                case 'ArrowRight': e.preventDefault(); game.movePlayer(1, 0);  break;
+            }
+        });
+
+        document.addEventListener('dblclick', e => e.preventDefault(), true);
+
+        // Game loop — enemy movement decoupled from frame rate via timers inside update()
+        let lastTime = 0;
+        function gameLoop(timestamp) {
+            const deltaTime = timestamp - lastTime;
+            lastTime = timestamp;
+            game.update(deltaTime);
+            game.draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        game.init();
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
