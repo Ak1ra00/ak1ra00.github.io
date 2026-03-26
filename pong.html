@@ -888,6 +888,10 @@ body::after {
     if (state === 'intro') startGame();
   });
 
+  // Tap intro overlay to start (overlay sits on top of canvas on mobile)
+  document.getElementById('introOverlay').addEventListener('click', () => { if(state==='intro') startGame(); });
+  document.getElementById('introOverlay').addEventListener('touchstart', (e) => { e.preventDefault(); if(state==='intro') startGame(); }, { passive: false });
+
   canvas.addEventListener('touchmove', e => {
     e.preventDefault();
     const rect = canvas.getBoundingClientRect();

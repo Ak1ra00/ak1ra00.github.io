@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bitcoin Invaders – Atlas Bitcoin Arcade</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --btc:#F7931A;--btc-glow:rgba(247,147,26,0.55);
+  --eth:#627EEA;--xrp:#00AAE4;--doge:#C2A633;--sol:#9945FF;--pepe:#00BB44;
+  --gold:#FFD700;--green:#00ff88;--red:#ff3355;--cyan:#00ffff;
+  --bg:#060610;--panel:rgba(8,8,24,0.88);--border:rgba(247,147,26,0.2);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Rajdhani',sans-serif;background:var(--bg);min-height:100vh;color:#f0f0f0;display:flex;flex-direction:column;align-items:center;overflow-x:hidden;touch-action:manipulation;}
+.scanlines{position:fixed;inset:0;z-index:300;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.025) 2px,rgba(0,0,0,0.025) 4px);}
+.nav{width:100%;max-width:900px;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);position:relative;z-index:10;}
+.nav-logo{font-family:'Orbitron',monospace;font-size:1rem;color:var(--btc);text-decoration:none;letter-spacing:.06em;text-shadow:0 0 12px var(--btc-glow);}
+.nav-links{display:flex;gap:12px;flex-wrap:wrap;}
+.nav-links a{color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;transition:color .2s;}
+.nav-links a:hover,.nav-links a.active{color:var(--btc);}
+.hdr{text-align:center;padding:6px 0 4px;position:relative;z-index:1;}
+.hdr h1{font-family:'Orbitron',monospace;font-size:1.4rem;font-weight:900;background:linear-gradient(90deg,#F7931A,#FFD700,#F7931A);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 12px var(--btc-glow));}
+.hdr p{color:#4b5563;font-size:.78rem;margin-top:2px;}
+.cwrap{border-radius:14px;overflow:hidden;box-shadow:0 0 0 2px var(--border),0 0 40px var(--btc-glow);position:relative;z-index:1;}
+canvas{display:block;background:#060610;}
+.hud{display:flex;gap:8px;width:100%;max-width:800px;margin-top:8px;position:relative;z-index:1;}
+.hcard{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:6px 12px;text-align:center;backdrop-filter:blur(14px);flex:1;}
+.hlbl{font-size:.6rem;text-transform:uppercase;letter-spacing:.12em;color:#4b5563;margin-bottom:1px;}
+.hval{font-family:'Orbitron',monospace;font-size:1rem;font-weight:700;color:var(--btc);text-shadow:0 0 8px var(--btc-glow);}
+.hval.g{color:var(--green);}
+.hval.y{color:var(--gold);}
+.hval.c{color:var(--cyan);}
+/* CONTROLS */
+.ctrl{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:8px 14px 10px;width:100%;max-width:800px;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:16px;position:relative;z-index:1;}
+@media(max-width:767px){.ctrl{position:fixed;bottom:0;left:0;right:0;border-radius:16px 16px 0 0;border-bottom:none;z-index:500;padding:8px 16px 14px;max-width:100%;box-shadow:0 -6px 30px rgba(0,0,0,.85);}}
+.cbtn{background:rgba(247,147,26,.1);border:2px solid rgba(247,147,26,.4);border-radius:10px;width:52px;height:52px;font-size:1.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--btc);touch-action:manipulation;user-select:none;-webkit-tap-highlight-color:transparent;transition:background .1s,transform .1s;}
+.cbtn:active{background:rgba(247,147,26,.35);transform:scale(.88);}
+.fire-btn{width:70px;height:52px;font-size:1rem;font-family:'Orbitron',monospace;font-weight:700;letter-spacing:.04em;background:rgba(255,51,85,.15);border-color:rgba(255,51,85,.5);color:var(--red);}
+.fire-btn:active{background:rgba(255,51,85,.4);}
+.ctrl-hint{color:#374151;font-size:.65rem;text-align:center;}
+@media(max-width:767px){.ctrl-hint{display:none;}}
+/* OVERLAY */
+.overlay{position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at center,#0d0820 0%,#060610 70%);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;transition:opacity .6s;padding:20px;}
+.overlay.hidden{opacity:0;pointer-events:none;}
+.ov-icon{font-size:4rem;}
+.ov-title{font-family:'Orbitron',monospace;font-size:clamp(1.4rem,5vw,2.2rem);font-weight:900;background:linear-gradient(90deg,#F7931A,#FFD700,#F7931A);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 18px rgba(247,147,26,.7));text-align:center;}
+.ov-sub{color:#6b7280;font-size:.85rem;text-align:center;max-width:340px;line-height:1.5;}
+.ov-enemies{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;}
+.ov-enemy{text-align:center;font-size:.65rem;font-family:'Orbitron',monospace;letter-spacing:.06em;}
+.ov-enemy span{display:block;font-size:1.4rem;}
+.ov-pts{color:#4b5563;}
+.ov-best{font-family:'Orbitron',monospace;color:var(--gold);font-size:.9rem;text-shadow:0 0 10px rgba(255,215,0,.4);}
+.ov-start{font-family:'Orbitron',monospace;font-size:.95rem;color:var(--green);letter-spacing:.12em;animation:blink .9s ease-in-out infinite;text-shadow:0 0 14px rgba(0,255,136,.5);}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.15;}}
+.ov-score{font-family:'Orbitron',monospace;font-size:2rem;font-weight:900;color:#fff;text-shadow:0 0 18px var(--btc-glow);}
+.rbtn{font-family:'Orbitron',monospace;background:linear-gradient(135deg,#00ff88,#00cc6a);border:none;padding:11px 34px;border-radius:10px;color:#000;font-weight:700;font-size:.85rem;cursor:pointer;letter-spacing:.06em;box-shadow:0 4px 20px rgba(0,255,136,.3);transition:all .2s;}
+.rbtn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,255,136,.5);}
+@media(max-width:767px){body{padding-bottom:80px;}}
+</style>
+</head>
+<body>
+<div class="scanlines"></div>
+
+<!-- INTRO -->
+<div class="overlay" id="intro">
+  <div class="ov-icon">🚀</div>
+  <div class="ov-title">BITCOIN INVADERS</div>
+  <div class="ov-sub">Defend your HODL stash from the shitcoin invasion.<br>Shoot them down before they reach you!</div>
+  <div class="ov-enemies">
+    <div class="ov-enemy"><span style="color:#627EEA">Ξ</span>ETH<div class="ov-pts">10 pts</div></div>
+    <div class="ov-enemy"><span style="color:#00AAE4">✕</span>XRP<div class="ov-pts">15 pts</div></div>
+    <div class="ov-enemy"><span style="color:#C2A633">Ð</span>DOGE<div class="ov-pts">20 pts</div></div>
+    <div class="ov-enemy"><span style="color:#9945FF">◎</span>SOL<div class="ov-pts">25 pts</div></div>
+    <div class="ov-enemy"><span style="color:#00BB44">🐸</span>PEPE<div class="ov-pts">30 pts</div></div>
+  </div>
+  <div class="ov-best" id="introBest">BEST: 0</div>
+  <div class="ov-start">▶ TAP OR PRESS ANY KEY TO START ◀</div>
+</div>
+
+<!-- GAME OVER -->
+<div class="overlay hidden" id="gameOver">
+  <div class="ov-icon" id="goIcon">💩</div>
+  <div class="ov-title" id="goTitle">REKT BY SHITCOINS</div>
+  <div class="ov-sub">Final Score</div>
+  <div class="ov-score" id="goScore">0</div>
+  <div class="ov-best" id="goBest">BEST: 0</div>
+  <button class="rbtn" id="playAgain">⚡ PLAY AGAIN</button>
+</div>
+
+<nav class="nav">
+  <a class="nav-logo" href="games.html">₿ ATLAS ARCADE</a>
+  <div class="nav-links">
+    <a href="index.html">Pac-Man</a>
+    <a href="snake.html">Snake</a>
+    <a href="pong.html">Pong</a>
+    <a href="invaders.html" class="active">Invaders</a>
+    <a href="flappy.html">Flappy</a>
+    <a href="tetris.html">Tetris</a>
+  </div>
+</nav>
+
+<div class="hdr">
+  <h1>🚀 BITCOIN INVADERS</h1>
+  <p>Arrow keys / touch • Space or 🔴 to fire • Defend your ₿ stash!</p>
+</div>
+
+<div class="cwrap"><canvas id="gc" width="800" height="520"></canvas></div>
+
+<div class="hud">
+  <div class="hcard"><div class="hlbl">Score</div><div class="hval" id="hScore">0</div></div>
+  <div class="hcard"><div class="hlbl">Wave</div><div class="hval c" id="hWave">1</div></div>
+  <div class="hcard"><div class="hlbl">Lives</div><div class="hval" id="hLives">🚀🚀🚀</div></div>
+  <div class="hcard"><div class="hlbl">Hi-Score</div><div class="hval y" id="hHi">0</div></div>
+</div>
+
+<div class="ctrl">
+  <button class="cbtn" id="btnLeft">⬅️</button>
+  <button class="cbtn fire-btn" id="btnFire">🔴 FIRE</button>
+  <button class="cbtn" id="btnRight">➡️</button>
+  <span class="ctrl-hint">Arrow keys + Space to fire</span>
+</div>
+
+<script>
+'use strict';
+const canvas = document.getElementById('gc');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+// ── ENEMY SPECS ──
+const ETYPES = [
+  { label:'ETH',  sym:'Ξ',  color:'#627EEA', pts:10 },
+  { label:'XRP',  sym:'✕',  color:'#00AAE4', pts:15 },
+  { label:'DOGE', sym:'Ð',  color:'#C2A633', pts:20 },
+  { label:'SOL',  sym:'◎',  color:'#9945FF', pts:25 },
+  { label:'PEPE', sym:'🐸', color:'#00BB44', pts:30 },
+];
+
+// ── STATE ──
+let score=0, wave=1, lives=3, hiScore=0;
+let gameActive=false;
+let invaders=[], bullets=[], bombs=[], shields=[], floats=[];
+let player={x:W/2, w:44, h:28, speed:5};
+let mystery=null;
+let stepTimer=0, stepInterval=600;
+let stepDir=1;
+let bombTimer=0, bombInterval=1800;
+let mysteryTimer=0, mysteryInterval=25000;
+let shakeX=0, shakeY=0, shakeM=0;
+let keys={};
+
+// ── HI-SCORE ──
+hiScore = parseInt(localStorage.getItem('btc_inv_hs')||'0');
+document.getElementById('introBest').textContent = 'BEST: '+hiScore.toLocaleString();
+document.getElementById('hHi').textContent = hiScore.toLocaleString();
+
+// ── INIT ──
+function initGame() {
+  score=0; lives=3; wave=1; floats=[]; mystery=null;
+  buildWave();
+  buildShields();
+  player.x = W/2;
+  stepInterval=600; bombInterval=1800; mysteryTimer=0;
+  updateHUD();
+}
+
+function buildWave() {
+  invaders=[];
+  const rows=5, cols=10;
+  const cellW=56, cellH=44;
+  const startX=(W-(cols*cellW))/2+cellW/2;
+  const startY=60;
+  const speed = Math.max(200, 600 - (wave-1)*50);
+  stepInterval = speed;
+  stepDir=1;
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      invaders.push({
+        type:r, x:startX+c*cellW, y:startY+r*cellH,
+        alive:true, bob:0, t:0
+      });
+    }
+  }
+  bombs=[];
+}
+
+function buildShields() {
+  shields=[];
+  const positions=[160, 320, 480, 640];
+  positions.forEach(sx=>{
+    shields.push({x:sx-30, y:H-110, w:60, h:20, hp:100});
+  });
+}
+
+// ── UPDATE ──
+let lastTs=0;
+function loop(ts){
+  const dt=Math.min(ts-lastTs,50); lastTs=ts;
+  if(gameActive) update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+
+function update(dt){
+  // Screen shake
+  if(shakeM>.5){shakeX=(Math.random()-.5)*shakeM;shakeY=(Math.random()-.5)*shakeM;shakeM*=.75;}
+  else{shakeX=0;shakeY=0;shakeM=0;}
+
+  // Player movement
+  const spd = player.speed * (dt/16);
+  if(keys['ArrowLeft']||keys['left']) player.x = Math.max(player.w/2+2, player.x - spd);
+  if(keys['ArrowRight']||keys['right']) player.x = Math.min(W-player.w/2-2, player.x + spd);
+
+  // Invader step
+  stepTimer+=dt;
+  const alive = invaders.filter(i=>i.alive);
+  if(alive.length===0){nextWave();return;}
+  const factor = Math.max(0.4, alive.length/50);
+  if(stepTimer >= stepInterval*factor){
+    stepTimer=0;
+    stepInvaders(alive);
+  }
+
+  // Bob animation
+  invaders.forEach(inv=>{inv.t+=dt*.002;});
+
+  // Bombs
+  bombTimer+=dt;
+  const bInterval = Math.max(600, bombInterval - (wave-1)*100);
+  if(bombTimer>=bInterval){
+    bombTimer=0;
+    const shooters=alive.filter(i=>i.y<H-140);
+    if(shooters.length){
+      const s=shooters[Math.floor(Math.random()*shooters.length)];
+      bombs.push({x:s.x, y:s.y+16, vy:3+wave*.3, color:ETYPES[s.type].color});
+    }
+  }
+
+  // Mystery ship
+  mysteryTimer+=dt;
+  if(mysteryTimer>=mysteryInterval && !mystery){
+    mysteryTimer=0; mysteryInterval=20000+Math.random()*15000;
+    mystery={x:-40, y:28, vx:2.2};
+  }
+  if(mystery){
+    mystery.x+=mystery.vx;
+    if(mystery.x>W+50) mystery=null;
+  }
+
+  // Move bullets
+  bullets=bullets.filter(b=>{b.y-=12;return b.y>0;});
+
+  // Move bombs
+  bombs=bombs.filter(b=>{
+    b.y+=b.vy;
+    // Bomb vs shield
+    shields.forEach(s=>{
+      if(s.hp>0&&b.x>s.x&&b.x<s.x+s.w&&b.y>s.y&&b.y<s.y+s.h){
+        s.hp-=25; b.y=-99;
+      }
+    });
+    // Bomb vs player
+    if(Math.abs(b.x-player.x)<20&&b.y>H-50&&b.y<H-10){
+      loseLife(); b.y=-99;
+    }
+    return b.y>0&&b.y<H;
+  });
+
+  // Bullet vs invader
+  bullets.forEach(b=>{
+    invaders.forEach(inv=>{
+      if(!inv.alive) return;
+      if(Math.abs(b.x-inv.x)<18&&Math.abs(b.y-inv.y)<14){
+        inv.alive=false; b.y=-99;
+        const spec=ETYPES[inv.type];
+        score+=spec.pts*(1+(wave-1)*0.5|0);
+        spawnFloat(inv.x, inv.y, '+'+score, spec.color);
+        spawnPts(inv.x, inv.y, spec.color);
+        updateHUD();
+      }
+    });
+    // Bullet vs mystery
+    if(mystery&&Math.abs(b.x-mystery.x)<24&&Math.abs(b.y-mystery.y)<14){
+      score+=200; mystery=null; b.y=-99;
+      spawnFloat(W/2, 40, '₿ +200', '#FFD700');
+      updateHUD();
+    }
+    // Bullet vs shield
+    shields.forEach(s=>{
+      if(s.hp>0&&b.x>s.x&&b.x<s.x+s.w&&b.y>s.y&&b.y<s.y+s.h){
+        s.hp-=20; b.y=-99;
+      }
+    });
+  });
+  bullets=bullets.filter(b=>b.y>0);
+
+  // Invader reaches bottom
+  const reached=invaders.find(i=>i.alive&&i.y>H-80);
+  if(reached){gameOver(false);return;}
+
+  // Float text
+  floats=floats.filter(f=>f.life>0);
+  floats.forEach(f=>{f.y+=f.vy;f.life-=.022;});
+}
+
+function stepInvaders(alive){
+  const minX=Math.min(...alive.map(i=>i.x));
+  const maxX=Math.max(...alive.map(i=>i.x));
+  if((stepDir===1&&maxX>W-30)||(stepDir===-1&&minX<30)){
+    invaders.forEach(i=>{if(i.alive)i.y+=18;});
+    stepDir*=-1;
+  } else {
+    invaders.forEach(i=>{if(i.alive)i.x+=stepDir*20;});
+  }
+}
+
+function nextWave(){
+  wave++;
+  buildWave();
+  updateHUD();
+  spawnFloat(W/2, H/2, '🚀 WAVE '+wave+'!', '#FFD700');
+}
+
+function loseLife(){
+  lives--; shakeM=16;
+  updateHUD();
+  if(lives<=0){gameOver(false);}
+}
+
+function fireBullet(){
+  if(bullets.filter(b=>b.active!==false).length>=2) return;
+  bullets.push({x:player.x, y:H-60, active:true});
+}
+
+// ── GAME OVER / START ──
+function gameOver(won){
+  gameActive=false;
+  if(score>hiScore){hiScore=score;localStorage.setItem('btc_inv_hs',hiScore);}
+  document.getElementById('goIcon').textContent = won?'🏆':'💩';
+  document.getElementById('goTitle').textContent = won?'SHITCOINS DEFEATED!':'REKT BY SHITCOINS';
+  document.getElementById('goScore').textContent = score.toLocaleString();
+  document.getElementById('goBest').textContent = 'BEST: '+hiScore.toLocaleString();
+  document.getElementById('gameOver').classList.remove('hidden');
+}
+
+function startGame(){
+  document.getElementById('intro').classList.add('hidden');
+  document.getElementById('gameOver').classList.add('hidden');
+  initGame();
+  gameActive=true;
+}
+
+// ── HUD ──
+function updateHUD(){
+  document.getElementById('hScore').textContent=score.toLocaleString();
+  document.getElementById('hWave').textContent=wave;
+  document.getElementById('hHi').textContent=hiScore.toLocaleString();
+  const l=['🚀','🚀','🚀'].map((_,i)=>i<lives?'🚀':'💀').join('');
+  document.getElementById('hLives').textContent=l;
+}
+
+// ── PARTICLES ──
+let pts=[];
+function spawnPts(x,y,col){
+  for(let i=0;i<10;i++){
+    const a=Math.random()*Math.PI*2, s=1.5+Math.random()*3;
+    pts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:1,col,sz:2+Math.random()*2});
+  }
+}
+function spawnFloat(x,y,txt,col){
+  floats.push({x,y,txt,col,vy:-1.1,life:1});
+}
+
+// ── DRAW ──
+function draw(){
+  ctx.save();
+  ctx.translate(shakeX,shakeY);
+  ctx.fillStyle='#060610';
+  ctx.fillRect(-10,-10,W+20,H+20);
+
+  if(!gameActive&&document.getElementById('intro').classList.contains('hidden')){
+    ctx.restore();return;
+  }
+
+  // Stars bg
+  ctx.fillStyle='rgba(255,255,255,0.4)';
+  for(let i=0;i<40;i++){
+    const sx=(i*137+17)%W, sy=(i*97+23)%H;
+    ctx.fillRect(sx,sy,1,1);
+  }
+
+  if(!gameActive){ctx.restore();return;}
+
+  // Shields
+  shields.forEach(s=>{
+    if(s.hp<=0) return;
+    const a=s.hp/100;
+    ctx.fillStyle=`rgba(0,255,136,${a*0.85})`;
+    ctx.shadowColor='#00ff88';ctx.shadowBlur=6*a;
+    ctx.fillRect(s.x,s.y,s.w,s.h);
+    ctx.shadowBlur=0;
+  });
+
+  // Mystery ship
+  if(mystery){
+    ctx.save();
+    ctx.shadowColor='#FFD700';ctx.shadowBlur=16;
+    ctx.fillStyle='#FFD700';
+    ctx.beginPath();ctx.arc(mystery.x,mystery.y,14,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(0,0,0,.7)';
+    ctx.font='bold 12px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('₿',mystery.x,mystery.y);
+    ctx.restore();
+    ctx.fillStyle='rgba(255,215,0,.5)';
+    ctx.font="bold 8px 'Orbitron',monospace";ctx.textAlign='center';
+    ctx.fillText('+200',mystery.x,mystery.y-20);
+  }
+
+  // Invaders
+  invaders.forEach(inv=>{
+    if(!inv.alive) return;
+    const spec=ETYPES[inv.type];
+    const bob=Math.sin(inv.t*3)*2;
+    const cx=inv.x, cy=inv.y+bob;
+    ctx.save();
+    ctx.shadowColor=spec.color;ctx.shadowBlur=10;
+    // Ghost body
+    ctx.beginPath();
+    ctx.arc(cx,cy-4,12,Math.PI,0);
+    ctx.lineTo(cx+12,cy+10);
+    const ww=8;
+    for(let i=0;i<3;i++){
+      const bx=cx+12-ww*i;
+      ctx.quadraticCurveTo(bx-ww/2,cy+10+(i%2===0?5:-2),bx-ww,cy+10);
+    }
+    ctx.closePath();
+    const g=ctx.createLinearGradient(cx-12,cy-10,cx+12,cy+10);
+    g.addColorStop(0,spec.color);g.addColorStop(1,'rgba(0,0,0,.5)');
+    ctx.fillStyle=g;ctx.fill();
+    ctx.shadowBlur=0;
+    // Eyes
+    ctx.fillStyle='#fff';
+    ctx.beginPath();ctx.ellipse(cx-4,cy-6,3,4,0,0,Math.PI*2);
+    ctx.ellipse(cx+4,cy-6,3,4,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(0,0,0,.7)';
+    ctx.beginPath();ctx.arc(cx-4,cy-5,1.5,0,Math.PI*2);ctx.arc(cx+4,cy-5,1.5,0,Math.PI*2);ctx.fill();
+    // Symbol
+    ctx.fillStyle='rgba(255,255,255,.9)';
+    ctx.font='bold 9px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(spec.sym,cx,cy+4);
+    ctx.restore();
+  });
+
+  // Player ship
+  {
+    const px=player.x, py=H-38;
+    ctx.save();
+    ctx.shadowColor='#FFD700';ctx.shadowBlur=18;
+    // Body
+    ctx.fillStyle='#F7931A';
+    ctx.beginPath();
+    ctx.moveTo(px,py-18);ctx.lineTo(px+18,py+10);ctx.lineTo(px-18,py+10);ctx.closePath();ctx.fill();
+    // Cockpit
+    ctx.fillStyle='#FFD700';
+    ctx.beginPath();ctx.arc(px,py-2,7,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(0,0,0,.7)';
+    ctx.font='bold 8px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('₿',px,py-2);
+    // Engine glow
+    ctx.fillStyle='rgba(255,100,0,.6)';
+    ctx.beginPath();ctx.ellipse(px,py+12,6,4,0,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+  }
+
+  // Bullets
+  bullets.forEach(b=>{
+    ctx.save();
+    ctx.shadowColor='#FFD700';ctx.shadowBlur=10;
+    ctx.fillStyle='#FFD700';
+    ctx.fillRect(b.x-2,b.y-10,4,14);
+    ctx.restore();
+  });
+
+  // Bombs
+  bombs.forEach(b=>{
+    ctx.save();
+    ctx.shadowColor=b.color;ctx.shadowBlur=8;
+    ctx.fillStyle=b.color;
+    ctx.fillRect(b.x-3,b.y-8,6,12);
+    ctx.restore();
+  });
+
+  // Particles
+  pts=pts.filter(p=>p.life>0);
+  pts.forEach(p=>{
+    p.x+=p.vx;p.y+=p.vy;p.vx*=.9;p.vy*=.9;p.life-=.04;
+    ctx.save();ctx.globalAlpha=p.life;
+    ctx.fillStyle=p.col;ctx.shadowColor=p.col;ctx.shadowBlur=5;
+    const r=Math.max(0,p.sz*p.life);
+    ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+  });
+
+  // Float text
+  floats.forEach(f=>{
+    ctx.save();ctx.globalAlpha=f.life;
+    ctx.fillStyle=f.col;ctx.shadowColor=f.col;ctx.shadowBlur=12;
+    ctx.font="bold 14px 'Orbitron',monospace";ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(f.txt,f.x,f.y);ctx.restore();
+  });
+
+  ctx.restore();
+}
+
+// ── INPUT ──
+document.addEventListener('keydown',e=>{
+  keys[e.key]=true;
+  if(!gameActive){
+    if(e.key!=='F5'&&e.key!=='F12') startGame();
+    return;
+  }
+  if(e.key===' '){e.preventDefault();fireBullet();}
+});
+document.addEventListener('keyup',e=>{keys[e.key]=false;});
+
+// Touch controls
+let leftHeld=false, rightHeld=false;
+function mobileLoop(){
+  if(gameActive){
+    if(leftHeld) player.x=Math.max(player.w/2+2,player.x-player.speed);
+    if(rightHeld) player.x=Math.min(W-player.w/2-2,player.x+player.speed);
+  }
+  requestAnimationFrame(mobileLoop);
+}
+mobileLoop();
+
+document.getElementById('btnLeft').addEventListener('touchstart',e=>{e.preventDefault();leftHeld=true;},{passive:false});
+document.getElementById('btnLeft').addEventListener('touchend',()=>leftHeld=false);
+document.getElementById('btnLeft').addEventListener('mousedown',()=>leftHeld=true);
+document.getElementById('btnLeft').addEventListener('mouseup',()=>leftHeld=false);
+document.getElementById('btnRight').addEventListener('touchstart',e=>{e.preventDefault();rightHeld=true;},{passive:false});
+document.getElementById('btnRight').addEventListener('touchend',()=>rightHeld=false);
+document.getElementById('btnRight').addEventListener('mousedown',()=>rightHeld=true);
+document.getElementById('btnRight').addEventListener('mouseup',()=>rightHeld=false);
+document.getElementById('btnFire').addEventListener('touchstart',e=>{e.preventDefault();fireBullet();},{passive:false});
+document.getElementById('btnFire').addEventListener('click',fireBullet);
+
+// Intro tap
+document.getElementById('intro').addEventListener('click',startGame);
+document.getElementById('intro').addEventListener('touchstart',e=>{e.preventDefault();startGame();},{passive:false});
+document.getElementById('playAgain').addEventListener('click',startGame);
+document.getElementById('playAgain').addEventListener('touchstart',e=>{e.preventDefault();startGame();},{passive:false});
+
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
