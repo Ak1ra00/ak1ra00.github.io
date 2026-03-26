@@ -40,16 +40,16 @@ body{font-family:'Rajdhani',sans-serif;background:var(--bg);min-height:100vh;col
 .mini-canvas{display:block;border-radius:6px;background:#060610;border:1px solid rgba(247,147,26,.15);}
 
 /* TOUCH CONTROLS */
-.ctrl{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:8px 14px 10px;width:100%;max-width:500px;margin-top:8px;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;z-index:1;}
-@media(max-width:600px){.ctrl{position:fixed;bottom:0;left:0;right:0;border-radius:16px 16px 0 0;border-bottom:none;z-index:500;padding:8px 10px 14px;max-width:100%;box-shadow:0 -6px 30px rgba(0,0,0,.85);}}
-.ctrl-row{display:flex;gap:8px;align-items:center;justify-content:center;}
-.cbtn{background:rgba(247,147,26,.1);border:2px solid rgba(247,147,26,.4);border-radius:10px;width:54px;height:48px;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--btc);touch-action:manipulation;user-select:none;-webkit-tap-highlight-color:transparent;transition:background .1s,transform .1s;}
+.ctrl{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:10px 12px 12px;width:100%;max-width:500px;margin-top:8px;display:flex;flex-direction:column;align-items:stretch;gap:8px;position:relative;z-index:1;}
+@media(max-width:600px){.ctrl{position:fixed;bottom:0;left:0;right:0;border-radius:16px 16px 0 0;border-bottom:none;z-index:500;padding:10px 12px 16px;max-width:100%;box-shadow:0 -6px 30px rgba(0,0,0,.85);}}
+.ctrl-row{display:flex;gap:10px;align-items:center;}
+.cbtn{background:rgba(247,147,26,.1);border:2px solid rgba(247,147,26,.4);border-radius:10px;flex:1;height:52px;font-size:1.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--btc);touch-action:manipulation;user-select:none;-webkit-tap-highlight-color:transparent;transition:background .1s,transform .1s;}
 .cbtn:active{background:rgba(247,147,26,.35);transform:scale(.88);}
-.cbtn.rot{background:rgba(0,255,136,.08);border-color:rgba(0,255,136,.4);color:var(--green);}
-.cbtn.hd{background:rgba(255,215,0,.08);border-color:rgba(255,215,0,.4);color:var(--gold);width:68px;font-size:.7rem;font-family:'Orbitron',monospace;}
-.cbtn.hold-btn{background:rgba(0,255,255,.08);border-color:rgba(0,255,255,.3);color:var(--cyan);font-size:.6rem;font-family:'Orbitron',monospace;width:60px;}
+.cbtn.rot{background:rgba(0,255,136,.08);border-color:rgba(0,255,136,.4);color:var(--green);font-size:.75rem;font-family:'Orbitron',monospace;letter-spacing:.04em;}
+.cbtn.hd{background:rgba(255,215,0,.08);border-color:rgba(255,215,0,.4);color:var(--gold);font-size:.75rem;font-family:'Orbitron',monospace;letter-spacing:.04em;}
+.cbtn.hold-btn{background:rgba(0,255,255,.08);border-color:rgba(0,255,255,.3);color:var(--cyan);font-size:.75rem;font-family:'Orbitron',monospace;letter-spacing:.04em;}
 .ctrl-hint{color:#374151;font-size:.62rem;text-align:center;line-height:1.4;}
-@media(max-width:600px){.ctrl-hint{display:none;} body{padding-bottom:96px;}}
+@media(max-width:600px){.ctrl-hint{display:none;} body{padding-bottom:110px;}}
 
 /* OVERLAY */
 .overlay{position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at center,#0d0820 0%,#060610 70%);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;transition:opacity .6s;padding:20px;}
@@ -129,14 +129,14 @@ body{font-family:'Rajdhani',sans-serif;background:var(--bg);min-height:100vh;col
 
 <div class="ctrl">
   <div class="ctrl-row">
-    <button class="cbtn rot" id="btnRot">🔄 ROT</button>
-    <button class="cbtn hd" id="btnHard">DROP ⬇⬇</button>
+    <button class="cbtn rot" id="btnRot">ROTATE</button>
+    <button class="cbtn hd" id="btnHard">DROP</button>
     <button class="cbtn hold-btn" id="btnHold">HOLD</button>
   </div>
   <div class="ctrl-row">
-    <button class="cbtn" id="btnLeft">⬅️</button>
-    <button class="cbtn" id="btnDown">⬇️</button>
-    <button class="cbtn" id="btnRight">➡️</button>
+    <button class="cbtn" id="btnLeft">◀</button>
+    <button class="cbtn" id="btnDown">▼</button>
+    <button class="cbtn" id="btnRight">▶</button>
   </div>
   <span class="ctrl-hint">← → ↓ move · ROT rotate · DROP hard drop · HOLD swap</span>
 </div>
