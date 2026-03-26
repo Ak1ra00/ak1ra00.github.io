@@ -912,9 +912,9 @@ body::after {
   // Mobile buttons
   const mobUp   = document.getElementById('mobUp');
   const mobDown = document.getElementById('mobDown');
-  mobUp.addEventListener('touchstart',   e => { e.preventDefault(); mobUpHeld = true; });
+  mobUp.addEventListener('touchstart',   e => { e.preventDefault(); mobUpHeld = true; }, { passive: false });
   mobUp.addEventListener('touchend',     ()  => { mobUpHeld = false; });
-  mobDown.addEventListener('touchstart', e => { e.preventDefault(); mobDownHeld = true; });
+  mobDown.addEventListener('touchstart', e => { e.preventDefault(); mobDownHeld = true; }, { passive: false });
   mobDown.addEventListener('touchend',   ()  => { mobDownHeld = false; });
   mobUp.addEventListener('mousedown',    ()  => { mobUpHeld = true; });
   mobUp.addEventListener('mouseup',      ()  => { mobUpHeld = false; });
