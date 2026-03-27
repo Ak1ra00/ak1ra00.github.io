@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 128" fill="none">
+  <defs>
+    <radialGradient id="coinFill" cx="38%" cy="32%" r="68%">
+      <stop offset="0%" stop-color="#FFE55C"/>
+      <stop offset="50%" stop-color="#F7931A"/>
+      <stop offset="100%" stop-color="#B35F00"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#F7931A" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#F7931A" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Ambient halo behind coin -->
+  <circle cx="60" cy="26" r="36" fill="url(#halo)"/>
+
+  <!-- Bitcoin coin -->
+  <circle cx="60" cy="26" r="23" fill="url(#coinFill)" filter="url(#glow)"/>
+  <circle cx="60" cy="26" r="19.5" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1.4"/>
+  <text x="60.5" y="35" text-anchor="middle"
+        font-family="'Arial Black',Arial,sans-serif"
+        font-weight="900" font-size="24" fill="#1a0800" opacity="0.88">₿</text>
+
+  <!-- Left arm: shoulder → coin bottom-left -->
+  <line x1="36" y1="73" x2="42" y2="44" stroke="#F7931A" stroke-width="7" stroke-linecap="round"/>
+  <!-- Right arm: shoulder → coin bottom-right -->
+  <line x1="84" y1="73" x2="78" y2="44" stroke="#F7931A" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- Shoulder arc (drawn before head so head sits on top) -->
+  <path d="M33 74 Q60 67 87 74" fill="none" stroke="#F7931A" stroke-width="7.5" stroke-linecap="round"/>
+
+  <!-- Torso -->
+  <path d="M38 76 L34 98 Q60 92 86 98 L82 76 Q60 71 38 76 Z" fill="#F7931A" opacity="0.93"/>
+
+  <!-- Neck -->
+  <rect x="55.5" y="71" width="9" height="7" rx="3.5" fill="#F7931A"/>
+
+  <!-- Head (on top) -->
+  <circle cx="60" cy="62" r="10.5" fill="#F7931A" filter="url(#glow)"/>
+
+  <!-- Left leg + foot -->
+  <line x1="42" y1="98" x2="33" y2="118" stroke="#F7931A" stroke-width="7" stroke-linecap="round"/>
+  <line x1="33" y1="118" x2="20" y2="118" stroke="#F7931A" stroke-width="5.5" stroke-linecap="round"/>
+
+  <!-- Right leg + foot -->
+  <line x1="78" y1="98" x2="87" y2="118" stroke="#F7931A" stroke-width="7" stroke-linecap="round"/>
+  <line x1="87" y1="118" x2="100" y2="118" stroke="#F7931A" stroke-width="5.5" stroke-linecap="round"/>
+
+  <!-- Ground shadow -->
+  <ellipse cx="60" cy="121" rx="44" ry="3.5" fill="#F7931A" opacity="0.12"/>
+</svg>

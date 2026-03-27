@@ -44,13 +44,7 @@
 
         /* HERO */
         .hero{text-align:center;padding:44px 20px 32px;}
-        .hero-badge{
-            display:inline-block;
-            font-family:'Orbitron',monospace;font-size:.65rem;letter-spacing:.18em;
-            color:var(--btc);border:1px solid var(--border);border-radius:20px;
-            padding:4px 14px;margin-bottom:16px;
-            background:rgba(247,147,26,.06);
-        }
+        .hero-logo{width:140px;height:auto;margin-bottom:10px;filter:drop-shadow(0 0 22px rgba(247,147,26,0.55));}
         .hero h1{
             font-family:'Orbitron',monospace;font-size:clamp(1.8rem,5vw,3.2rem);font-weight:900;
             background:linear-gradient(90deg,#F7931A 0%,#FFD700 45%,#F7931A 90%);
@@ -156,7 +150,7 @@
 
 <div class="main">
     <div class="hero">
-        <div class="hero-badge">₿ BITCOIN ARCADE</div>
+        <img src="logo.svg" alt="Atlas holding Bitcoin" class="hero-logo">
         <h1>ATLAS BITCOIN<br>ARCADE</h1>
         <p class="hero-rule">One rule: <span>collect Bitcoin</span> · dodge shitcoins · HODL your score</p>
     </div>
