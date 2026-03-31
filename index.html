@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Atlas Bitcoin Arcade – soufianekh.space</title>
+    <meta name="description" content="Play Bitcoin-themed arcade classics created by Soufiane: Pac-Man, Snake, Pong, Invaders, Flappy, and Tetris reimagined with crypto flair.">
+    <meta name="theme-color" content="#060610">
+    <link rel="canonical" href="https://soufianekh.space/">
+    <meta property="og:title" content="Atlas Bitcoin Arcade – soufianekh.space">
+    <meta property="og:description" content="Play Bitcoin-themed arcade classics created by Soufiane: Pac-Man, Snake, Pong, Invaders, Flappy, and Tetris reimagined with crypto flair.">
+    <meta property="og:image" content="https://soufianekh.space/logo.svg">
+    <meta property="og:type" content="website">
+    <link rel="icon" href="logo.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root{
@@ -130,13 +140,41 @@
             .nav-links{gap:10px;}
             .nav-links a{font-size:.68rem;}
         }
+        .skip-link{
+            position:fixed;
+            top:10px;
+            left:10px;
+            background:#111;
+            color:#f0f0f0;
+            padding:6px 12px;
+            border-radius:999px;
+            border:1px solid rgba(255,255,255,.2);
+            z-index:400;
+            font-size:.8rem;
+            text-decoration:none;
+            opacity:0;
+            transition:opacity .2s;
+        }
+        .skip-link:focus{opacity:1;}
+        .sr-only{
+            position:absolute;
+            width:1px;
+            height:1px;
+            padding:0;
+            margin:-1px;
+            overflow:hidden;
+            clip:rect(0,0,0,0);
+            white-space:nowrap;
+            border:0;
+        }
     </style>
 </head>
 <body>
+<a class="skip-link" href="#games-grid">Skip to the arcade library</a>
 <div class="scanlines"></div>
 <canvas id="bgCanvas"></canvas>
 
-<nav class="nav">
+<nav class="nav" aria-label="Primary navigation">
     <a class="nav-logo" href="index.html">₿ ATLAS ARCADE</a>
     <div class="nav-links">
         <a href="pacman.html">Pac-Man</a>
@@ -145,18 +183,18 @@
         <a href="invaders.html">Invaders</a>
         <a href="flappy.html">Flappy</a>
         <a href="tetris.html">Tetris</a>
-        <a href="https://github.com/ak1ra00/hw-flash/releases/latest" target="_blank" rel="noopener" style="color:#06b6d4;">❄ DeepSea</a>
+        <a href="https://github.com/ak1ra00/hw-flash/releases/latest" target="_blank" rel="noopener" style="color:#06b6d4;">⚓ DeepSea</a>
     </div>
 </nav>
 
-<div class="main">
-    <div class="hero">
+<main id="main-content" class="main">
+    <header class="hero">
         <img src="logo.svg" alt="Atlas holding Bitcoin" class="hero-logo">
         <h1>ATLAS BITCOIN<br>ARCADE</h1>
         <p class="hero-rule">One rule: <span>collect Bitcoin</span> · dodge shitcoins · HODL your score</p>
-    </div>
+    </header>
 
-    <div class="grid">
+    <section id="games-grid" class="grid" aria-label="Arcade titles">
         <a class="card" href="pacman.html">
             <div class="card-icon">🪙</div>
             <div class="card-title">BITCOIN PAC-MAN</div>
@@ -166,7 +204,8 @@
                 <span class="tag">Multi-level</span>
                 <span class="badge badge-og">ORIGINAL</span>
             </div>
-            <button class="play-btn">▶ PLAY NOW</button>
+            <span class="play-btn" aria-hidden="true">▶ PLAY NOW</span>
+            <span class="sr-only">Open Bitcoin Pac-Man</span>
         </a>
 
         <a class="card" href="snake.html">
@@ -178,7 +217,8 @@
                 <span class="tag">Classic</span>
                 <span class="badge badge-new">NEW</span>
             </div>
-            <button class="play-btn">▶ PLAY NOW</button>
+            <span class="play-btn" aria-hidden="true">▶ PLAY NOW</span>
+            <span class="sr-only">Open Bitcoin Snake</span>
         </a>
 
         <a class="card" href="pong.html">
@@ -190,7 +230,8 @@
                 <span class="tag">1v1 AI</span>
                 <span class="badge badge-new">NEW</span>
             </div>
-            <button class="play-btn">▶ PLAY NOW</button>
+            <span class="play-btn" aria-hidden="true">▶ PLAY NOW</span>
+            <span class="sr-only">Open Bitcoin Pong</span>
         </a>
 
         <a class="card" href="invaders.html">
@@ -202,7 +243,8 @@
                 <span class="tag">Waves</span>
                 <span class="badge badge-new">NEW</span>
             </div>
-            <button class="play-btn">▶ PLAY NOW</button>
+            <span class="play-btn" aria-hidden="true">▶ PLAY NOW</span>
+            <span class="sr-only">Open Bitcoin Invaders</span>
         </a>
 
         <a class="card" href="flappy.html">
@@ -214,7 +256,8 @@
                 <span class="tag">Tap to play</span>
                 <span class="badge badge-new">NEW</span>
             </div>
-            <button class="play-btn">▶ PLAY NOW</button>
+            <span class="play-btn" aria-hidden="true">▶ PLAY NOW</span>
+            <span class="sr-only">Open Flappy Bitcoin</span>
         </a>
 
         <a class="card" href="tetris.html">
@@ -226,10 +269,11 @@
                 <span class="tag">Strategy</span>
                 <span class="badge badge-new">NEW</span>
             </div>
-            <button class="play-btn">▶ PLAY NOW</button>
+            <span class="play-btn" aria-hidden="true">▶ PLAY NOW</span>
+            <span class="sr-only">Open Bitcoin Tetris</span>
         </a>
-    </div>
-</div>
+    </section>
+</main>
 
 <footer class="footer">
     Atlas Bitcoin Arcade · Made with ❤ by <a href="https://twitter.com/justice__gate" target="_blank">@justice__gate</a>
