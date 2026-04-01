@@ -98,11 +98,12 @@ addEventListener('resize',()=>{bgW=bg.width=innerWidth;bgH=bg.height=innerHeight
 function drawBg(rage,sr){
     bgx.clearRect(0,0,bgW,bgH);
     const a=.04+sr*.07;
-    const g=bgx.createRadialGradient(bgW/2,bgH/2,0,bgW/2,bgH/2,bgW*.75);
-    if(rage){g.addColorStop(0,`rgba(255,51,85,${a*2.2})`);g.addColorStop(.6,`rgba(80,0,15,${a})`);g.addColorStop(1,'transparent');}
-    else{g.addColorStop(0,`rgba(247,147,26,${a})`);g.addColorStop(.6,`rgba(10,10,50,${a*.5})`);g.addColorStop(1,'transparent');}
-    bgx.fillStyle=g; bgx.fillRect(0,0,bgW,bH);
-    bgPts.forEach(p=>{
+const g=bgx.createRadialGradient(bgW/2,bgH/2,0,bgW/2,bgH/2,bgW*.75);
+if(rage){g.addColorStop(0,`rgba(255,51,85,${a*2.2})`);g.addColorStop(.6,`rgba(80,0,15,${a})`);g.addColorStop(1,'transparent');}
+else{g.addColorStop(0,`rgba(247,147,26,${a})`);g.addColorStop(.6,`rgba(10,10,50,${a*.5})`);g.addColorStop(1,'transparent');}
+bgx.fillStyle = g;
+bgx.fillRect(0, 0, bgW, bgH);
+bgPts.forEach(p=>{
         const spd=rage?2.2:1;
         p.x=(p.x+p.vx*spd+bgW)%bgW; p.y=(p.y+p.vy*spd+bgH)%bgH;
         bgx.save();
