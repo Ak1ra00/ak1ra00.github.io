@@ -10,8 +10,10 @@ let audioCtx=null, soundEnabled=true;
 function toggleSound(){
     soundEnabled=!soundEnabled;
     const btn=document.getElementById('sndBtn');
+    if(!btn) return;
     btn.textContent=soundEnabled?'🔊 SFX':'🔇 SFX';
     btn.className='snd-btn'+(soundEnabled?'':' off');
+    btn.setAttribute('aria-pressed', soundEnabled ? 'true' : 'false');
 }
 function getAudio(){
     if(!soundEnabled) return null;
@@ -99,7 +101,7 @@ function drawBg(rage,sr){
     const g=bgx.createRadialGradient(bgW/2,bgH/2,0,bgW/2,bgH/2,bgW*.75);
     if(rage){g.addColorStop(0,`rgba(255,51,85,${a*2.2})`);g.addColorStop(.6,`rgba(80,0,15,${a})`);g.addColorStop(1,'transparent');}
     else{g.addColorStop(0,`rgba(247,147,26,${a})`);g.addColorStop(.6,`rgba(10,10,50,${a*.5})`);g.addColorStop(1,'transparent');}
-    bgx.fillStyle=g; bgx.fillRect(0,0,bgW,bgH);
+    bgx.fillStyle=g; bgx.fillRect(0,0,bgW,bH);
     bgPts.forEach(p=>{
         const spd=rage?2.2:1;
         p.x=(p.x+p.vx*spd+bgW)%bgW; p.y=(p.y+p.vy*spd+bgH)%bgH;
@@ -393,6 +395,7 @@ const G={
         document.getElementById('pauseOverlay').classList.remove('on');
         const pb=document.getElementById('pauseBtn');
         pb.textContent='⏸ PAUSE';pb.classList.remove('paused');
+        pb.setAttribute('aria-pressed','false');
         const hs=loadHs();if(hs.length) document.getElementById('hHi').textContent=hs[0].sc.toLocaleString();
         this.updatePuDisplay();
     },
@@ -414,10 +417,16 @@ const G={
         const po=document.getElementById('pauseOverlay');
         const pb=document.getElementById('pauseBtn');
         if(this.paused){
-            po.classList.add('on');pb.textContent='▶ RESUME';pb.classList.add('paused');
+            po.classList.add('on');
+            pb.textContent='▶ RESUME';
+            pb.classList.add('paused');
+            pb.setAttribute('aria-pressed','true');
             this.stat('⏸ Game Paused','s-gold');
         } else {
-            po.classList.remove('on');pb.textContent='⏸ PAUSE';pb.classList.remove('paused');
+            po.classList.remove('on');
+            pb.textContent='⏸ PAUSE';
+            pb.classList.remove('paused');
+            pb.setAttribute('aria-pressed','false');
             this.stat('🎮 Game Active – Catch the Bitcoin!','s-ok');
         }
     },
