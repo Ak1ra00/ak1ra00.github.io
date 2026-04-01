@@ -4,14 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Bitcoin Pac-Man – Atlas Bitcoin Arcade</title>
+
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+
+    <!-- SEO and social sharing -->
+    <meta name="description" content="Play Bitcoin Pac‑Man: collect BTC coins, dodge ETH/XRP/DOGE/SOL/PEPE ghosts, unlock power-ups, and chase local high scores in Atlas Bitcoin Arcade.">
+    <meta property="og:title" content="Bitcoin Pac‑Man – Atlas Bitcoin Arcade">
+    <meta property="og:description" content="Collect BTC, avoid crypto ghosts, trigger rage mode, and unlock new enemies in this Bitcoin remix of Pac‑Man.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://soufianekh.space/pacman.html">
+    <meta property="og:image" content="https://soufianekh.space/logo.svg">
 </head>
 <body>
 
 <div class="scanlines"></div>
 
-<nav style="position:relative;z-index:10;width:100%;max-width:900px;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(247,147,26,0.2);margin:0 auto 4px;">
+<nav style="position:relative;z-index:10;width:100%;max-width:900px;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(247,147,26,0.2);margin:0 auto 4px;" aria-label="Primary navigation">
     <a href="index.html" style="font-family:'Orbitron',monospace;font-size:1rem;color:#F7931A;text-decoration:none;letter-spacing:.06em;text-shadow:0 0 12px rgba(247,147,26,.55);">₿ ATLAS ARCADE</a>
     <div style="display:flex;gap:12px;flex-wrap:wrap;">
         <a href="pacman.html" style="color:#F7931A;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Pac-Man</a>
@@ -56,7 +65,12 @@
     </div>
 
     <div class="cwrap" id="cwrap">
-        <canvas id="gc" width="800" height="600"></canvas>
+        <canvas
+            id="gc"
+            width="800"
+            height="600"
+            aria-label="Bitcoin Pac-Man arcade game: collect BTC coins, avoid shitcoin ghosts, and chase high scores."
+        ></canvas>
         <div id="pauseOverlay">
             <div class="pause-title">⏸ PAUSED</div>
             <div class="pause-sub">Press ⏸ or [P] to resume</div>
@@ -96,7 +110,9 @@
         <div class="li" id="pepeLi" style="opacity:.3"><div class="ld" style="background:var(--pepe)"></div>PEPE</div>
     </div>
 
-    <div id="gstat" class="gstatus s-ok">🎮 Game Active – Catch the Bitcoin!</div>
+    <div id="gstat" class="gstatus s-ok" role="status" aria-live="polite">
+        🎮 Game Active – Catch the Bitcoin!
+    </div>
 
     <div id="gop" class="gopanel">
         <div class="poo">💩</div>
