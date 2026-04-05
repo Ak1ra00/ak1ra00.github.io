@@ -671,6 +671,8 @@ function drawPlayer(p,cx){
     ctx.translate(x+p.w/2,y+p.h/2);
     ctx.rotate(Math.PI);
     ctx.translate(-p.w/2,-p.h/2);
+  } else {
+    ctx.translate(x,y);
   }
   // body - orange
   ctx.fillStyle='#F7931A';
