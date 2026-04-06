@@ -60,6 +60,7 @@ canvas{display:block;background:#060610;width:100%;height:auto;}
 @media(max-width:767px){body{padding-bottom:80px;}}
 </style>
 </head>
+<script src="auth.js"></script>
 <body>
 <div class="scanlines"></div>
 
@@ -151,7 +152,7 @@ let shakeX=0, shakeY=0, shakeM=0;
 let keys={};
 
 // ── HI-SCORE ──
-hiScore = parseInt(localStorage.getItem('btc_inv_hs')||'0');
+hiScore = Auth.getScore('btc_inv_hs');
 document.getElementById('introBest').textContent = 'BEST: '+hiScore.toLocaleString();
 document.getElementById('hHi').textContent = hiScore.toLocaleString();
 
@@ -336,7 +337,7 @@ function fireBullet(){
 // ── GAME OVER / START ──
 function gameOver(won){
   gameActive=false;
-  if(score>hiScore){hiScore=score;localStorage.setItem('btc_inv_hs',hiScore);}
+  if(score>hiScore){hiScore=score;Auth.saveScore('btc_inv_hs',hiScore);}
   document.getElementById('goIcon').textContent = won?'🏆':'💩';
   document.getElementById('goTitle').textContent = won?'SHITCOINS DEFEATED!':'REKT BY SHITCOINS';
   document.getElementById('goScore').textContent = score.toLocaleString();

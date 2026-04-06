@@ -85,6 +85,7 @@ body{font-family:'Rajdhani',sans-serif;background:var(--bg);min-height:100vh;col
 .lives-row{display:flex;gap:6px;align-items:center;font-family:'Press Start 2P',monospace;font-size:8px;color:var(--btc);}
 </style>
 </head>
+<script src="auth.js"></script>
 <body>
 <div class="scanlines"></div>
 
@@ -296,7 +297,7 @@ const canvas=document.getElementById('g');
 const ctx=canvas.getContext('2d');
 let gs={};
 let diff=2;
-let hiScore=parseInt(localStorage.getItem('sato_hs')||'0');
+let hiScore=Auth.getScore('sato_hs');
 document.getElementById('menuHi').textContent='BEST: '+hiScore.toLocaleString();
 document.getElementById('hHi').textContent=hiScore.toLocaleString();
 
@@ -335,7 +336,7 @@ function showMenu(){
   document.getElementById('menu').classList.remove('h');
   document.getElementById('goOv').classList.add('h');
   document.getElementById('winOv').classList.add('h');
-  hiScore=parseInt(localStorage.getItem('sato_hs')||'0');
+  hiScore=Auth.getScore('sato_hs');
   document.getElementById('menuHi').textContent='BEST: '+hiScore.toLocaleString();
 }
 
@@ -562,7 +563,7 @@ function update(){
     gs.phase='win';
     gs.winT=0;
     // save hi score
-    if(gs.score>gs.hiScore){gs.hiScore=gs.score;localStorage.setItem('sato_hs',gs.score);}
+    if(gs.score>gs.hiScore){gs.hiScore=gs.score;Auth.saveScore('sato_hs',gs.score);}
     spawnParticles(level.goalX,120,'#FFD700',30);
   }
 

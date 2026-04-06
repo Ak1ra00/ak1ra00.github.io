@@ -303,6 +303,7 @@ canvas {
 }
 </style>
 </head>
+<script src="auth.js"></script>
 <body>
 
 <nav class="nav">
@@ -390,7 +391,7 @@ const C = {
 // ─── GAME STATE ──────────────────────────────────────────────────────────────
 let state     = 'intro'; // 'intro' | 'playing' | 'dead'
 let score     = 0;
-let hiScore   = parseInt(localStorage.getItem('btc_flappy_hs') || '0', 10);
+let hiScore   = Auth.getScore('btc_flappy_hs');
 let frame     = 0;
 let raf       = null;
 
@@ -805,7 +806,7 @@ function update(){
         // Update hi-score live
         if(score > hiScore){
           hiScore = score;
-          localStorage.setItem('btc_flappy_hs', hiScore);
+          Auth.saveScore('btc_flappy_hs', hiScore);
         }
       }
     }
@@ -823,7 +824,7 @@ function update(){
   // Live hi-score update
   if(score > hiScore){
     hiScore = score;
-    localStorage.setItem('btc_flappy_hs', hiScore);
+    Auth.saveScore('btc_flappy_hs', hiScore);
   }
 }
 
@@ -872,7 +873,7 @@ function killPlayer(){
   // Save hi-score
   if(score > hiScore){
     hiScore = score;
-    localStorage.setItem('btc_flappy_hs', hiScore);
+    Auth.saveScore('btc_flappy_hs', hiScore);
   }
 
   triggerFlash();

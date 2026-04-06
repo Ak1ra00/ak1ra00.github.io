@@ -58,6 +58,7 @@ canvas{display:block;background:#060610;width:100%;height:auto;}
 .rbtn:hover{transform:translateY(-2px);}
 </style>
 </head>
+<script src="auth.js"></script>
 <body>
 <div class="scanlines"></div>
 
@@ -153,7 +154,7 @@ let floats = [], particles = [];
 let shakeX = 0, shakeY = 0, shakeM = 0;
 let coinSpin = 0;
 
-hiScore = parseInt(localStorage.getItem('btc_snake_hs') || '0');
+hiScore = Auth.getScore('btc_snake_hs');
 document.getElementById('introBest').textContent = 'BEST: ' + hiScore.toLocaleString();
 document.getElementById('hHi').textContent = hiScore.toLocaleString();
 
@@ -237,7 +238,7 @@ function moveSnake() {
     if (coins > 0 && coins % 5 === 0 && obstacles.length < 8) spawnObstacle();
     spawnBTC();
     updateHUD();
-    if (score > hiScore) { hiScore = score; localStorage.setItem('btc_snake_hs', hiScore); }
+    if (score > hiScore) { hiScore = score; Auth.saveScore('btc_snake_hs', hiScore); }
   } else {
     snake.pop();
   }
@@ -275,7 +276,7 @@ function loseLife() {
 
 function endGame() {
   gameActive = false;
-  if (score > hiScore) { hiScore = score; localStorage.setItem('btc_snake_hs', hiScore); }
+  if (score > hiScore) { hiScore = score; Auth.saveScore('btc_snake_hs', hiScore); }
   document.getElementById('goScore').textContent = score.toLocaleString();
   document.getElementById('goBest').textContent = 'BEST: ' + hiScore.toLocaleString();
   document.getElementById('gameOver').classList.remove('hidden');
