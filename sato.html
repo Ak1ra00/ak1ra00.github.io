@@ -158,7 +158,7 @@ body{font-family:'Rajdhani',sans-serif;background:var(--bg);min-height:100vh;col
 <script>
 'use strict';
 // ── CONSTANTS ──
-const W=400,H=240,GRAV=0.48,JV=-10.5,SPD=2.6,ESPD=1.0,MFALL=11;
+const W=400,H=240,GRAV=0.40,JV=-9.2,SPD=2.1,ESPD=0.75,MFALL=10;
 
 // ── LEVEL DATA ──
 const ECOL={eth:'#627EEA',doge:'#C2A633',xrp:'#00AAE4',pepe:'#00BB44',sol:'#9945FF'};
@@ -771,7 +771,9 @@ function render(){
 let lastT=0;
 function loop(ts){
   requestAnimationFrame(loop);
-  const dt=Math.min(ts-lastT,50);lastT=ts;
+  const dt=ts-lastT;
+  if(dt<14)return; // cap ~60fps — prevents 2× speed on 120Hz screens
+  lastT=ts;
   if(gs&&gs.phase){
     update();
     render();
