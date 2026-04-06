@@ -312,6 +312,7 @@ body::after {
 }
 </style>
 </head>
+<script src="auth.js"></script>
 <body>
 
 <nav class="nav">
@@ -404,7 +405,7 @@ body::after {
   let state = 'intro'; // intro | playing | paused | gameover
   let playerScore = 0, aiScore = 0;
   let rally = 0, maxRally = 0;
-  let bestStreak = parseInt(localStorage.getItem('btc_pong_hs') || '0');
+  let bestStreak = Auth.getScore('btc_pong_hs');
   let flashTimer = 0;
   let pauseTimer = 0;
   let pauseDir = 1; // 1 = toward player, -1 = toward AI
@@ -436,13 +437,13 @@ body::after {
   function randBetween(a, b) { return a + Math.random() * (b - a); }
 
   function loadBest() {
-    bestStreak = parseInt(localStorage.getItem('btc_pong_hs') || '0');
+    bestStreak = Auth.getScore('btc_pong_hs');
   }
 
   function saveBest(v) {
     if (v > bestStreak) {
       bestStreak = v;
-      localStorage.setItem('btc_pong_hs', v);
+      Auth.saveScore('btc_pong_hs', v);
     }
   }
 
