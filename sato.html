@@ -158,7 +158,7 @@ body{font-family:'Rajdhani',sans-serif;background:var(--bg);min-height:100vh;col
 <script>
 'use strict';
 // ── CONSTANTS ──
-const W=400,H=240,GRAV=0.40,JV=-9.2,SPD=2.1,ESPD=0.75,MFALL=10;
+const W=400,H=240,GRAV=0.40,JV=-9.2,JV_MIN=-4.2,JV_BOOST=0.38,JV_CUT=-2.5,JV_FRAMES=16,SPD=2.1,ESPD=0.75,MFALL=10;
 
 // ── LEVEL DATA ──
 const ECOL={eth:'#627EEA',doge:'#C2A633',xrp:'#00AAE4',pepe:'#00BB44',sol:'#9945FF'};
@@ -341,19 +341,24 @@ function showMenu(){
 
 // ── INPUT ──
 const keys={};
+function isJumpKey(code){return code==='Space'||code==='ArrowUp'||code==='KeyW';}
 document.addEventListener('keydown',e=>{
+  if(!keys[e.code]&&isJumpKey(e.code)&&gs.phase==='play') doJump();
   keys[e.code]=true;
-  if((e.code==='Space'||e.code==='ArrowUp'||e.code==='KeyW')&&gs.phase==='play') doJump();
+  if(isJumpKey(e.code)) keys['jump']=true;
   e.preventDefault && (e.code==='Space'||e.code.startsWith('Arrow')) && e.preventDefault();
 });
-document.addEventListener('keyup',e=>{keys[e.code]=false;});
+document.addEventListener('keyup',e=>{
+  keys[e.code]=false;
+  if(isJumpKey(e.code)){keys['jump']=false;doJumpRelease();}
+});
 
 function btnTouch(id,flag){
   const el=document.getElementById(id);
   el.addEventListener('touchstart',e=>{e.preventDefault();keys[flag]=true;el.classList.add('pressed');if(flag==='jump')doJump();},{passive:false});
-  el.addEventListener('touchend',e=>{e.preventDefault();keys[flag]=false;el.classList.remove('pressed');},{passive:false});
+  el.addEventListener('touchend',e=>{e.preventDefault();keys[flag]=false;el.classList.remove('pressed');if(flag==='jump')doJumpRelease();},{passive:false});
   el.addEventListener('mousedown',e=>{keys[flag]=true;if(flag==='jump')doJump();});
-  el.addEventListener('mouseup',e=>{keys[flag]=false;});
+  el.addEventListener('mouseup',e=>{keys[flag]=false;if(flag==='jump')doJumpRelease();});
 }
 btnTouch('btnL','left');
 btnTouch('btnR','right');
@@ -362,7 +367,20 @@ btnTouch('btnJ','jump');
 function doJump(){
   const p=gs.p;
   if(!p||!p.alive)return;
-  if(p.grounded){p.vy=JV;p.grounded=false;snd('jump');}
+  if(p.grounded){
+    p.vy=JV_MIN;   // small initial hop — holding extends it
+    p.grounded=false;
+    p.jumpHeld=true;
+    p.jumpT=0;
+    snd('jump');
+  }
+}
+function doJumpRelease(){
+  const p=gs.p;
+  if(!p)return;
+  p.jumpHeld=false;
+  // cut upward velocity so a tap gives a short jump
+  if(p.vy<JV_CUT) p.vy=JV_CUT;
 }
 
 // ── SOUND ──
@@ -457,6 +475,13 @@ function update(){
   if(keys['ArrowLeft']||keys['KeyA']||keys['left']){p.vx=-mv;p.facing=-1;}
   else if(keys['ArrowRight']||keys['KeyD']||keys['right']){p.vx=mv;p.facing=1;}
   else{p.vx*=0.7;}
+
+  // Variable jump: apply extra upward boost while button held
+  if(p.jumpHeld&&p.vy<0){
+    p.jumpT=(p.jumpT||0)+1;
+    if(p.jumpT<=JV_FRAMES){p.vy-=JV_BOOST;if(p.vy<JV)p.vy=JV;}
+    else{p.jumpHeld=false;}
+  }
 
   p.vy+=GRAV;
   if(p.vy>MFALL)p.vy=MFALL;
