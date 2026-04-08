@@ -23,7 +23,7 @@ body{font-family:'Rajdhani',sans-serif;background:var(--bg);min-height:100vh;col
 .cwrap{width:min(440px,100vw);position:relative;z-index:1;border:2px solid var(--border);border-radius:4px;box-shadow:0 0 40px var(--btc-glow);overflow:hidden;background:#010112;}
 #g{display:block;width:100%;height:auto;image-rendering:pixelated;}
 .ctrl{width:100%;max-width:440px;display:flex;justify-content:space-between;align-items:center;padding:8px 14px 10px;margin-top:4px;background:var(--panel);border:1px solid var(--border);border-radius:12px;}
-@media(max-width:460px){.ctrl{position:fixed;bottom:0;left:0;right:0;border-radius:16px 16px 0 0;border-bottom:none;z-index:500;padding:8px 12px 14px;max-width:100%;box-shadow:0 -6px 30px rgba(0,0,0,.85);}body{padding-bottom:80px;}}
+@media(max-width:460px){.ctrl{position:fixed;bottom:0;left:0;right:0;border-radius:16px 16px 0 0;border-bottom:none;z-index:10003;padding:8px 12px 14px;max-width:100%;box-shadow:0 -6px 30px rgba(0,0,0,.85);}body{padding-bottom:80px;}}
 .cbtn{background:rgba(247,147,26,.1);border:2px solid rgba(247,147,26,.4);border-radius:10px;width:64px;height:52px;font-size:1.5rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--btc);touch-action:manipulation;user-select:none;-webkit-tap-highlight-color:transparent;transition:background .1s;}
 .cbtn:active,.cbtn.pressed{background:rgba(247,147,26,.4);}
 .overlay{position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at center,#0a0520 0%,#010112 70%);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;padding:20px;}
@@ -118,19 +118,32 @@ const STARS=Array.from({length:140},(_,i)=>({
 }));
 
 // ── INPUT ──
-const keys={};
-document.addEventListener('keydown',e=>{keys[e.code]=true;});
-document.addEventListener('keyup',e=>{keys[e.code]=false;});
-function cbtn(id,flag){
+const held={left:false,right:false};
+
+document.addEventListener('keydown',e=>{
+  if(e.code==='ArrowLeft'||e.code==='KeyA') held.left=true;
+  if(e.code==='ArrowRight'||e.code==='KeyD') held.right=true;
+});
+document.addEventListener('keyup',e=>{
+  if(e.code==='ArrowLeft'||e.code==='KeyA') held.left=false;
+  if(e.code==='ArrowRight'||e.code==='KeyD') held.right=false;
+});
+document.addEventListener('mouseup',()=>{held.left=false;held.right=false;});
+
+function setupBtn(id,side){
   const el=document.getElementById(id);
-  el.addEventListener('touchstart',e=>{e.preventDefault();keys[flag]=true;el.classList.add('pressed');},{passive:false});
-  el.addEventListener('touchend',e=>{e.preventDefault();keys[flag]=false;el.classList.remove('pressed');},{passive:false});
-  el.addEventListener('touchcancel',e=>{e.preventDefault();keys[flag]=false;el.classList.remove('pressed');},{passive:false});
-  el.addEventListener('mousedown',()=>keys[flag]=true);
-  el.addEventListener('mouseup',()=>keys[flag]=false);
+  if(!el)return;
+  const on=()=>{held[side]=true;el.classList.add('pressed');};
+  const off=()=>{held[side]=false;el.classList.remove('pressed');};
+  el.addEventListener('touchstart',e=>{e.preventDefault();on();},{passive:false});
+  el.addEventListener('touchend',e=>{e.preventDefault();off();},{passive:false});
+  el.addEventListener('touchcancel',e=>{e.preventDefault();off();},{passive:false});
+  el.addEventListener('mousedown',on);
+  el.addEventListener('mouseup',off);
+  el.addEventListener('mouseleave',off);
 }
-cbtn('btnL','left'); cbtn('btnR','right');
-document.addEventListener('mouseup',()=>{keys['left']=false;keys['right']=false;});
+setupBtn('btnL','left');
+setupBtn('btnR','right');
 
 // ── SOUND ──
 let AC=null;
@@ -259,8 +272,8 @@ function update(){
   }
 
   // move
-  const left=keys['ArrowLeft']||keys['KeyA']||keys['left'];
-  const right=keys['ArrowRight']||keys['KeyD']||keys['right'];
+  const left=held.left;
+  const right=held.right;
   if(left){p.vx=-SPD;p.facing=-1;}
   else if(right){p.vx=SPD;p.facing=1;}
   else p.vx*=.72;
