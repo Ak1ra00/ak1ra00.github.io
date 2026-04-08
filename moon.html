@@ -327,6 +327,9 @@ function update(){
     }
   }
 
+  // apply horizontal velocity
+  p.x+=p.vx;
+
   // horizontal wrap
   if(p.x+p.w<0)p.x=W;
   if(p.x>W)p.x=-p.w;
