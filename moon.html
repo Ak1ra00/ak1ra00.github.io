@@ -316,11 +316,6 @@ function update(){
             gs.score+=25;addPop(pl.x+pl.w/2,pl.y-8,'+25 ATH!',PCOL.dca);
             spawnP(pl.x+pl.w/2,pl.y,PCOL.dca,8);
           }
-          // maybe spawn enemy on this platform
-          if(gs.hm>130&&!pl.hasEnemy&&Math.random()<Math.min(gs.hm/550,.55)){
-            pl.hasEnemy=true;
-            enemies.push(makeEnemy(pl,gs.hm));
-          }
         }
         break;
       }
@@ -360,6 +355,11 @@ function update(){
       plats.push(pl);
       if(Math.random()<.6&&pl.type!=='rekt')coins.push(makeCoin(pl));
       if(Math.random()<.07)powerups.push(makePowerup(pl.x+pl.w/2,pl.y-28));
+      // Spawn enemies at generation time so they're always visible before player reaches them
+      if(gs.hm>130&&pl.type!=='rekt'&&Math.random()<Math.min(gs.hm/550,.55)){
+        pl.hasEnemy=true;
+        enemies.push(makeEnemy(pl,gs.hm));
+      }
     }
     gs.topPlatY=y;
   }
