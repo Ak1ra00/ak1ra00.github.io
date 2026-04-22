@@ -471,13 +471,13 @@ function updateExhaust(){
       });
     }
   }
-  exhaustParticles = exhaustParticles.filter(p => p.life > 0);
   exhaustParticles.forEach(p => {
     p.x += p.vx; p.y += p.vy;
     p.vx *= 0.92; p.vy *= 0.96;
     p.size *= 0.94;
     p.life -= 0.04;
   });
+  exhaustParticles = exhaustParticles.filter(p => p.life > 0);
 }
 function drawExhaust(camY){
   exhaustParticles.forEach(p => {
@@ -488,7 +488,9 @@ function drawExhaust(camY){
     ctx.fillStyle = p.col;
     ctx.shadowColor = p.col;
     ctx.shadowBlur = 6;
-    ctx.beginPath(); ctx.arc(p.x, sy, p.size * p.life, 0, Math.PI*2); ctx.fill();
+    const r = p.size * p.life;
+    if(r <= 0){ctx.restore();return;}
+    ctx.beginPath(); ctx.arc(p.x, sy, r, 0, Math.PI*2); ctx.fill();
     ctx.restore();
   });
 }
