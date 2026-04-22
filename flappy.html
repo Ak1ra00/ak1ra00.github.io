@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Flappy Bitcoin — BTC Arcade</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -300,6 +300,18 @@ canvas {
     width: 340px;
     height: 425px;
   }
+}
+
+/* Mobile responsive sizing */
+#game-wrap, .game-wrap {
+  max-width: min(480px, 100vw);
+  margin: 0 auto;
+  width: 100%;
+}
+canvas {
+  width: 100%;
+  height: auto;
+  display: block;
 }
 </style>
 </head>

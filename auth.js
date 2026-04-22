@@ -106,6 +106,15 @@ function injectCSS() {
     background:none;border:none;color:#4b5563;cursor:pointer;padding:0;
     transition:color .15s;}
   #auth-logout-btn:hover{color:#ff3355;}
+  .auth-mob-login{font-family:'Orbitron',monospace;font-size:.65rem;cursor:pointer;
+    letter-spacing:.05em;background:none;
+    border:1px solid rgba(247,147,26,0.35);border-radius:6px;
+    padding:6px 14px;color:#F7931A;transition:all .15s;white-space:nowrap;width:100%;}
+  .auth-mob-login:hover{background:rgba(247,147,26,0.14);}
+  .auth-mob-logout{font-family:'Orbitron',monospace;font-size:.55rem;
+    background:none;border:none;color:#4b5563;cursor:pointer;padding:0;
+    transition:color .15s;}
+  .auth-mob-logout:hover{color:#ff3355;}
   `;
   document.head.appendChild(s);
 }
@@ -169,6 +178,12 @@ function injectNavBtn() {
   const wrap = document.createElement('span');
   wrap.id = 'auth-nav-wrap';
   nav.appendChild(wrap);
+  var mobileWrap = document.getElementById('auth-nav-wrap-mobile');
+  if(mobileWrap){
+    var mobileSpan = document.createElement('span');
+    mobileSpan.id = 'auth-nav-wrap-mobile-inner';
+    mobileWrap.appendChild(mobileSpan);
+  }
 }
 
 function updateNavBtn() {
@@ -185,6 +200,16 @@ function updateNavBtn() {
   } else {
     wrap.innerHTML = `<button id="auth-nav-btn">LOGIN</button>`;
     document.getElementById('auth-nav-btn').onclick = openAuthModal;
+  }
+  var mobileInner = document.getElementById('auth-nav-wrap-mobile-inner');
+  if(mobileInner) {
+    if(user) {
+      mobileInner.innerHTML = `<span class="auth-user-badge"><span class="auth-user-name">👤 ${user}</span><button class="auth-mob-logout">LOGOUT</button></span>`;
+      mobileInner.querySelector('.auth-mob-logout').onclick = () => { Auth.logout(); updateNavBtn(); };
+    } else {
+      mobileInner.innerHTML = `<button class="auth-mob-login">LOGIN</button>`;
+      mobileInner.querySelector('.auth-mob-login').onclick = openAuthModal;
+    }
   }
 }
 

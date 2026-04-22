@@ -36,6 +36,18 @@ body{font-family:'Rajdhani',sans-serif;background:var(--bg);min-height:100vh;col
 #g{display:block;background:#060610;width:100%;height:auto;}
 .tap-hint{font-family:'Press Start 2P',monospace;font-size:.55rem;color:#374151;
   text-align:center;padding:6px 0 2px;letter-spacing:.08em;position:relative;z-index:1;}
+
+/* Mobile responsive sizing */
+#wrap, .cwrap, #game-wrap, .game-wrap {
+  max-width: min(480px, 100vw);
+  margin: 0 auto;
+  width: 100%;
+}
+canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+}
 </style>
 </head>
 <body>

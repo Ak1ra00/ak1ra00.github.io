@@ -78,7 +78,12 @@ body{
 .hdr p{color:#4b5563;font-size:.85rem;margin-top:3px;text-align:center;}
 
 /* ── CANVAS ── */
-.cwrap{border-radius:14px;overflow:hidden;position:relative;box-shadow:0 0 0 2px var(--border),0 0 45px var(--btc-glow),0 0 90px rgba(247,147,26,.08);transition:box-shadow .3s;}
+.cwrap{border-radius:14px;overflow:hidden;position:relative;box-shadow:0 0 0 2px var(--border),0 0 45px var(--btc-glow),0 0 90px rgba(247,147,26,.08);transition:box-shadow .3s;max-width:min(800px,100vw);width:100%;}
+.cwrap canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+}
 .cwrap.rage{box-shadow:0 0 0 2px rgba(255,51,85,.7),0 0 45px rgba(255,51,85,.45),0 0 90px rgba(255,51,85,.18);}
 #gc{display:block;background:#060610;max-width:100%;height:auto;}
 
