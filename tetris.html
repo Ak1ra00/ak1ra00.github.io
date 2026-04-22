@@ -170,7 +170,7 @@ const SCORE_TABLE=[0,100,300,500,800];
 // ── STATE ──
 let board=newBoard(), cur, nxt, held, canHold;
 let score,level,lines,hiScore,dropT,dropI;
-let floats=[], clearFlash=[], gameActive=false, paused=false;
+let floats=[], clearFlash=[], lineParticles=[], gameActive=false, paused=false;
 let lastTs=0;
 
 hiScore=Auth.getScore('btc_tetris_hs');
@@ -211,7 +211,7 @@ function lighten(h,a){
 // ── GAME ACTIONS ──
 function startGame(){
   board=newBoard(); score=0; lines=0; level=1; held=null; canHold=true;
-  floats=[]; clearFlash=[]; dropT=0; dropI=SPEEDS[0]; paused=false;
+  floats=[]; clearFlash=[]; lineParticles=[]; dropT=0; dropI=SPEEDS[0]; paused=false;
   hiScore=Auth.getScore('btc_tetris_hs');
   nxt=randPiece(); spawnPiece();
   gameActive=true;
@@ -258,6 +258,21 @@ function clearLines(){
   floats.push({x:W/2,y:H/2,txt:(hasShit?'⚠️ ':'')+msgs[Math.min(cleared,4)],col,vy:-1.1,life:1.4});
   if(pts>0) floats.push({x:W/2,y:H/2+28,txt:'+'+pts.toLocaleString(),col:'#00ff88',vy:-0.9,life:1.1});
   clearFlash=flashRows; setTimeout(()=>clearFlash=[],180);
+  flashRows.forEach(r=>{
+    for(let i=0;i<8;i++){
+      const px=(i/7)*W+(Math.random()-0.5)*30;
+      const py=r*SZ+SZ/2;
+      const angle=-Math.PI/2+(Math.random()-0.5)*Math.PI*0.8;
+      const speed=2+Math.random()*5;
+      lineParticles.push({
+        x:px,y:py,
+        vx:Math.cos(angle)*speed,
+        vy:Math.sin(angle)*speed,
+        col:Math.random()<0.6?'#FFD700':'#F7931A',
+        life:1,sz:2+Math.random()*3
+      });
+    }
+  });
   updateInfo();
 }
 
@@ -313,26 +328,67 @@ function drawCell(x,y,col,alpha,ghost){
   ctx.save(); ctx.globalAlpha=alpha||1;
   if(ghost){
     ctx.strokeStyle=col; ctx.lineWidth=2;
+    ctx.setLineDash([4,3]);
     ctx.strokeRect(px+2,py+2,SZ-4,SZ-4);
+    ctx.setLineDash([]);
   } else {
-    const g=ctx.createLinearGradient(px,py,px+SZ,py+SZ);
-    g.addColorStop(0,lighten(col.startsWith('#')?col:'#F7931A',60));
-    g.addColorStop(1,col);
-    ctx.fillStyle=g; ctx.fillRect(px+1,py+1,SZ-2,SZ-2);
-    ctx.strokeStyle='rgba(0,0,0,.35)'; ctx.lineWidth=1;
-    ctx.strokeRect(px+1,py+1,SZ-2,SZ-2);
-    ctx.fillStyle='rgba(0,0,0,.12)';
-    ctx.font=`bold ${SZ*.55}px Arial`;
-    ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText('₿',px+SZ/2,py+SZ/2+1);
+    const bev=4;
+    const isBTC=col===BTC_COLS.I||col===BTC_COLS.O||col===BTC_COLS.T||col===BTC_COLS.S||col===BTC_COLS.Z||col===BTC_COLS.J||col===BTC_COLS.L;
+    // Main fill (with inner glow for BTC pieces)
+    if(isBTC){ ctx.shadowColor=col; ctx.shadowBlur=6; }
+    ctx.fillStyle=col;
+    ctx.fillRect(px+1,py+1,SZ-2,SZ-2);
+    ctx.shadowColor='transparent'; ctx.shadowBlur=0;
+    // Top face (bright highlight) — trapezoid
+    ctx.fillStyle='rgba(255,255,255,0.40)';
+    ctx.beginPath();
+    ctx.moveTo(px+1,py+1);
+    ctx.lineTo(px+SZ-1,py+1);
+    ctx.lineTo(px+SZ-1-bev,py+1+bev);
+    ctx.lineTo(px+1+bev,py+1+bev);
+    ctx.closePath(); ctx.fill();
+    // Left face (medium-bright) — trapezoid
+    ctx.fillStyle='rgba(255,255,255,0.20)';
+    ctx.beginPath();
+    ctx.moveTo(px+1,py+1);
+    ctx.lineTo(px+1+bev,py+1+bev);
+    ctx.lineTo(px+1+bev,py+SZ-1-bev);
+    ctx.lineTo(px+1,py+SZ-1);
+    ctx.closePath(); ctx.fill();
+    // Bottom face (dark shadow) — trapezoid
+    ctx.fillStyle='rgba(0,0,0,0.40)';
+    ctx.beginPath();
+    ctx.moveTo(px+1,py+SZ-1);
+    ctx.lineTo(px+1+bev,py+SZ-1-bev);
+    ctx.lineTo(px+SZ-1-bev,py+SZ-1-bev);
+    ctx.lineTo(px+SZ-1,py+SZ-1);
+    ctx.closePath(); ctx.fill();
+    // Right face (dark shadow) — trapezoid
+    ctx.fillStyle='rgba(0,0,0,0.25)';
+    ctx.beginPath();
+    ctx.moveTo(px+SZ-1,py+1);
+    ctx.lineTo(px+SZ-1,py+SZ-1);
+    ctx.lineTo(px+SZ-1-bev,py+SZ-1-bev);
+    ctx.lineTo(px+SZ-1-bev,py+1+bev);
+    ctx.closePath(); ctx.fill();
+    // Subtle center dot
+    ctx.fillStyle='rgba(0,0,0,0.18)';
+    ctx.beginPath();
+    ctx.arc(px+SZ/2,py+SZ/2,SZ*0.12,0,Math.PI*2);
+    ctx.fill();
   }
   ctx.restore();
 }
 
 function drawBoard(){
   ctx.fillStyle='#060610'; ctx.fillRect(0,0,W,H);
+  // Deep-space vignette (subtle)
+  const vig=ctx.createRadialGradient(W/2,H/2,H*0.2,W/2,H/2,H*0.85);
+  vig.addColorStop(0,'rgba(0,0,0,0)');
+  vig.addColorStop(1,'rgba(0,0,30,0.55)');
+  ctx.fillStyle=vig; ctx.fillRect(0,0,W,H);
   // Grid
-  ctx.strokeStyle='rgba(255,255,255,0.03)'; ctx.lineWidth=1;
+  ctx.strokeStyle='rgba(247,147,26,0.06)'; ctx.lineWidth=1;
   for(let r=0;r<=ROWS;r++){ctx.beginPath();ctx.moveTo(0,r*SZ);ctx.lineTo(W,r*SZ);ctx.stroke();}
   for(let c=0;c<=COLS;c++){ctx.beginPath();ctx.moveTo(c*SZ,0);ctx.lineTo(c*SZ,H);ctx.stroke();}
   // Board cells
@@ -357,6 +413,13 @@ function drawBoard(){
     ctx.font="bold 16px 'Orbitron',monospace";
     ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.fillText(f.txt,f.x,f.y); ctx.restore();
+  });
+  // Line-clear particles
+  lineParticles.forEach(p=>{
+    ctx.save(); ctx.globalAlpha=p.life*0.9;
+    ctx.fillStyle=p.col; ctx.shadowColor=p.col; ctx.shadowBlur=8;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.sz*p.life,0,Math.PI*2); ctx.fill();
+    ctx.restore();
   });
   // Pause
   if(paused){
@@ -396,6 +459,8 @@ function loop(ts){
     }
     floats=floats.filter(f=>f.life>0);
     floats.forEach(f=>{f.y+=f.vy;f.life-=.018;});
+    lineParticles=lineParticles.filter(p=>p.life>0);
+    lineParticles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.15;p.vx*=0.96;p.life-=0.025;});
   }
   drawBoard();
   requestAnimationFrame(loop);

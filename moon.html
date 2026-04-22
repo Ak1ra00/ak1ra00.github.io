@@ -107,6 +107,8 @@ const canvas=document.getElementById('g');
 const ctx=canvas.getContext('2d');
 let gs={phase:'menu'};
 let banner=null;
+let exhaustParticles=[];
+let shieldPulseT=0; // visual-only shield pulse timer (triggered on coin collect)
 
 // ── STARS (pre-generated, parallax layers) ──
 const STARS=Array.from({length:140},(_,i)=>({
@@ -212,6 +214,8 @@ function startGame(){
   document.getElementById('menuOv').classList.add('h');
   document.getElementById('goOv').classList.add('h');
   banner=null;
+  exhaustParticles=[];
+  shieldPulseT=0;
   const plats=genInitial();
   const coins=genCoinsForPlats(plats);
   gs={
@@ -248,7 +252,8 @@ function update(){
   if(!p.alive){
     p.deadT++;
     p.vy+=GRAV;p.y+=p.vy;p.x+=p.vx*.88;
-    updateParts(particles);updatePops(popups);
+    updateParts(particles);updatePops(popups);updateExhaust();
+    if(shieldPulseT>0)shieldPulseT--;
     if(p.deadT>90){
       gs.lives--;
       if(gs.lives<=0){
@@ -391,6 +396,7 @@ function update(){
       c.alive=false;gs.score+=10;
       addPop(c.x,c.y-6,'+10','#F7931A');
       spawnP(c.x,c.y,'#F7931A',5);snd('coin');
+      shieldPulseT=120; // ~2s visual hex shield on coin collect
     }
   }
 
@@ -413,7 +419,8 @@ function update(){
   for(let i=coins.length-1;i>=0;i--)if(!coins[i].alive||coins[i].y-gs.camY>H+60)coins.splice(i,1);
   for(let i=powerups.length-1;i>=0;i--)if(!powerups[i].alive||powerups[i].y-gs.camY>H+60)powerups.splice(i,1);
 
-  updateParts(particles);updatePops(popups);
+  updateParts(particles);updatePops(popups);updateExhaust();
+  if(shieldPulseT>0)shieldPulseT--;
   if(banner&&(banner.t-=.014)<=0)banner=null;
   updateHUD();
 }
@@ -447,6 +454,66 @@ function spawnP(wx,wy,col,n){
   }
 }
 function updateParts(pts){for(let i=pts.length-1;i>=0;i--){const p=pts[i];p.x+=p.vx;p.y+=p.vy;p.vy+=.12;p.life-=.025;if(p.life<=0)pts.splice(i,1);}}
+function updateExhaust(){
+  const player=gs.p;
+  if(!player)return;
+  // Spawn new particles at player bottom while rising or jetpacking
+  if(player.alive && (player.vy < 0 || (player.jetT && player.jetT > 0))){
+    for(let i=0;i<2;i++){
+      exhaustParticles.push({
+        x: player.x + player.w/2 + (Math.random()-0.5)*6,
+        y: player.y + player.h,
+        vx: (Math.random()-0.5)*1.5,
+        vy: 1.5 + Math.random()*2,
+        life: 1,
+        size: 2 + Math.random()*3,
+        col: Math.random() < 0.5 ? '#F7931A' : '#FFD700'
+      });
+    }
+  }
+  exhaustParticles = exhaustParticles.filter(p => p.life > 0);
+  exhaustParticles.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    p.vx *= 0.92; p.vy *= 0.96;
+    p.size *= 0.94;
+    p.life -= 0.04;
+  });
+}
+function drawExhaust(camY){
+  exhaustParticles.forEach(p => {
+    const sy = p.y - camY;
+    if(sy < -8 || sy > H+8) return;
+    ctx.save();
+    ctx.globalAlpha = p.life * 0.8;
+    ctx.fillStyle = p.col;
+    ctx.shadowColor = p.col;
+    ctx.shadowBlur = 6;
+    ctx.beginPath(); ctx.arc(p.x, sy, p.size * p.life, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  });
+}
+function drawHexShield(px, py, pw, ph, camY){
+  const cx = px + pw/2, cy = (py - camY) + ph/2;
+  const r = Math.max(pw, ph) * 0.85;
+  const pulse = 0.5 + 0.5*Math.sin(Date.now()*0.004);
+  ctx.save();
+  ctx.strokeStyle = `rgba(0,200,255,${0.25 + pulse*0.20})`;
+  ctx.lineWidth = 1.5;
+  ctx.shadowColor = '#00c8ff';
+  ctx.shadowBlur = 8 * pulse;
+  // Hexagon
+  ctx.beginPath();
+  for(let i=0; i<6; i++){
+    const angle = i * Math.PI/3 - Math.PI/6;
+    const hx = cx + Math.cos(angle)*r, hy = cy + Math.sin(angle)*r;
+    i===0 ? ctx.moveTo(hx,hy) : ctx.lineTo(hx,hy);
+  }
+  ctx.closePath(); ctx.stroke();
+  // Inner glow fill
+  ctx.fillStyle = `rgba(0,200,255,${0.02 + pulse*0.03})`;
+  ctx.fill();
+  ctx.restore();
+}
 function addPop(x,y,text,col){gs.popups.push({x,y,text,col,t:1});}
 function updatePops(ps){for(let i=ps.length-1;i>=0;i--){const p=ps[i];p.y-=1.1;p.t-=.022;if(p.t<=0)ps.splice(i,1);}}
 function updateHUD(){
@@ -469,6 +536,43 @@ function render(){
   g.addColorStop(0,lerpcol('#040118','#000004',prog));
   g.addColorStop(1,lerpcol('#020a30','#000008',prog));
   ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+
+  // Distant Earth (bottom-right of screen)
+  const earthX = W * 0.85, earthY = H * 0.75;
+  const earthR = 55;
+  ctx.save();
+  // Earth glow
+  const earthGlow = ctx.createRadialGradient(earthX, earthY, earthR*0.5, earthX, earthY, earthR*1.8);
+  earthGlow.addColorStop(0, 'rgba(30,100,200,0.0)');
+  earthGlow.addColorStop(0.6, 'rgba(20,80,180,0.12)');
+  earthGlow.addColorStop(1, 'rgba(10,40,100,0.0)');
+  ctx.fillStyle = earthGlow;
+  ctx.beginPath(); ctx.arc(earthX, earthY, earthR*1.8, 0, Math.PI*2); ctx.fill();
+  // Earth base
+  const earthGrad = ctx.createRadialGradient(earthX-earthR*0.3, earthY-earthR*0.3, 0, earthX, earthY, earthR);
+  earthGrad.addColorStop(0, '#4a90d9');
+  earthGrad.addColorStop(0.4, '#2a6cb5');
+  earthGrad.addColorStop(0.7, '#1a4a8a');
+  earthGrad.addColorStop(1, '#0d2650');
+  ctx.fillStyle = earthGrad;
+  ctx.beginPath(); ctx.arc(earthX, earthY, earthR, 0, Math.PI*2); ctx.fill();
+  // Cloud patches
+  ctx.fillStyle = 'rgba(255,255,255,0.18)';
+  ctx.beginPath(); ctx.ellipse(earthX-15, earthY-20, 20, 10, 0.3, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(earthX+10, earthY+15, 15, 8, -0.4, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(earthX-5, earthY+25, 18, 7, 0.1, 0, Math.PI*2); ctx.fill();
+  // Land mass
+  ctx.fillStyle = 'rgba(60,140,60,0.50)';
+  ctx.beginPath(); ctx.ellipse(earthX+8, earthY-10, 12, 18, 0.5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(earthX-20, earthY+10, 10, 14, -0.3, 0, Math.PI*2); ctx.fill();
+  // Atmospheric rim
+  const rimGrad = ctx.createRadialGradient(earthX, earthY, earthR*0.92, earthX, earthY, earthR*1.12);
+  rimGrad.addColorStop(0, 'rgba(80,160,255,0.0)');
+  rimGrad.addColorStop(0.5, 'rgba(80,160,255,0.30)');
+  rimGrad.addColorStop(1, 'rgba(80,160,255,0.0)');
+  ctx.fillStyle = rimGrad;
+  ctx.beginPath(); ctx.arc(earthX, earthY, earthR*1.12, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
 
   // Stars (parallax)
   for(const s of STARS){
@@ -614,6 +718,14 @@ function render(){
     ctx.font='11px monospace';ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText(pu.type==='jet'?'⚡':'🛡',pu.x,sy);
     ctx.restore();
+  }
+
+  // Exhaust (behind player)
+  drawExhaust(camY);
+
+  // Hex shield — shown when shield power-up active OR briefly after collecting a coin
+  if(p.alive && (p.shielded || shieldPulseT>0)){
+    drawHexShield(p.x, p.y, p.w, p.h, camY);
   }
 
   // Player

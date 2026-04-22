@@ -85,6 +85,20 @@ const ctx=canvas.getContext('2d');
 let gs=null;
 let hiScore=Auth.getScore('stack_hs');
 
+// Background tx network
+const txNodes=Array.from({length:8},()=>({
+  x:Math.random()*400,y:Math.random()*600,
+  vx:(Math.random()-0.5)*0.4,vy:(Math.random()-0.5)*0.4
+}));
+
+// Lightning effect
+let lightningFlash=0, lightningPoints=[];
+function generateLightning(x1,y1,x2,y2){
+  const pts=[{x:x1,y:y1}];
+  for(let i=1;i<6;i++){const t=i/6;pts.push({x:x1+(x2-x1)*t+(Math.random()-0.5)*28,y:y1+(y2-y1)*t+(Math.random()-0.5)*12});}
+  pts.push({x:x2,y:y2}); return pts;
+}
+
 // ── COLOUR PALETTE (cycles through Bitcoin-ish hues) ──
 const PALETTES=[
   {face:'#F7931A',top:'#FFD700',shadow:'#8B4513'},
@@ -183,6 +197,12 @@ function drop(){
     snd('perfect');
     addPop(W/2, gs.swingY-8, gs.combo>=2?`PERFECT ×${gs.combo} +${100+bonus}`:'PERFECT! +100', '#FFD700');
     spawnParticles(W/2, gs.swingY+BLOCK_H/2, '#FFD700', 12);
+    // Lightning on combo
+    if(gs.combo>=2){
+      const cam=gs.camY||0;
+      lightningFlash=18;
+      lightningPoints=generateLightning(top.x+top.w/2,(top.y-cam)-BLOCK_H,top.x+top.w/2,top.y-cam);
+    }
     // Keep same width
     gs.blocks.push({x:top.x,y:gs.swingY,w:top.w,h:BLOCK_H,pal:sw.pal,fixed:true});
     gs.swing.w=top.w;
@@ -298,6 +318,17 @@ function render(){
   bg.addColorStop(1,lerpCol('#060610','#050115',prog));
   ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
 
+  // Background transaction network
+  txNodes.forEach(n=>{n.x+=n.vx;n.y+=n.vy;if(n.x<0||n.x>W)n.vx*=-1;if(n.y<0||n.y>H)n.vy*=-1;});
+  for(let i=0;i<txNodes.length;i++){
+    for(let j=i+1;j<txNodes.length;j++){
+      const dx=txNodes[i].x-txNodes[j].x, dy=txNodes[i].y-txNodes[j].y;
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist<200){ctx.save();ctx.strokeStyle=`rgba(247,147,26,${0.04*(1-dist/200)})`;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(txNodes[i].x,txNodes[i].y);ctx.lineTo(txNodes[j].x,txNodes[j].y);ctx.stroke();ctx.restore();}
+    }
+  }
+  txNodes.forEach(n=>{ctx.fillStyle='rgba(247,147,26,0.08)';ctx.beginPath();ctx.arc(n.x,n.y,2,0,Math.PI*2);ctx.fill();});
+
   if(!gs){drawIntro();return;}
 
   const cam=gs.camY||0;
@@ -334,6 +365,18 @@ function render(){
     drawBlock(fb.x,sy,fb.w,BLOCK_H,pal(fb.pal),false);
   }
 
+  // Lightning combo effect
+  if(lightningFlash>0){
+    lightningFlash--;
+    ctx.save();
+    ctx.strokeStyle=`rgba(255,220,50,${lightningFlash/18})`;
+    ctx.lineWidth=2; ctx.shadowColor='#FFD700'; ctx.shadowBlur=14;
+    ctx.beginPath();
+    lightningPoints.forEach((pt,i)=>{i===0?ctx.moveTo(pt.x,pt.y+cam):ctx.lineTo(pt.x,pt.y+cam);});
+    ctx.stroke();
+    ctx.restore();
+  }
+
   // Particles
   for(const p of gs.particles){
     const sy=p.y-cam;
@@ -368,29 +411,46 @@ function render(){
 function drawBlock(x,y,w,h,p,isTop,isSwinging){
   if(w<=0)return;
   ctx.save();
-  if(isTop){ctx.shadowColor=p.face;ctx.shadowBlur=18;}
-  else if(isSwinging){ctx.shadowColor=p.face;ctx.shadowBlur=10;}
+  if(isTop){ctx.shadowColor=p.face;ctx.shadowBlur=20;}
+  else if(isSwinging){ctx.shadowColor=p.face;ctx.shadowBlur=12;}
 
-  // Top face (lighter)
-  ctx.fillStyle=p.top;
-  ctx.fillRect(Math.floor(x),Math.floor(y),Math.ceil(w),4);
+  const bev=5, fx=Math.floor(x), fy=Math.floor(y), fw=Math.ceil(w), fh=Math.ceil(h);
 
   // Main face
   ctx.fillStyle=p.face;
-  ctx.fillRect(Math.floor(x),Math.floor(y+4),Math.ceil(w),Math.ceil(h-4));
+  ctx.fillRect(fx+bev, fy+bev, fw-bev, fh-bev);
 
-  // ₿ label if wide enough
+  // Top bevel (brightest)
+  ctx.fillStyle=p.top;
+  ctx.beginPath();
+  ctx.moveTo(fx,fy); ctx.lineTo(fx+fw,fy);
+  ctx.lineTo(fx+fw-bev,fy+bev); ctx.lineTo(fx+bev,fy+bev);
+  ctx.closePath(); ctx.fill();
+
+  // Left bevel (medium bright)
+  ctx.fillStyle=p.top;
+  ctx.globalAlpha=0.6;
+  ctx.beginPath();
+  ctx.moveTo(fx,fy); ctx.lineTo(fx+bev,fy+bev);
+  ctx.lineTo(fx+bev,fy+fh); ctx.lineTo(fx,fy+fh);
+  ctx.closePath(); ctx.fill();
+  ctx.globalAlpha=1;
+
+  // Bottom-right shadow bevel
+  ctx.fillStyle=p.shadow;
+  ctx.beginPath();
+  ctx.moveTo(fx+fw,fy); ctx.lineTo(fx+fw,fy+fh); ctx.lineTo(fx,fy+fh);
+  ctx.lineTo(fx+bev,fy+fh-bev); ctx.lineTo(fx+fw-bev,fy+fh-bev); ctx.lineTo(fx+fw-bev,fy+bev);
+  ctx.closePath(); ctx.fill();
+
+  // ₿ label
   if(w>36){
     ctx.shadowBlur=0;
-    ctx.fillStyle='rgba(0,0,0,0.45)';
+    ctx.fillStyle='rgba(0,0,0,0.35)';
     ctx.font=`bold ${Math.min(14,Math.floor(w/4))}px monospace`;
     ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText('₿',Math.floor(x+w/2),Math.floor(y+h/2+1));
+    ctx.fillText('₿',fx+fw/2,fy+fh/2+1);
   }
-
-  // Side shadow
-  ctx.fillStyle=p.shadow;
-  ctx.fillRect(Math.floor(x),Math.floor(y+h-3),Math.ceil(w),3);
 
   ctx.restore();
 }

@@ -297,6 +297,7 @@ const canvas=document.getElementById('g');
 const ctx=canvas.getContext('2d');
 let gs={};
 let diff=2;
+let bgScrolls=[0,0,0]; // parallax layer offsets
 let hiScore=Auth.getScore('sato_hs');
 document.getElementById('menuHi').textContent='BEST: '+hiScore.toLocaleString();
 document.getElementById('hHi').textContent=hiScore.toLocaleString();
@@ -438,6 +439,13 @@ function spawnParticles(x,y,col,n){
 function update(){
   if(!gs||!gs.p)return;
   const p=gs.p,{level,enemies,coins,particles}=gs;
+
+  // Update parallax scrolls while the game scene is active
+  if(gs.phase==='play'||gs.phase==='win'||gs.phase==='winwait'||gs.phase==='dead'){
+    bgScrolls[0]+=0.2;
+    bgScrolls[1]+=0.5;
+    bgScrolls[2]+=1.0;
+  }
 
   if(gs.phase==='dead'){
     p.deadT=(p.deadT||0)+1;
@@ -606,16 +614,48 @@ function updateHUD(){
 
 // ── RENDER ──
 function drawBackground(lv){
-  const g=ctx.createLinearGradient(0,0,0,H);
-  g.addColorStop(0,lv.bgTop);g.addColorStop(1,lv.bgBot);
-  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-  // stars
+  // Sky gradient
+  const sky=ctx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,'#0a0518');
+  sky.addColorStop(0.5,'#0d0e2a');
+  sky.addColorStop(1,'#060610');
+  ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+
+  // Stars (parallax with slowest layer)
   ctx.fillStyle='rgba(255,255,255,0.4)';
   const seed=gs.lvlIdx*1234;
+  const starShift=Math.floor(bgScrolls[0]*0.15);
   for(let i=0;i<60;i++){
-    const sx=((seed*i*137+i*91)%1000)/1000*W;
+    const sx=(((seed*i*137+i*91)%1000)/1000*W - starShift)%W;
     const sy=((seed*i*73+i*53)%1000)/1000*H*0.75;
-    ctx.fillRect(Math.floor(sx),Math.floor(sy),1,1);
+    ctx.fillRect(Math.floor((sx+W)%W),Math.floor(sy),1,1);
+  }
+
+  // Far mountains (slow, dark purple)
+  ctx.fillStyle='rgba(30,15,50,0.8)';
+  drawPixelMountains(bgScrolls[0]*0.3,H,W,80,40,8,5);
+
+  // Mid mountains (medium speed, dark blue)
+  ctx.fillStyle='rgba(15,20,55,0.9)';
+  drawPixelMountains(bgScrolls[1]*0.6,H,W,65,30,6,4);
+
+  // Near hills (fast, very dark)
+  ctx.fillStyle='rgba(8,8,20,0.95)';
+  drawPixelMountains(bgScrolls[2],H,W,45,20,4,3);
+
+  // Ground platform line
+  ctx.fillStyle='#1a1a3a';
+  ctx.fillRect(0,H-32,W,32);
+  ctx.fillStyle='rgba(247,147,26,0.3)';
+  ctx.fillRect(0,H-33,W,2);
+}
+
+function drawPixelMountains(scroll,H,W,baseHeight,peakVar,stepW,pixH){
+  const offset=scroll%(stepW*2);
+  for(let x=-stepW*2+(offset%(stepW*2));x<W+stepW*2;x+=stepW){
+    const seed=Math.floor((x+scroll)/stepW);
+    const h=baseHeight+Math.sin(seed*1.7+seed*seed*0.01)*peakVar;
+    ctx.fillRect(x,H-32-h,stepW-1,h);
   }
 }
 
@@ -660,72 +700,127 @@ function drawCoin(c,cx){
   ctx.restore();
 }
 
+// Map enemy type string -> visual category index (0=virus,1=robot,2=ghost)
+const EVIS={eth:1,doge:0,xrp:1,pepe:0,sol:2};
 function drawEnemy(e,cx){
   if(!e.alive)return;
   const x=Math.floor(e.x-cx),y=Math.floor(e.y);
   if(x+e.w<0||x>W)return;
   const col=ECOL[e.type]||'#ff00ff';
   const nm=ENAMES[e.type]||'???';
+  const frame=Math.floor(Date.now()/200)%2;
   ctx.save();
-  ctx.shadowColor=col;ctx.shadowBlur=8;
-  // body
-  ctx.fillStyle=col;
-  ctx.fillRect(x,y+4,e.w,e.h-4);
-  // head
-  ctx.fillStyle=col;
-  ctx.fillRect(x+2,y,e.w-4,8);
-  // eyes
-  ctx.fillStyle='#fff';
-  ctx.fillRect(x+3,y+2,3,3);
-  ctx.fillRect(x+e.w-6,y+2,3,3);
-  ctx.fillStyle='#000';
-  ctx.fillRect(x+(e.dir>0?4:3),y+3,2,2);
-  ctx.fillRect(x+e.w+(e.dir>0?-5:-6),y+3,2,2);
-  // label
+  ctx.imageSmoothingEnabled=false;
+
+  const type=EVIS[e.type]!==undefined?EVIS[e.type]:0;
+  const ex={x:x,y:y,w:e.w,h:e.h};
+  const cxp=ex.x+ex.w/2,cyp=ex.y+ex.h/2;
+
+  switch(type%3){
+    case 0: { // Virus enemy - spiked circle
+      ctx.shadowColor=col;ctx.shadowBlur=6;
+      ctx.fillStyle=col;
+      ctx.beginPath();ctx.arc(cxp,cyp,ex.w/2-2,0,Math.PI*2);ctx.fill();
+      // Spikes
+      for(let i=0;i<6;i++){
+        const a=i*Math.PI/3+(frame===0?0:0.26);
+        ctx.beginPath();
+        ctx.moveTo(cxp+Math.cos(a)*(ex.w/2-2),cyp+Math.sin(a)*(ex.h/2-2));
+        ctx.lineTo(cxp+Math.cos(a)*(ex.w/2+3),cyp+Math.sin(a)*(ex.h/2+3));
+        ctx.strokeStyle=col;ctx.lineWidth=2;ctx.stroke();
+      }
+      ctx.shadowBlur=0;
+      ctx.fillStyle='rgba(0,0,0,0.5)';ctx.font=`bold ${Math.floor(ex.w*0.5)}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('✕',cxp,cyp+1);
+      break;
+    }
+    case 1: { // Robot enemy - square with blinking eye
+      ctx.shadowColor=col;ctx.shadowBlur=6;
+      ctx.fillStyle=col;
+      ctx.fillRect(ex.x+1,ex.y+1,ex.w-2,ex.h-2);
+      // Eye
+      ctx.fillStyle='#fff';
+      ctx.fillRect(cxp-4,cyp-4,8,6);
+      ctx.fillStyle='rgba(0,0,0,0.8)';
+      const eyeX=frame===0?cxp-2:cxp+1;
+      ctx.fillRect(eyeX,cyp-3,3,4);
+      // Antenna
+      const antH=frame===0?4:5;
+      ctx.fillStyle=col;
+      ctx.fillRect(cxp-1,ex.y-antH,2,antH);
+      ctx.fillRect(cxp-3,ex.y-antH,6,2);
+      break;
+    }
+    case 2: { // Ghost enemy - wavy bottom with symbol
+      ctx.shadowColor=col;ctx.shadowBlur=6;
+      ctx.fillStyle=col;
+      ctx.beginPath();
+      ctx.arc(cxp,cyp-2,ex.w/2-1,Math.PI,0);
+      ctx.lineTo(ex.x+ex.w-1,ex.y+ex.h);
+      const waveAmt=frame===0?2:-2;
+      ctx.quadraticCurveTo(cxp+ex.w/4,ex.y+ex.h+waveAmt,cxp,ex.y+ex.h);
+      ctx.quadraticCurveTo(cxp-ex.w/4,ex.y+ex.h-waveAmt,ex.x+1,ex.y+ex.h);
+      ctx.closePath();ctx.fill();
+      ctx.shadowBlur=0;
+      ctx.fillStyle='rgba(255,255,255,0.8)';ctx.font=`bold ${Math.floor(ex.w*0.45)}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('◎',cxp,cyp);
+      break;
+    }
+  }
+  // small label below (keeps the meme-coin identity readable)
   ctx.shadowBlur=0;
-  ctx.fillStyle='#fff';ctx.font='bold 5px monospace';ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillText(nm,x+e.w/2,y+e.h/2+2);
+  ctx.fillStyle='rgba(255,255,255,0.85)';ctx.font='bold 5px monospace';ctx.textAlign='center';ctx.textBaseline='top';
+  ctx.fillText(nm,cxp,ex.y+ex.h+1);
   ctx.restore();
 }
 
 function drawPlayer(p,cx){
   const x=Math.floor(p.x-cx),y=Math.floor(p.y);
-  const f=p.facing;
+  const running=p.alive&&p.grounded&&Math.abs(p.vx||0)>0.2;
+  const runFrame=running?Math.floor(Date.now()/120)%4:0;
+  const px=x,py=y; // world->screen top-left
+  const cxp=px+p.w/2,cyp=py+p.h/2;
+
   ctx.save();
+  ctx.imageSmoothingEnabled=false;
+
   if(!p.alive){
     ctx.globalAlpha=0.7;
-    ctx.translate(x+p.w/2,y+p.h/2);
+    ctx.translate(cxp,cyp);
     ctx.rotate(Math.PI);
-    ctx.translate(-p.w/2,-p.h/2);
-  } else {
-    ctx.translate(x,y);
+    ctx.translate(-cxp,-cyp);
   }
-  // body - orange
+
+  ctx.shadowColor='#F7931A';ctx.shadowBlur=8;
+
+  // Body (orange)
   ctx.fillStyle='#F7931A';
-  ctx.fillRect(0,p.h*0.35,p.w,p.h*0.65-4); // torso
-  // legs with step animation
-  const legOff=p.grounded?Math.sin(p.step*0.3)*2:0;
-  ctx.fillStyle='#c26a00';
-  ctx.fillRect(1,p.h-6+legOff,4,6);
-  ctx.fillRect(p.w-5,p.h-6-legOff,4,6);
-  // head
-  ctx.fillStyle='#F7931A';
-  ctx.fillRect(2,0,p.w-4,p.h*0.4);
-  // bitcoin cap
+  ctx.fillRect(px+2,py+2,p.w-4,p.h-4);
+
+  // Head
   ctx.fillStyle='#FFD700';
-  ctx.fillRect(1,-3,p.w-2,5);
-  ctx.fillStyle='#F7931A';
-  ctx.fillRect(f>0?p.w-3:-3,p.h*0.05,4,3); // cap brim
-  // face
-  ctx.fillStyle='#fff';
-  const ex=f>0?p.w-7:3;
-  ctx.fillRect(ex,p.h*0.1,4,4);
-  ctx.fillStyle='#000';
-  ctx.fillRect(ex+(f>0?1:1),p.h*0.1+1,2,2);
-  // ₿ on body
-  ctx.fillStyle='rgba(255,215,0,0.9)';ctx.font='bold 7px monospace';
+  ctx.beginPath();ctx.arc(cxp,py+4,5,0,Math.PI*2);ctx.fill();
+
+  // ₿ on torso
+  ctx.shadowBlur=0;
+  ctx.fillStyle='rgba(0,0,0,0.4)';
+  ctx.font=`bold ${Math.floor(p.w*0.5)}px Arial`;
   ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillText('₿',p.w/2,p.h*0.62);
+  ctx.fillText('₿',cxp,cyp+2);
+
+  // Running legs (4-frame animation via sin swing)
+  ctx.strokeStyle='#E65100';ctx.lineWidth=2;
+  const legSwing=running?Math.sin(runFrame*Math.PI/2):0;
+  const foot1Y=py+p.h+legSwing*3;
+  const foot2Y=py+p.h-legSwing*3;
+  ctx.beginPath();ctx.moveTo(cxp-2,py+p.h-4);ctx.lineTo(cxp-4,foot1Y);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cxp+2,py+p.h-4);ctx.lineTo(cxp+4,foot2Y);ctx.stroke();
+
+  // Tiny facing eye so direction reads clearly
+  const f=p.facing||1;
+  ctx.fillStyle='#1a0800';
+  ctx.fillRect(cxp+(f>0?1:-3),py+3,2,2);
+
   ctx.restore();
 }
 
