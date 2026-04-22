@@ -29,6 +29,18 @@ body{font-family:'Rajdhani',sans-serif;background:var(--bg);min-height:100vh;col
 .board-wrap{border-radius:12px;overflow:hidden;box-shadow:0 0 0 2px var(--border),0 0 40px var(--btc-glow);}
 #board{display:block;background:#060610;}
 
+/* responsive canvas wrapper */
+#board-wrap, .board-wrap {
+  max-width: min(380px, 100vw);
+  margin: 0 auto;
+  width: 100%;
+}
+#board {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
 /* INFO PANEL */
 .info{display:flex;flex-direction:column;gap:8px;width:130px;}
 .icard{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px 10px;backdrop-filter:blur(14px);}

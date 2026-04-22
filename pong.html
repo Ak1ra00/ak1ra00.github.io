@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Bitcoin Pong | ₿ Arcade</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -115,6 +115,9 @@ body::after {
     0 0 0 2px var(--btc),
     0 0 30px var(--btc-glow),
     0 0 60px rgba(247,147,26,0.2);
+  max-width: min(800px, 100vw);
+  width: 100%;
+  margin: 0 auto;
 }
 
 #gameCanvas {
@@ -122,6 +125,8 @@ body::after {
   border-radius: 6px;
   background: var(--bg);
   cursor: none;
+  width: 100%;
+  height: auto;
 }
 
 /* OVERLAY BASE */
@@ -304,10 +309,6 @@ body::after {
 }
 
 @media (max-width: 840px) {
-  #gameCanvas {
-    width: 100%;
-    height: auto;
-  }
   .mobile-controls { display: flex; }
 }
 </style>
@@ -927,7 +928,7 @@ body::after {
 
   canvas.addEventListener('mousemove', e => {
     const rect = canvas.getBoundingClientRect();
-    const scaleY = H / rect.height;
+    const scaleY = canvas.height / rect.height;
     mouseY = (e.clientY - rect.top) * scaleY;
     touchY = null;
   });
@@ -943,7 +944,7 @@ body::after {
   canvas.addEventListener('touchmove', e => {
     e.preventDefault();
     const rect = canvas.getBoundingClientRect();
-    const scaleY = H / rect.height;
+    const scaleY = canvas.height / rect.height;
     touchY = (e.touches[0].clientY - rect.top) * scaleY;
   }, { passive: false });
 
@@ -951,7 +952,7 @@ body::after {
     e.preventDefault();
     if (state === 'intro') { startGame(); return; }
     const rect = canvas.getBoundingClientRect();
-    const scaleY = H / rect.height;
+    const scaleY = canvas.height / rect.height;
     touchY = (e.touches[0].clientY - rect.top) * scaleY;
   }, { passive: false });
 
