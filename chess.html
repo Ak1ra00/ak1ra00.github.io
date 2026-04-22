@@ -277,15 +277,21 @@ function drawPiece(ctx,type,x,y,sq,fill,shade){
       nb();R(-13,-38,13,-33);nf();
       nb();R(-13,-47,-6,-38);nf();nb();R(-3,-47,3,-38);nf();nb();R(6,-47,13,-38);nf();
     }else if(type==='N'){
+      // neck + head body facing right
       nb();
-      ctx.moveTo(-s*9,-s*7);ctx.lineTo(s*7,-s*7);
-      ctx.lineTo(s*10,-s*15);ctx.lineTo(s*16,-s*17);ctx.lineTo(s*18,-s*23);
-      ctx.lineTo(s*10,-s*23);
-      ctx.bezierCurveTo(s*10,-s*30,s*6,-s*36,s*2,-s*42);
-      ctx.lineTo(-s*2,-s*44);ctx.lineTo(-s*10,-s*40);
-      ctx.bezierCurveTo(-s*12,-s*28,-s*12,-s*16,-s*9,-s*7);
+      ctx.moveTo(-s*8,-s*7);
+      ctx.bezierCurveTo(-s*12,-s*15,-s*13,-s*25,-s*10,-s*35);
+      ctx.bezierCurveTo(-s*8,-s*42,-s*4,-s*46,s*0,-s*47);
+      ctx.bezierCurveTo(s*3,-s*47,s*7,-s*45,s*9,-s*42);
+      ctx.bezierCurveTo(s*12,-s*40,s*13,-s*36,s*12,-s*32);
+      ctx.lineTo(s*16,-s*26);
+      ctx.lineTo(s*18,-s*22);
+      ctx.lineTo(s*16,-s*18);
+      ctx.lineTo(s*12,-s*16);
+      ctx.bezierCurveTo(s*10,-s*13,s*8,-s*10,s*8,-s*7);
       nz();nf();
-      nb();ctx.moveTo(s*1,-s*42);ctx.lineTo(s*5,-s*50);ctx.lineTo(s*9,-s*42);nz();nf();
+      // ear
+      nb();ctx.moveTo(s*6,-s*43);ctx.lineTo(s*8,-s*53);ctx.lineTo(s*12,-s*44);nz();nf();
     }else if(type==='B'){
       nb();
       ctx.moveTo(-s*11,-s*7);
@@ -328,10 +334,18 @@ function drawPiece(ctx,type,x,y,sq,fill,shade){
   pass(0,0,fill);
   if(type==='N'){
     ctx.save();ctx.translate(pcx,pcy);
-    ctx.fillStyle='rgba(0,0,0,0.55)';
-    ctx.beginPath();ctx.arc(s*11,-s*21,s*2,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='rgba(0,0,0,0.4)';
-    ctx.beginPath();ctx.arc(s*17,-s*24,s*1.5,0,Math.PI*2);ctx.fill();
+    // eye
+    ctx.fillStyle='rgba(0,0,0,0.65)';
+    ctx.beginPath();ctx.arc(s*13,-s*29,s*2.5,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.30)';
+    ctx.beginPath();ctx.arc(s*12,-s*30,s*1,0,Math.PI*2);ctx.fill();
+    // nostril
+    ctx.fillStyle='rgba(0,0,0,0.45)';
+    ctx.beginPath();ctx.arc(s*17,-s*21,s*1.5,0,Math.PI*2);ctx.fill();
+    // mane texture lines on the back of the neck
+    ctx.strokeStyle='rgba(0,0,0,0.18)';ctx.lineWidth=s*1.5;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(-s*8,-s*18);ctx.bezierCurveTo(-s*11,-s*24,-s*12,-s*29,-s*10,-s*34);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(-s*6,-s*30);ctx.bezierCurveTo(-s*10,-s*36,-s*9,-s*41,-s*6,-s*45);ctx.stroke();
     ctx.restore();
   }
 }
