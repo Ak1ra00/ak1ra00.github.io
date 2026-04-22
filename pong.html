@@ -522,15 +522,25 @@ body::after {
       ctx.fillRect(0, 0, W, H);
     }
 
-    // Center dashed line
-    ctx.setLineDash([12, 10]);
-    ctx.strokeStyle = 'rgba(247,147,26,0.15)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(W / 2, 0);
-    ctx.lineTo(W / 2, H);
-    ctx.stroke();
-    ctx.setLineDash([]);
+    // Center energy field
+    const fieldX = W/2;
+    ctx.save();
+    // Pulsing center line segments
+    const pulse = 0.5 + 0.5*Math.sin(Date.now()*0.003);
+    for(let y=0; y<H; y+=20) {
+      const segAlpha = 0.08 + pulse*0.12;
+      const segW = 2 + pulse*2;
+      ctx.fillStyle = `rgba(247,147,26,${segAlpha})`;
+      ctx.fillRect(fieldX - segW/2, y+2, segW, 14);
+    }
+    // Glow line
+    const glow = ctx.createLinearGradient(fieldX-20, 0, fieldX+20, 0);
+    glow.addColorStop(0, 'transparent');
+    glow.addColorStop(0.5, `rgba(247,147,26,${0.06+pulse*0.06})`);
+    glow.addColorStop(1, 'transparent');
+    ctx.fillStyle = glow;
+    ctx.fillRect(fieldX-20, 0, 40, H);
+    ctx.restore();
   }
 
   function drawScore() {
@@ -542,9 +552,15 @@ body::after {
 
     ctx.font = '700 28px Orbitron, monospace';
     ctx.fillStyle = C_GOLD;
+    ctx.shadowColor = C_GOLD;
+    ctx.shadowBlur = 24;
     ctx.fillText(playerScore, W/2 - 100, 60);
+    ctx.shadowBlur = 0;
     ctx.fillStyle = C_ETH;
+    ctx.shadowColor = C_ETH;
+    ctx.shadowBlur = 24;
     ctx.fillText(aiScore, W/2 + 100, 60);
+    ctx.shadowBlur = 0;
 
     // Label
     ctx.font = '700 13px Orbitron, monospace';
@@ -606,6 +622,22 @@ body::after {
     }
     ctx.globalAlpha = 1;
 
+    // Comet tail with additive composite
+    if (trail && trail.length > 1) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      trail.forEach((pos, i) => {
+        const t = i / trail.length;
+        const r = BALL_R * t * 0.9;
+        const alpha = t * 0.4;
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, Math.max(1, r), 0, Math.PI*2);
+        ctx.fillStyle = `rgba(247,147,26,${alpha})`;
+        ctx.fill();
+      });
+      ctx.restore();
+    }
+
     ctx.save();
     ctx.translate(ball.x, ball.y);
     ctx.rotate(ball.spin);
@@ -638,6 +670,21 @@ body::after {
     ctx.fillText('₿', 0, 1);
 
     ctx.restore();
+
+    // Specular rim highlight at top-left
+    ctx.save();
+    const rimGrad = ctx.createRadialGradient(
+      ball.x - BALL_R*0.3, ball.y - BALL_R*0.3, 0,
+      ball.x, ball.y, BALL_R
+    );
+    rimGrad.addColorStop(0, 'rgba(255,255,220,0.45)');
+    rimGrad.addColorStop(0.5, 'rgba(255,200,100,0.15)');
+    rimGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = rimGrad;
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
   }
 
   function drawRallyBadge() {
@@ -663,7 +710,7 @@ body::after {
   function moveBall() {
     // Trail
     trail.push({ x: ball.x, y: ball.y });
-    if (trail.length > 5) trail.shift();
+    if (trail.length > 10) trail.shift();
 
     ball.x += ball.vx;
     ball.y += ball.vy;

@@ -736,13 +736,19 @@ const G={
         ctx.save();ctx.translate(skX,skY);
         ctx.fillStyle='#060610';ctx.fillRect(-12,-12,gc.width+24,gc.height+24);
 
-        // Walls
+        // Walls — neon tube style
         this.walls.forEach(w=>{
-            ctx.fillStyle='#0a1228';
-            ctx.fillRect(w.x*CELL+1,w.y*CELL+1,CELL-2,CELL-2);
-            ctx.strokeStyle='rgba(40,80,180,.18)';
-            ctx.lineWidth=1;
-            ctx.strokeRect(w.x*CELL+1,w.y*CELL+1,CELL-2,CELL-2);
+            const wx=w.x*CELL+1,wy=w.y*CELL+1,ws=CELL-2;
+            ctx.fillStyle='#070e1f';
+            ctx.fillRect(wx,wy,ws,ws);
+            // Neon edge glow
+            ctx.save();
+            ctx.shadowColor='rgba(60,120,255,0.85)';
+            ctx.shadowBlur=6;
+            ctx.strokeStyle='rgba(60,120,255,0.55)';
+            ctx.lineWidth=1.5;
+            ctx.strokeRect(wx+0.5,wy+0.5,ws-1,ws-1);
+            ctx.restore();
         });
 
         // Ghost house glow
@@ -754,7 +760,7 @@ const G={
         ctx.strokeRect(16*CELL,12*CELL,8*CELL,7*CELL);
         ctx.restore();
 
-        // Power pellets
+        // Power pellets with additive bloom
         this.pellets.forEach(p=>{
             const cx=p.x*CELL+CELL/2, cy=p.y*CELL+CELL/2;
             const pulse=Math.sin(p.pulse||0);
@@ -765,6 +771,16 @@ const G={
             ctx.beginPath();ctx.arc(cx,cy,Math.max(0.5,r),0,Math.PI*2);ctx.fill();
             ctx.fillStyle='#ffffff';ctx.shadowBlur=4;
             ctx.beginPath();ctx.arc(cx,cy,Math.max(0.5,r*0.45),0,Math.PI*2);ctx.fill();
+            // Additive bloom halo
+            ctx.globalCompositeOperation='lighter';
+            ctx.globalAlpha=0.18+pulse*0.10;
+            ctx.shadowBlur=0;
+            const bloom=ctx.createRadialGradient(cx,cy,0,cx,cy,r*2.8);
+            bloom.addColorStop(0,'rgba(0,255,136,0.9)');
+            bloom.addColorStop(1,'rgba(0,255,136,0)');
+            ctx.fillStyle=bloom;
+            ctx.beginPath();ctx.arc(cx,cy,r*2.8,0,Math.PI*2);ctx.fill();
+            ctx.globalCompositeOperation='source-over';
             ctx.restore();
         });
 
@@ -856,14 +872,16 @@ const G={
         ctx.shadowColor=en.frightened?(flashOn?'#fff':'#0000ff'):(this.rage?'#ff3355':col);
         ctx.shadowBlur=en.frightened?14:(this.rage?20:12);
 
-        // Ghost body
+        // Ghost body with animated tentacles
+        const tw=Date.now()*0.004;
         ctx.beginPath();
         ctx.arc(cx,cy-2,r,Math.PI,0);
         ctx.lineTo(cx+r,cy+r);
         const ww=r*2/3;
         for(let i=0;i<3;i++){
             const bx=cx+r-ww*i;
-            ctx.quadraticCurveTo(bx-ww/2,cy+r+(i%2===0?6.5:-2),bx-ww,cy+r);
+            const tentWave=Math.sin(tw+i*1.4)*(i%2===0?5:-4);
+            ctx.quadraticCurveTo(bx-ww/2,cy+r+tentWave,bx-ww,cy+r);
         }
         ctx.closePath();
 

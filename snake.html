@@ -341,6 +341,14 @@ function loop(ts) {
   ctx.fillStyle = 'rgba(255,255,255,0.03)';
   for (let r = 0; r <= ROWS; r++) for (let c = 0; c <= COLS; c++) ctx.fillRect(c*CELL-1, r*CELL-1, 2, 2);
 
+  // Faint circuit traces
+  ctx.strokeStyle = 'rgba(247,147,26,0.04)';
+  ctx.lineWidth = 1;
+  for (let i = 2; i < 28; i += 5) {
+    ctx.beginPath(); ctx.moveTo(i*CELL, 0); ctx.lineTo(i*CELL, 560); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, i*CELL); ctx.lineTo(560, i*CELL); ctx.stroke();
+  }
+
   if (gameActive || !document.getElementById('gameOver').classList.contains('hidden')) {
     // Pellet
     if (pellet) {
@@ -391,22 +399,103 @@ function loop(ts) {
     }
 
     // Snake body
+    const CS = CELL;
     snake.forEach((seg, i) => {
       const isHead = i === 0;
       const t = 1 - i / snake.length;
-      const col = isHead ? '#FFD700' : `hsl(${30 + t*10},100%,${40 + t*20}%)`;
+      const segColor = isHead ? '#FFD700' : `hsl(${30 + t*10},100%,${40 + t*20}%)`;
       ctx.save();
-      if (isHead) { ctx.shadowColor = '#FFD700'; ctx.shadowBlur = 14; }
-      ctx.fillStyle = col;
-      const pad = isHead ? 1 : 2 + (1-t)*2;
-      ctx.beginPath();
-      ctx.roundRect(seg.x*CELL+pad, seg.y*CELL+pad, CELL-pad*2, CELL-pad*2, isHead ? 6 : 4);
-      ctx.fill();
+
       if (isHead) {
-        ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.font = `bold ${CELL*.55}px Arial`;
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText('₿', seg.x*CELL+CELL/2, seg.y*CELL+CELL/2+1);
+        // Head: gold base with glow, then eyes + tongue
+        ctx.shadowColor = '#FFD700'; ctx.shadowBlur = 14;
+        ctx.fillStyle = segColor;
+        const pad = 1;
+        ctx.beginPath();
+        ctx.roundRect(seg.x*CS+pad, seg.y*CS+pad, CS-pad*2, CS-pad*2, 6);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Direction-aware eyes
+        const hdir = snake.length > 1
+          ? { x: snake[0].x - snake[1].x, y: snake[0].y - snake[1].y }
+          : { x: dir.dx, y: dir.dy };
+
+        const hcx = snake[0].x * CS + CS/2;
+        const hcy = snake[0].y * CS + CS/2;
+
+        const eyeOffset = 4;
+        const eyeForward = 3;
+        const e1 = {
+          x: hcx + hdir.x*eyeForward - hdir.y*eyeOffset,
+          y: hcy + hdir.y*eyeForward + hdir.x*eyeOffset
+        };
+        const e2 = {
+          x: hcx + hdir.x*eyeForward + hdir.y*eyeOffset,
+          y: hcy + hdir.y*eyeForward - hdir.x*eyeOffset
+        };
+
+        // White sclera
+        ctx.fillStyle = '#fff';
+        ctx.beginPath(); ctx.arc(e1.x, e1.y, 3, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(e2.x, e2.y, 3, 0, Math.PI*2); ctx.fill();
+        // Black pupil
+        ctx.fillStyle = '#111';
+        ctx.beginPath(); ctx.arc(e1.x + hdir.x*0.5, e1.y + hdir.y*0.5, 1.5, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(e2.x + hdir.x*0.5, e2.y + hdir.y*0.5, 1.5, 0, Math.PI*2); ctx.fill();
+
+        // Flickering forked tongue
+        const tongueOut = (Date.now() % 800) < 400;
+        if (tongueOut) {
+          const tLen = 8, tFork = 4;
+          const tx = hcx + hdir.x * (CS/2 + 2);
+          const ty = hcy + hdir.y * (CS/2 + 2);
+          ctx.strokeStyle = '#ff3355'; ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(tx - hdir.x*tLen, ty - hdir.y*tLen);
+          ctx.lineTo(tx, ty);
+          ctx.stroke();
+          // Fork prong 1
+          ctx.beginPath();
+          ctx.moveTo(tx, ty);
+          ctx.lineTo(tx + hdir.x*tFork - hdir.y*2, ty + hdir.y*tFork + hdir.x*2);
+          ctx.stroke();
+          // Fork prong 2
+          ctx.beginPath();
+          ctx.moveTo(tx, ty);
+          ctx.lineTo(tx + hdir.x*tFork + hdir.y*2, ty + hdir.y*tFork - hdir.x*2);
+          ctx.stroke();
+        }
+      } else {
+        // Metallic beveled body segment
+        const pad = Math.min(4, 2 + Math.floor(i/6));
+        const bx = seg.x * CS + pad, by = seg.y * CS + pad;
+        const bw = CS - pad*2, bh = CS - pad*2;
+        const bev = 3;
+
+        // Base fill
+        ctx.fillStyle = segColor;
+        ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 4); ctx.fill();
+
+        // Top-left highlight bevel
+        ctx.fillStyle = 'rgba(255,255,255,0.28)';
+        ctx.beginPath();
+        ctx.moveTo(bx, by+bh); ctx.lineTo(bx, by); ctx.lineTo(bx+bw, by);
+        ctx.lineTo(bx+bw-bev, by+bev); ctx.lineTo(bx+bev, by+bev); ctx.lineTo(bx+bev, by+bh-bev);
+        ctx.closePath(); ctx.fill();
+
+        // Bottom-right shadow bevel
+        ctx.fillStyle = 'rgba(0,0,0,0.32)';
+        ctx.beginPath();
+        ctx.moveTo(bx+bw, by); ctx.lineTo(bx+bw, by+bh); ctx.lineTo(bx, by+bh);
+        ctx.lineTo(bx+bev, by+bh-bev); ctx.lineTo(bx+bw-bev, by+bh-bev); ctx.lineTo(bx+bw-bev, by+bev);
+        ctx.closePath(); ctx.fill();
+
+        // Inner dark border
+        ctx.strokeStyle = 'rgba(0,0,0,0.55)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.roundRect(bx+0.5, by+0.5, bw-1, bh-1, 3.5); ctx.stroke();
       }
+
       ctx.restore();
     });
 
