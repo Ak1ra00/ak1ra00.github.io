@@ -277,20 +277,21 @@ function drawPiece(ctx,type,x,y,sq,fill,shade){
       nb();R(-13,-38,13,-33);nf();
       nb();R(-13,-47,-6,-38);nf();nb();R(-3,-47,3,-38);nf();nb();R(6,-47,13,-38);nf();
     }else if(type==='N'){
-      // back of neck, crown of head, face, muzzle, chin, throat — single outline
+      // neck leans forward; head with prominent ear spike; defined snout
       nb();
-      ctx.moveTo(-s*8,-s*7);
-      ctx.bezierCurveTo(-s*11,-s*14,-s*12,-s*26,-s*10,-s*36);
-      ctx.bezierCurveTo(-s*8,-s*43,-s*2,-s*47,s*6,-s*47);
-      ctx.bezierCurveTo(s*10,-s*47,s*14,-s*44,s*13,-s*38);
-      ctx.bezierCurveTo(s*14,-s*34,s*16,-s*30,s*17,-s*26);
-      ctx.lineTo(s*19,-s*23);
-      ctx.lineTo(s*17,-s*19);
-      ctx.lineTo(s*12,-s*18);
-      ctx.bezierCurveTo(s*10,-s*14,s*8,-s*10,s*8,-s*7);
+      ctx.moveTo(-s*6,-s*7);
+      ctx.bezierCurveTo(-s*9,-s*13,-s*9,-s*23,-s*7,-s*33);
+      ctx.bezierCurveTo(-s*5,-s*40,-s*1,-s*46,s*5,-s*47);
+      ctx.lineTo(s*9,-s*45);
+      ctx.lineTo(s*12,-s*55);  // ear tip — tall spike
+      ctx.lineTo(s*15,-s*45);
+      ctx.lineTo(s*14,-s*41);
+      ctx.bezierCurveTo(s*15,-s*36,s*16,-s*30,s*17,-s*26);
+      ctx.lineTo(s*19,-s*22);  // nose tip extends far right
+      ctx.lineTo(s*17,-s*18);
+      ctx.lineTo(s*11,-s*17);
+      ctx.bezierCurveTo(s*9,-s*13,s*8,-s*10,s*8,-s*7);
       nz();nf();
-      // ear
-      nb();ctx.moveTo(s*4,-s*45);ctx.lineTo(s*6,-s*55);ctx.lineTo(s*10,-s*46);nz();nf();
     }else if(type==='B'){
       nb();
       ctx.moveTo(-s*11,-s*7);
@@ -333,18 +334,18 @@ function drawPiece(ctx,type,x,y,sq,fill,shade){
   pass(0,0,fill);
   if(type==='N'){
     ctx.save();ctx.translate(pcx,pcy);
-    // eye on face between forehead and nose bridge
+    // eye — on cheek between ear and nose bridge
     ctx.fillStyle='rgba(0,0,0,0.70)';
-    ctx.beginPath();ctx.arc(s*14,-s*36,s*2.5,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(s*15,-s*38,s*2.5,0,Math.PI*2);ctx.fill();
     ctx.fillStyle='rgba(255,255,255,0.35)';
-    ctx.beginPath();ctx.arc(s*13,-s*37,s*1,0,Math.PI*2);ctx.fill();
-    // nostril at muzzle tip
+    ctx.beginPath();ctx.arc(s*14,-s*39,s*1,0,Math.PI*2);ctx.fill();
+    // nostril at nose tip
     ctx.fillStyle='rgba(0,0,0,0.45)';
-    ctx.beginPath();ctx.arc(s*18,-s*22,s*1.5,0,Math.PI*2);ctx.fill();
-    // mane texture lines on back of neck
-    ctx.strokeStyle='rgba(0,0,0,0.18)';ctx.lineWidth=s*1.5;ctx.lineCap='round';
-    ctx.beginPath();ctx.moveTo(-s*8,-s*18);ctx.bezierCurveTo(-s*11,-s*24,-s*12,-s*30,-s*10,-s*36);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(-s*6,-s*30);ctx.bezierCurveTo(-s*9,-s*36,-s*8,-s*42,-s*4,-s*45);ctx.stroke();
+    ctx.beginPath();ctx.arc(s*18,-s*21,s*1.5,0,Math.PI*2);ctx.fill();
+    // mane lines on back of neck
+    ctx.strokeStyle='rgba(0,0,0,0.20)';ctx.lineWidth=s*1.5;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(-s*7,-s*16);ctx.bezierCurveTo(-s*9,-s*22,-s*9,-s*28,-s*7,-s*34);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(-s*5,-s*29);ctx.bezierCurveTo(-s*7,-s*35,-s*6,-s*42,-s*2,-s*46);ctx.stroke();
     ctx.restore();
   }
 }
