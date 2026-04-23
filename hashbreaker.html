@@ -203,6 +203,9 @@ function initGame(){
   activePowers=[];powerUps=[];particles=[];floats=[];
   paddle={x:W/2-45,y:638,w:90,h:14};
   paddleTarget=W/2;
+  document.getElementById('intro').classList.add('hidden');
+  document.getElementById('gameOver').classList.add('hidden');
+  document.getElementById('levelClear').classList.add('hidden');
   buildLevel(1);spawnBall();gameState='LAUNCH';
 }
 function spawnBall(){
