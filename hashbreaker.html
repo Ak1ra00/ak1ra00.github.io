@@ -511,14 +511,16 @@ function updateBall(ball,dtn){
   for(let i=blocks.length-1;i>=0;i--){
     const b=blocks[i];if(b.hp<=0)continue;
     if(ball.x+8<=b.x||ball.x-8>=b.x+b.w||ball.y+8<=b.y||ball.y-8>=b.y+b.h)continue;
-    if(b.hp===999){b.hitFlash=1;sndFed();break;}
-
     const fromL=ball.vx>0&&ball.x<b.x+b.w/2;
     const fromR=ball.vx<0&&ball.x>b.x+b.w/2;
     const fromT=ball.vy>0&&ball.y<b.y+b.h/2;
     const fromB=ball.vy<0&&ball.y>b.y+b.h/2;
     const ox=Math.min(Math.abs(ball.x-(fromL?b.x:b.x+b.w)),b.w);
     const oy=Math.min(Math.abs(ball.y-(fromT?b.y:b.y+b.h)),b.h);
+    if(b.hp===999){
+      if(ox<oy){ball.vx=-ball.vx;}else{ball.vy=-ball.vy;}
+      b.hitFlash=1;sndFed();break;
+    }
     if(!ball.ghost){
       if(ox<oy){ball.vx=-ball.vx;}else{ball.vy=-ball.vy;}
     }
