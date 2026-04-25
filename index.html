@@ -492,7 +492,7 @@
     <div class="mempool" aria-label="Live mempool mining strip">
         <div class="mp-label"><span class="mining-emoji">⛏</span>MEMPOOL</div>
         <div class="mp-blocks" id="mp-blocks"></div>
-        <div class="mp-tps" id="mp-tps">— TX/s</div>
+        <div class="mp-tps" id="mp-tps">— TX</div>
     </div>
 
     <div class="filter-bar" role="group" aria-label="Filter games">
@@ -738,48 +738,127 @@
   tick();
 })();
 
-/* ─── LIVE NETWORK TICKER + HERO ROTATE ─── */
+/* ─── HERO TYPEWRITER ─── */
+(function(){
+  const rotEl=document.getElementById('hero-rotate');
+  if(!rotEl)return;
+  const lines=['STACKING SATS','MINING BLOCKS','HODLING STRONG','DODGING SHITCOINS','DIAMOND HANDS','TO THE MOON','HASHING POWER'];
+  let li=0;
+  async function cycle(){
+    while(true){
+      const t=lines[li];
+      for(let c=1;c<=t.length;c++){rotEl.textContent=t.slice(0,c);await new Promise(r=>setTimeout(r,55));}
+      await new Promise(r=>setTimeout(r,1700));
+      for(let c=t.length;c>=0;c--){rotEl.textContent=t.slice(0,c);await new Promise(r=>setTimeout(r,28));}
+      await new Promise(r=>setTimeout(r,260));
+      li=(li+1)%lines.length;
+    }
+  }
+  cycle();
+})();
+
+/* ─── REAL-TIME BTC NETWORK + MEMPOOL (mempool.space API) ─── */
 (function(){
   const blockEl=document.getElementById('ns-block'),hashEl=document.getElementById('ns-hash'),
-        priceEl=document.getElementById('ns-price'),rotEl=document.getElementById('hero-rotate');
+        priceEl=document.getElementById('ns-price');
+  const mpWrap=document.getElementById('mp-blocks'),mpTpsEl=document.getElementById('mp-tps');
   if(!blockEl)return;
-  const epoch=Date.UTC(2026,3,25);
-  const minutesSince=Math.max(0,Math.floor((Date.now()-epoch)/60000));
-  let block=897431+Math.floor(minutesSince/10);
-  let hash=812.4+Math.sin(minutesSince/40)*8;
-  let price=104287+Math.round(Math.sin(minutesSince/120)*1800);
-  function fmt(){
-    blockEl.textContent=block.toLocaleString();
-    hashEl.textContent=hash.toFixed(1);
-    priceEl.textContent='$'+price.toLocaleString();
-  }
-  fmt();
-  function flash(el,cls){el.classList.add('flash');if(cls)el.classList.add(cls);
-    setTimeout(()=>{el.classList.remove('flash');if(cls)el.classList.remove(cls);},900);}
-  setInterval(()=>{
-    if(Math.random()<0.15){block++;blockEl.textContent=block.toLocaleString();flash(blockEl,'up');}
-    hash+=(Math.random()-.5)*1.6;hash=Math.max(782,Math.min(842,hash));
-    hashEl.textContent=hash.toFixed(1);
-    const dp=(Math.random()-.5)*180;price=Math.max(95000,Math.min(120000,Math.round(price+dp)));
-    priceEl.textContent='$'+price.toLocaleString();
-    if(Math.abs(dp)>40)flash(priceEl,dp>0?'up':'down');
-  },2200);
+  const API='https://mempool.space/api';
+  let lastBlock=0,lastPrice=0,booted=false;
 
-  if(rotEl){
-    const lines=['STACKING SATS','MINING BLOCKS','HODLING STRONG','DODGING SHITCOINS','DIAMOND HANDS','TO THE MOON','HASHING POWER'];
-    let li=0;
-    async function cycle(){
-      while(true){
-        const t=lines[li];
-        for(let c=1;c<=t.length;c++){rotEl.textContent=t.slice(0,c);await new Promise(r=>setTimeout(r,55));}
-        await new Promise(r=>setTimeout(r,1700));
-        for(let c=t.length;c>=0;c--){rotEl.textContent=t.slice(0,c);await new Promise(r=>setTimeout(r,28));}
-        await new Promise(r=>setTimeout(r,260));
-        li=(li+1)%lines.length;
+  function flash(el,cls){
+    if(!el)return;
+    el.classList.add('flash');if(cls)el.classList.add(cls);
+    setTimeout(()=>{el.classList.remove('flash');if(cls)el.classList.remove(cls);},900);
+  }
+  async function getJSON(path,asText){
+    try{
+      const r=await fetch(API+path,{cache:'no-store'});
+      if(!r.ok)return null;
+      return asText?r.text():r.json();
+    }catch(e){return null;}
+  }
+
+  async function refreshHeader(){
+    const [h,hr,p]=await Promise.all([
+      getJSON('/blocks/tip/height',true),
+      getJSON('/v1/mining/hashrate/3d'),
+      getJSON('/v1/prices')
+    ]);
+    if(h!=null){
+      const nb=parseInt(String(h).trim());
+      if(nb && nb!==lastBlock){
+        const isAdvance=lastBlock!==0 && nb>lastBlock;
+        lastBlock=nb;
+        blockEl.textContent=nb.toLocaleString();
+        if(isAdvance)flash(blockEl,'up');
       }
     }
-    cycle();
+    if(hr && typeof hr.currentHashrate==='number'){
+      hashEl.textContent=(hr.currentHashrate/1e18).toFixed(1);
+    }
+    if(p && typeof p.USD==='number'){
+      const np=p.USD;
+      const dp=lastPrice?np-lastPrice:0;
+      lastPrice=np;
+      priceEl.textContent='$'+Math.round(np).toLocaleString();
+      if(Math.abs(dp)>0.5)flash(priceEl,dp>0?'up':'down');
+    }
   }
+
+  function buildStrip(confirmed,pending){
+    if(!mpWrap||!Array.isArray(confirmed))return;
+    const newTop=confirmed[0]?.height||0;
+    const prevTop=parseInt(mpWrap.dataset.topHeight||'0');
+    const isNewBlock=prevTop && newTop>prevTop;
+    mpWrap.dataset.topHeight=String(newTop);
+
+    mpWrap.innerHTML='';
+    // Last 5 confirmed (oldest left → newest right at the boundary with pending)
+    const recent=confirmed.slice(0,5).reverse();
+    recent.forEach((b,i)=>{
+      const el=document.createElement('div');
+      el.className='mp-blk';
+      el.textContent=String(b.height).slice(-3);
+      el.title='Block '+b.height.toLocaleString()+' · '+(b.tx_count||0).toLocaleString()+' tx';
+      if(isNewBlock && b.height===newTop && i===recent.length-1){
+        el.classList.add('mining');
+        setTimeout(()=>el.classList.remove('mining'),1400);
+      }
+      mpWrap.appendChild(el);
+    });
+    // Next 3 pending mempool blocks
+    if(Array.isArray(pending)){
+      pending.slice(0,3).forEach(b=>{
+        const el=document.createElement('div');
+        el.className='mp-blk pending';
+        const tx=b.nTx||0;
+        el.textContent=tx>=1000?Math.floor(tx/1000)+'k':String(tx);
+        const fee=b.medianFee?Math.round(b.medianFee):0;
+        el.title='Pending: '+tx.toLocaleString()+' tx · ~'+fee+' sat/vB';
+        mpWrap.appendChild(el);
+      });
+    }
+  }
+
+  async function refreshMempool(){
+    const [blocks,pending,stats]=await Promise.all([
+      getJSON('/v1/blocks'),
+      getJSON('/v1/fees/mempool-blocks'),
+      getJSON('/mempool')
+    ]);
+    if(blocks)buildStrip(blocks,pending||[]);
+    if(stats && typeof stats.count==='number' && mpTpsEl){
+      mpTpsEl.textContent=stats.count.toLocaleString()+' TX';
+    }
+  }
+
+  async function refreshAll(){
+    await Promise.all([refreshHeader(),refreshMempool()]);
+    if(!booted){booted=true;}
+  }
+  refreshAll();
+  setInterval(refreshAll,30000);
 })();
 
 /* ─── BOOT SCREEN DISMISS ─── */
@@ -789,53 +868,6 @@
   if(sessionStorage.getItem('atlas_booted')){boot.classList.add('skip');return;}
   sessionStorage.setItem('atlas_booted','1');
   setTimeout(()=>{boot.style.display='none';},2200);
-})();
-
-/* ─── LIVE MEMPOOL MINING STRIP ─── */
-(function(){
-  const wrap=document.getElementById('mp-blocks'),tpsEl=document.getElementById('mp-tps');
-  if(!wrap)return;
-  function blkCount(){return Math.max(8,Math.min(20,Math.floor(window.innerWidth/72)));}
-  function build(){
-    const n=blkCount();wrap.innerHTML='';
-    for(let i=0;i<n;i++){
-      const b=document.createElement('div');b.className='mp-blk';
-      if(i>=n-3)b.classList.add('pending');
-      b.textContent=(897400+i).toString().slice(-3);
-      wrap.appendChild(b);
-    }
-  }
-  build();addEventListener('resize',build);
-  let counter=897000;
-  function mineNext(){
-    const blks=wrap.querySelectorAll('.mp-blk');
-    if(!blks.length)return;
-    const target=blks[blks.length-3];
-    if(target){
-      target.classList.add('mining');target.classList.remove('pending');
-      target.textContent=(++counter).toString().slice(-3);
-      setTimeout(()=>target.classList.remove('mining'),1400);
-    }
-    if(Math.random()<.45){
-      const first=blks[0];
-      first.style.transition='transform .5s,opacity .5s';
-      first.style.transform='translateX(-30px)';first.style.opacity='0';
-      setTimeout(()=>{
-        first.remove();
-        const nb=document.createElement('div');nb.className='mp-blk pending confirmed';
-        nb.textContent=(counter+5).toString().slice(-3);
-        wrap.appendChild(nb);
-        setTimeout(()=>nb.classList.remove('confirmed'),500);
-      },480);
-    }
-  }
-  setInterval(mineNext,1700);
-  let tps=4.2;
-  setInterval(()=>{
-    tps+=(Math.random()-.5)*.8;tps=Math.max(2.4,Math.min(7.8,tps));
-    tpsEl.textContent=tps.toFixed(1)+' TX/s';
-  },1300);
-  tpsEl.textContent=tps.toFixed(1)+' TX/s';
 })();
 
 /* ─── CARD CLICK PARTICLE BURST ─── */
