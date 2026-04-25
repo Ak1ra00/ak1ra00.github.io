@@ -1,0 +1,151 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Bitcoin Bubble Burst – Atlas Bitcoin Arcade</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <meta name="description" content="Bitcoin Bubble Burst: aim and fire BTC bubbles, match 3+, and liquidate shitcoin clusters before they crash your stack.">
+  <meta property="og:title" content="Bitcoin Bubble Burst – Atlas Bitcoin Arcade">
+  <meta property="og:description" content="A Bitcoin‑themed Puzzle Bobble remix: pop shitcoin bubbles with precise BTC shots and chase arcade high scores.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://soufianekh.space/bubbles.html">
+  <meta property="og:image" content="https://soufianekh.space/logo.svg">
+</head>
+<script src="auth.js"></script>
+<body>
+  <div class="scanlines"></div>
+
+  <nav style="position:relative;z-index:10;width:100%;max-width:900px;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(247,147,26,0.2);margin:0 auto 4px;" aria-label="Primary navigation">
+    <a href="index.html" style="font-family:'Orbitron',monospace;font-size:1rem;color:#F7931A;text-decoration:none;letter-spacing:.06em;text-shadow:0 0 12px rgba(247,147,26,.55);">₿ ATLAS ARCADE</a>
+    <div class="nav-links" style="display:flex;gap:12px;flex-wrap:wrap;">
+      <a href="pacman.html" style="color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Pac-Man</a>
+      <a href="snake.html" style="color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Snake</a>
+      <a href="pong.html" style="color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Pong</a>
+      <a href="invaders.html" style="color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Invaders</a>
+      <a href="flappy.html" style="color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Flappy</a>
+      <a href="tetris.html" style="color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Tetris</a>
+      <a href="hashbreaker.html" style="color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Hashbreaker</a>
+      <a href="bubbles.html" style="color:#F7931A;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Bubbles</a>
+    </div>
+  </nav>
+
+  <div id="rageRing"></div>
+  <div id="hitFlash"></div>
+  <canvas id="bgCanvas"></canvas>
+
+  <!-- INTRO OVERLAY -->
+  <div id="intro" role="dialog" aria-modal="true" aria-labelledby="introTitle" aria-describedby="introDesc">
+    <div class="intro-logo">🫧</div>
+    <div class="intro-title" id="introTitle">BITCOIN BUBBLE BURST</div>
+    <div class="intro-sub" id="introDesc">
+      Aim your BTC cannon, match 3+ bubbles, and liquidate shitcoin clusters before they dump on your stack.
+      <br>Mouse / touch to aim · Click / tap to fire.
+    </div>
+    <div class="intro-enemies">
+      <div class="ie">🟡<span style="color:var(--gold)">BTC</span></div>
+      <div class="ie">🟣<span style="color:var(--eth)">ETH</span></div>
+      <div class="ie">🔵<span style="color:var(--xrp)">XRP</span></div>
+      <div class="ie">🟤<span style="color:var(--doge)">DOGE</span></div>
+      <div class="ie">🟢<span style="color:var(--pepe)">PEPE</span></div>
+    </div>
+    <div class="intro-hiscore" id="introHi">Best: 0</div>
+    <div class="intro-start">▶ TAP OR PRESS ANY KEY TO START ◀</div>
+  </div>
+
+  <!-- LEVEL BANNER -->
+  <div id="lvlBanner">
+    <div class="lvl-num" id="lvlNum">LEVEL 1</div>
+    <div class="lvl-sub" id="lvlSub">Stack sats – dodge leverage.</div>
+  </div>
+
+  <div class="gw">
+    <div class="hdr">
+      <h1>🫧 BITCOIN BUBBLE BURST</h1>
+      <p>Mouse / touch to aim • Click / tap to fire • Clear the shitcoin bubbles before they crush your ₿ floor.</p>
+    </div>
+
+    <div class="cwrap" id="cwrap">
+      <canvas
+        id="gc"
+        width="800"
+        height="960"
+        aria-label="Bitcoin Bubble Burst: Bitcoin‑themed bubble shooter where you pop shitcoin clusters with BTC shots."
+      ></canvas>
+      <div id="pauseOverlay">
+        <div class="pause-title">⏸ PAUSED</div>
+        <div class="pause-sub">Press ⏸ or [P] to resume</div>
+      </div>
+    </div>
+
+    <div class="hud">
+      <div class="hcard"><div class="hlbl">Score</div><div class="hval" id="hScore">0</div></div>
+      <div class="hcard"><div class="hlbl">Combo</div><div class="hval y" id="hCombo">×1</div></div>
+      <div class="hcard"><div class="hlbl">Shots Left</div><div class="hval c" id="hShots">0</div></div>
+      <div class="hcard"><div class="hlbl">Floor Height</div><div class="hval" id="hRows">0</div></div>
+      <div class="hcard"><div class="hlbl">Hi‑Score</div><div class="hval y" id="hHi">0</div></div>
+      <div class="hcard"><div class="hlbl">Level</div><div class="hval c" id="hLevel">1</div></div>
+    </div>
+
+    <div class="sbar-wrap">
+      <div class="sbar-row">
+        <span id="rageLabel">📈 HODL Meter</span>
+        <span id="rageVal">0 / 10</span>
+      </div>
+      <div class="sbar-track"><div class="sbar-fill" id="sbarFill"></div></div>
+    </div>
+
+    <div id="puDisplay">
+      <span class="pu-lbl">⚡ Power‑ups:</span>
+      <div id="puBadges"></div>
+    </div>
+
+    <div class="legend">
+      <div class="li"><div class="ld" style="background:var(--gold)"></div>₿ BTC – your shots</div>
+      <div class="li"><div class="ld" style="background:var(--eth)"></div>ETH – fast float</div>
+      <div class="li"><div class="ld" style="background:var(--xrp)"></div>XRP – sticky spread</div>
+      <div class="li"><div class="ld" style="background:var(--doge)"></div>DOGE – meme cluster</div>
+      <div class="li"><div class="ld" style="background:var(--pepe)"></div>PEPE – chaos bubble</div>
+      <div class="li"><div class="ld" style="background:var(--cyan)"></div>🎯 Laser / 🧲 Magnet / 💣 Block bomb</div>
+    </div>
+
+    <div id="gstat" class="gstatus s-ok" role="status" aria-live="polite">
+      🎮 Aim your BTC cannon and clear the bubble stack.
+    </div>
+
+    <div id="gop" class="gopanel">
+      <div class="poo">💥</div>
+      <div class="gotitle">STACK LIQUIDATED</div>
+      <div class="gosub">Final Score</div>
+      <div class="goscore" id="gofinal">0</div>
+      <table class="hst">
+        <thead><tr><th>#</th><th>Score</th><th>Level</th><th>Floor</th></tr></thead>
+        <tbody id="hsbody"></tbody>
+      </table>
+      <button class="rbtn" id="playAgain">⚡ PLAY AGAIN</button>
+    </div>
+
+    <div class="ctrl">
+      <div class="ctrl-left">
+        <button class="pause-btn" id="pauseBtn">⏸ PAUSE</button>
+        <button class="snd-btn" id="sndBtn">🔊 SFX</button>
+        <p class="ctrl-hint">Move pointer to aim · Click / tap to fire · [P] to pause</p>
+      </div>
+      <div class="cbgrid">
+        <div></div>
+        <button class="cbtn" id="btnLeft">⬅️</button>
+        <div></div>
+        <div></div>
+        <button class="cbtn" id="btnFire">🔫</button>
+        <div></div>
+      </div>
+    </div>
+
+    <div class="credits">Made for Atlas Bitcoin Arcade · Bitcoin‑themed Puzzle Bobble remix</div>
+  </div>
+
+  <script src="bubbles.js"></script>
+</body>
+</html>
