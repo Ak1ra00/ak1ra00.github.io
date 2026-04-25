@@ -116,6 +116,7 @@ const COLS = 15;
 const ROW_H = BUBBLE_R*1.732; // sqrt(3)
 const TOP_MARGIN = 60;
 const LAUNCH_Y = 860;
+const CELL_W = (800 - 2*BUBBLE_R) / COLS;
 
 const COLORS = [
   { id:'btc', col:'#F7931A'},
@@ -251,9 +252,11 @@ function prepareNextBubble(){
 // cluster search
 function neighbors(b){
   const res=[];
+  const thresh = CELL_W + 2;
   grid.forEach(o=>{
+    if(o===b) return;
     const dx=o.x-b.x, dy=o.y-b.y;
-    if(Math.sqrt(dx*dx+dy*dy) < BUBBLE_R*2.1) res.push(o);
+    if(dx*dx+dy*dy < thresh*thresh) res.push(o);
   });
   return res;
 }
@@ -293,35 +296,42 @@ function findFloating(){
 
 // ── INPUT ───────────────────────────────────────────────────────────────
 let aiming = false;
-let pointerX = gc.width/2;
+let pointerClientX = gc.getBoundingClientRect().left + gc.getBoundingClientRect().width/2;
 
-function updateAngleFromPointer(px){
+function updateAngleFromPointer(clientX, clientY){
   const rect = gc.getBoundingClientRect();
-  const x = clamp(px-rect.left, 40, gc.width-40);
-  pointerX = x;
-  shooter.angle = Math.atan2(LAUNCH_Y-40 - LAUNCH_Y, x-shooter.x) - Math.PI/2;
+  const scaleX = gc.width  / rect.width;
+  const scaleY = gc.height / rect.height;
+  const cx = (clientX - rect.left) * scaleX;
+  const cy = clientY !== undefined ? (clientY - rect.top) * scaleY : LAUNCH_Y - 120;
+  let angle = Math.atan2(cy - LAUNCH_Y, cx - shooter.x);
+  angle = clamp(angle, -Math.PI + 0.10, -0.10);
+  shooter.angle = angle;
+  pointerClientX = clientX;
 }
 
 gc.addEventListener('pointerdown',e=>{
   if(gameState!=='PLAY') return;
   aiming=true;
-  updateAngleFromPointer(e.clientX);
+  updateAngleFromPointer(e.clientX, e.clientY);
 });
 
 gc.addEventListener('pointermove',e=>{
-  if(!aiming || gameState!=='PLAY') return;
-  updateAngleFromPointer(e.clientX);
+  if(gameState!=='PLAY') return;
+  updateAngleFromPointer(e.clientX, e.clientY);
 });
 
-gc.addEventListener('pointerup',()=>{
+gc.addEventListener('pointerup',e=>{
   if(gameState!=='PLAY') return;
   aiming=false;
+  updateAngleFromPointer(e.clientX, e.clientY);
   shoot();
 });
 
-document.getElementById('btnLeft').addEventListener('click',()=>{
+document.getElementById('btnLeft').addEventListener('pointerdown',e=>{
+  e.preventDefault();
   if(gameState!=='PLAY') return;
-  updateAngleFromPointer(pointerX-60);
+  shooter.angle = clamp(shooter.angle - 0.18, -Math.PI + 0.10, -0.10);
 });
 
 document.getElementById('btnFire').addEventListener('click',()=>{
@@ -331,13 +341,15 @@ document.getElementById('btnFire').addEventListener('click',()=>{
 
 window.addEventListener('keydown',e=>{
   if(e.key==='p' || e.key==='P') togglePause();
+  if(e.key==='ArrowLeft')  { if(gameState==='PLAY') shooter.angle=clamp(shooter.angle-0.12,-Math.PI+0.10,-0.10); }
+  if(e.key==='ArrowRight') { if(gameState==='PLAY') shooter.angle=clamp(shooter.angle+0.12,-Math.PI+0.10,-0.10); }
   if(gameState==='INTRO') startGame();
   else if(gameState==='GAMEOVER' && e.key==='Enter') restart();
 });
 
 window.addEventListener('mousemove',e=>{
   if(gameState!=='PLAY') return;
-  updateAngleFromPointer(e.clientX);
+  updateAngleFromPointer(e.clientX, e.clientY);
 });
 
 // ── GAME FLOW ───────────────────────────────────────────────────────────
@@ -539,27 +551,76 @@ function draw(){
     ctx.restore();
   }
 
+  drawTrajectory();
   drawShooter();
   ctx.restore();
 }
 
+const BUBBLE_LABELS = {
+  '#F7931A':'₿', '#627EEA':'Ξ', '#00AAE4':'✕', '#C2A633':'Ð', '#00BB44':'♣'
+};
+
 function drawBubble(x,y,color,glow){
   ctx.save();
-  ctx.beginPath();
-  ctx.arc(x,y,BUBBLE_R,0,Math.PI*2);
-  const grad = ctx.createRadialGradient(x-BUBBLE_R*0.4,y-BUBBLE_R*0.4,4,x,y,BUBBLE_R);
-  grad.addColorStop(0,'#ffffff');
-  grad.addColorStop(0.25,color);
-  grad.addColorStop(1,'#000000');
-  ctx.fillStyle=grad;
-  ctx.fill();
   if(glow){
     ctx.shadowColor=color;
-    ctx.shadowBlur=16;
+    ctx.shadowBlur=22;
   }
-  ctx.strokeStyle='rgba(0,0,0,0.5)';
-  ctx.lineWidth=1.5;
+  ctx.beginPath();
+  ctx.arc(x,y,BUBBLE_R,0,Math.PI*2);
+  const grad = ctx.createRadialGradient(x-BUBBLE_R*0.38,y-BUBBLE_R*0.38,2,x,y,BUBBLE_R);
+  grad.addColorStop(0,'rgba(255,255,255,0.9)');
+  grad.addColorStop(0.22,color);
+  grad.addColorStop(0.75,color);
+  grad.addColorStop(1,'rgba(0,0,0,0.75)');
+  ctx.fillStyle=grad;
+  ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.strokeStyle='rgba(0,0,0,0.4)';
+  ctx.lineWidth=1.2;
   ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(x-BUBBLE_R*0.28, y-BUBBLE_R*0.32, BUBBLE_R*0.28, 0, Math.PI*2);
+  ctx.fillStyle='rgba(255,255,255,0.45)';
+  ctx.fill();
+  const label = BUBBLE_LABELS[color];
+  if(label){
+    ctx.shadowBlur=0;
+    ctx.fillStyle='rgba(255,255,255,0.95)';
+    ctx.font=`900 ${Math.floor(BUBBLE_R*0.85)}px Orbitron,monospace`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(label, x, y+1);
+  }
+  ctx.restore();
+}
+
+function drawTrajectory(){
+  if(!currentBubble || moving) return;
+  let x=shooter.x, y=LAUNCH_Y;
+  let vx=Math.cos(shooter.angle), vy=Math.sin(shooter.angle);
+  ctx.save();
+  ctx.setLineDash([5,9]);
+  ctx.strokeStyle='rgba(247,147,26,0.28)';
+  ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(x,y);
+  for(let i=0;i<300;i++){
+    x+=vx*2.8; y+=vy*2.8;
+    if(x-BUBBLE_R<=0){ x=BUBBLE_R; vx=Math.abs(vx); }
+    if(x+BUBBLE_R>=gc.width){ x=gc.width-BUBBLE_R; vx=-Math.abs(vx); }
+    if(y<=TOP_MARGIN+BUBBLE_R) break;
+    ctx.lineTo(x,y);
+    let hit=false;
+    for(const b of grid){
+      const dx=b.x-x, dy=b.y-y;
+      if(dx*dx+dy*dy<(BUBBLE_R*2)**2){hit=true;break;}
+    }
+    if(hit) break;
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='rgba(247,147,26,0.45)';
+  ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2); ctx.fill();
   ctx.restore();
 }
 
