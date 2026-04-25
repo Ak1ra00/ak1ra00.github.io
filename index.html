@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Atlas Bitcoin Arcade – soufianekh.space</title>
-    <meta name="description" content="Play 10 Bitcoin-themed arcade games. Pac-Man, Snake, Tetris, Chess and more — free to play.">
+    <meta name="description" content="Play 11 Bitcoin-themed arcade games. Pac-Man, Snake, Tetris, Chess and more — free to play.">
     <meta name="theme-color" content="#EEF2FF">
     <link rel="canonical" href="https://soufianekh.space/">
     <meta property="og:title" content="Atlas Bitcoin Arcade">
-    <meta property="og:description" content="10 Bitcoin-themed arcade games. Free to play.">
+    <meta property="og:description" content="11 Bitcoin-themed arcade games. Free to play.">
     <meta property="og:image" content="https://soufianekh.space/logo.svg">
     <meta property="og:type" content="website">
     <link rel="icon" href="logo.svg" type="image/svg+xml">
@@ -127,7 +127,7 @@
         .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;}
         .card{background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:28px 22px 22px;display:flex;flex-direction:column;align-items:center;gap:10px;text-decoration:none;color:inherit;backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);box-shadow:var(--shadow-glass),inset 0 1px 0 rgba(255,255,255,0.85),inset 0 -1px 0 rgba(180,195,230,0.20);transition:border-color .28s cubic-bezier(0.34,1.56,0.64,1),box-shadow .28s cubic-bezier(0.34,1.56,0.64,1),transform .28s cubic-bezier(0.34,1.56,0.64,1);position:relative;overflow:hidden;opacity:0;animation:cardIn .6s cubic-bezier(0.34,1.56,0.64,1) forwards;}
         @keyframes cardIn{from{opacity:0;transform:translateY(18px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-        .card:nth-child(1){animation-delay:.04s}.card:nth-child(2){animation-delay:.08s}.card:nth-child(3){animation-delay:.12s}.card:nth-child(4){animation-delay:.16s}.card:nth-child(5){animation-delay:.20s}.card:nth-child(6){animation-delay:.24s}.card:nth-child(7){animation-delay:.28s}.card:nth-child(8){animation-delay:.32s}.card:nth-child(9){animation-delay:.36s}.card:nth-child(10){animation-delay:.40s}
+        .card:nth-child(1){animation-delay:.04s}.card:nth-child(2){animation-delay:.08s}.card:nth-child(3){animation-delay:.12s}.card:nth-child(4){animation-delay:.16s}.card:nth-child(5){animation-delay:.20s}.card:nth-child(6){animation-delay:.24s}.card:nth-child(7){animation-delay:.28s}.card:nth-child(8){animation-delay:.32s}.card:nth-child(9){animation-delay:.36s}.card:nth-child(10){animation-delay:.40s}.card:nth-child(11){animation-delay:.44s}
         .card::before{content:'';position:absolute;top:0;left:8%;right:8%;height:1px;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.95) 30%,rgba(255,255,255,1.00) 50%,rgba(255,255,255,0.95) 70%,transparent 100%);border-radius:0 0 50% 50%;pointer-events:none;z-index:1;}
         .card::after{content:'';position:absolute;inset:0;border-radius:20px;background:linear-gradient(145deg,rgba(255,255,255,0.20) 0%,transparent 40%,transparent 60%,rgba(255,255,255,0.08) 100%);pointer-events:none;z-index:0;}
         .card:hover{border-color:rgba(255,255,255,0.90);box-shadow:var(--shadow-hover),inset 0 1px 0 rgba(255,255,255,0.95),inset 0 -1px 0 rgba(180,195,230,0.25),0 0 0 1.5px rgba(247,147,26,0.30);transform:translateY(-6px) scale(1.01);}
@@ -425,6 +425,7 @@
     <a href="sato.html">SATO BROS</a>
     <a href="moon.html">TO THE MOON</a>
     <a href="stacksats.html">STACK SATS</a>
+    <a href="bubbles.html">BUBBLES</a>
     <a href="https://github.com/ak1ra00/hw-flash/releases/latest" target="_blank" rel="noopener" class="deepsea">⚓ DEEPSEA</a>
   <div id="auth-nav-wrap-mobile" style="padding:12px 8px 4px;border-top:1px solid var(--border-dim);margin-top:8px;"></div>
 </nav>
@@ -443,6 +444,7 @@
             <a href="sato.html">Sato</a>
             <a href="moon.html">Moon</a>
             <a href="stacksats.html">Stack Sats</a>
+            <a href="bubbles.html">Bubbles</a>
             <a href="https://github.com/ak1ra00/hw-flash/releases/latest" target="_blank" rel="noopener" class="deepsea">⚓ DeepSea</a>
         </div>
         <button class="hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
@@ -457,7 +459,7 @@
         <img src="logo.svg" alt="Atlas holding Bitcoin" class="hero-logo">
         <h1>ATLAS BITCOIN<br>ARCADE</h1>
         <div class="hero-badges">
-            <span class="hero-badge"><strong>10</strong> GAMES</span>
+            <span class="hero-badge"><strong>11</strong> GAMES</span>
             <span class="hero-badge"><strong>₿</strong> BITCOIN ONLY</span>
             <span class="hero-badge">FREE TO PLAY</span>
             <span class="hero-badge" id="sats-badge" style="display:none"><strong id="sats-val">0</strong> TOTAL SATS</span>
@@ -627,6 +629,17 @@
                 <span class="sr-only">Play Hashbreaker</span>
             </a>
 
+            <a class="card" href="bubbles.html" data-category="puzzle" data-score="btc_bubbles_hs">
+                <div class="card-played"></div>
+                <div class="card-icon">🫧</div>
+                <div class="card-title">BUBBLE BURST</div>
+                <div class="card-desc">Aim your BTC cannon, match 3+ shitcoin bubbles, and pop ETH, XRP, DOGE &amp; PEPE clusters before they crash your stack.</div>
+                <div class="card-meta"><span class="tag">Puzzle</span><span class="tag">Shooter</span><span class="badge badge-new">NEW</span></div>
+                <div class="card-score"></div>
+                <span class="play-btn" aria-hidden="true">▶ PLAY NOW</span>
+                <span class="sr-only">Play Bitcoin Bubble Burst</span>
+            </a>
+
         </section>
     </main>
 
@@ -642,6 +655,7 @@
             <a href="sato.html">Sato Bros</a>
             <a href="moon.html">To The Moon</a>
             <a href="stacksats.html">Stack Sats</a>
+            <a href="bubbles.html">Bubbles</a>
         </div>
         <p class="footer-copy">Atlas Bitcoin Arcade · Made with ❤ by <a href="https://twitter.com/justice__gate" target="_blank">@justice__gate</a></p>
     </footer>
