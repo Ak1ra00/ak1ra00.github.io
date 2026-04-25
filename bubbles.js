@@ -116,7 +116,7 @@ const COLS = 15;
 const ROW_H = BUBBLE_R*1.732; // sqrt(3)
 const TOP_MARGIN = 60;
 const LAUNCH_Y = 860;
-const CELL_W = (800 - 2*BUBBLE_R) / COLS; // ~50.9 — used for neighbor detection
+const CELL_W = (800 - 2*BUBBLE_R) / COLS;
 
 const COLORS = [
   { id:'btc', col:'#F7931A'},
@@ -252,7 +252,7 @@ function prepareNextBubble(){
 // cluster search
 function neighbors(b){
   const res=[];
-  const thresh = CELL_W + 2; // must exceed same-row distance (~50.9px) but not 2-step (~101.8px)
+  const thresh = CELL_W + 2;
   grid.forEach(o=>{
     if(o===b) return;
     const dx=o.x-b.x, dy=o.y-b.y;
@@ -300,13 +300,11 @@ let pointerClientX = gc.getBoundingClientRect().left + gc.getBoundingClientRect(
 
 function updateAngleFromPointer(clientX, clientY){
   const rect = gc.getBoundingClientRect();
-  // Scale screen coords → canvas coords
   const scaleX = gc.width  / rect.width;
   const scaleY = gc.height / rect.height;
   const cx = (clientX - rect.left) * scaleX;
   const cy = clientY !== undefined ? (clientY - rect.top) * scaleY : LAUNCH_Y - 120;
   let angle = Math.atan2(cy - LAUNCH_Y, cx - shooter.x);
-  // Clamp: only allow upward shots with small margin from horizontal
   angle = clamp(angle, -Math.PI + 0.10, -0.10);
   shooter.angle = angle;
   pointerClientX = clientX;
@@ -564,12 +562,10 @@ const BUBBLE_LABELS = {
 
 function drawBubble(x,y,color,glow){
   ctx.save();
-  // Glow halo
   if(glow){
     ctx.shadowColor=color;
     ctx.shadowBlur=22;
   }
-  // Body gradient
   ctx.beginPath();
   ctx.arc(x,y,BUBBLE_R,0,Math.PI*2);
   const grad = ctx.createRadialGradient(x-BUBBLE_R*0.38,y-BUBBLE_R*0.38,2,x,y,BUBBLE_R);
@@ -580,16 +576,13 @@ function drawBubble(x,y,color,glow){
   ctx.fillStyle=grad;
   ctx.fill();
   ctx.shadowBlur=0;
-  // Rim
   ctx.strokeStyle='rgba(0,0,0,0.4)';
   ctx.lineWidth=1.2;
   ctx.stroke();
-  // Specular
   ctx.beginPath();
   ctx.arc(x-BUBBLE_R*0.28, y-BUBBLE_R*0.32, BUBBLE_R*0.28, 0, Math.PI*2);
   ctx.fillStyle='rgba(255,255,255,0.45)';
   ctx.fill();
-  // Crypto label
   const label = BUBBLE_LABELS[color];
   if(label){
     ctx.shadowBlur=0;
@@ -625,7 +618,6 @@ function drawTrajectory(){
     if(hit) break;
   }
   ctx.stroke();
-  // Dot at tip
   ctx.setLineDash([]);
   ctx.fillStyle='rgba(247,147,26,0.45)';
   ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2); ctx.fill();
