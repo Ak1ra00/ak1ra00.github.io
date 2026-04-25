@@ -189,6 +189,92 @@
           .nav-logo { font-size: 14px; }
           #theme-toggle { width: 32px; height: 32px; font-size: 14px; }
         }
+
+        /* ─── BITCOIN NETWORK STATUS BAR ────────────────────────────────── */
+        .network-bar{display:flex;gap:0;flex-wrap:wrap;justify-content:center;align-items:stretch;
+          width:min(1100px,calc(100% - 40px));margin:-8px auto 28px;padding:8px 6px;
+          background:linear-gradient(135deg,rgba(255,255,255,0.55) 0%,rgba(255,255,255,0.30) 100%);
+          border:1px solid var(--border);border-radius:18px;
+          backdrop-filter:blur(20px) saturate(200%);-webkit-backdrop-filter:blur(20px) saturate(200%);
+          box-shadow:var(--shadow-glass),inset 0 1px 0 rgba(255,255,255,0.85);
+          position:relative;overflow:hidden;z-index:2;}
+        [data-theme="dark"] .network-bar{
+          background:linear-gradient(135deg,rgba(20,20,50,0.65) 0%,rgba(15,15,40,0.45) 100%);}
+        .network-bar::before{content:'';position:absolute;inset:0;
+          background:linear-gradient(90deg,transparent 0%,rgba(247,147,26,0.16) 50%,transparent 100%);
+          transform:translateX(-100%);animation:netSweep 7s ease-in-out infinite;pointer-events:none;}
+        @keyframes netSweep{0%,100%{transform:translateX(-100%)}50%{transform:translateX(100%)}}
+        .net-stat{flex:1;min-width:130px;padding:7px 12px;display:flex;flex-direction:column;
+          align-items:center;gap:2px;border-right:1px solid var(--border-dim);position:relative;z-index:1;}
+        .net-stat:last-child{border-right:none;}
+        .net-label{font-family:'Orbitron',monospace;font-size:.5rem;letter-spacing:.18em;
+          color:var(--text-muted);text-transform:uppercase;}
+        .net-val{font-family:'Orbitron',monospace;font-size:.92rem;font-weight:900;color:var(--btc);
+          letter-spacing:.04em;text-shadow:0 0 14px rgba(247,147,26,0.30);
+          font-variant-numeric:tabular-nums;transition:color .3s,transform .25s;}
+        .net-val.flash{transform:scale(1.08);}
+        .net-val.up{color:var(--green);}
+        .net-val.down{color:#ef4444;}
+        .net-val.live{font-size:.62rem;letter-spacing:.18em;}
+        .net-pulse{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);
+          margin-right:6px;box-shadow:0 0 8px var(--green);animation:pulseDot 1.4s ease-in-out infinite;
+          vertical-align:middle;}
+        @keyframes pulseDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.65)}}
+        @media(max-width:520px){
+          .net-stat{min-width:50%;border-right:none;border-bottom:1px solid var(--border-dim);padding:6px 10px;}
+          .net-stat:nth-last-child(-n+2){border-bottom:none;}
+          .net-val{font-size:.78rem;}.net-val.live{font-size:.55rem;}
+        }
+
+        /* ─── 3D HOLOGRAPHIC CARD TILT ──────────────────────────────────── */
+        .grid{perspective:1400px;}
+        .card{transform-style:preserve-3d;will-change:transform;}
+        .card .holo{position:absolute;inset:0;border-radius:20px;pointer-events:none;z-index:3;opacity:0;
+          background:radial-gradient(circle 280px at var(--mx,50%) var(--my,50%),
+            rgba(255,255,255,0.55) 0%,rgba(255,220,150,0.30) 22%,rgba(247,147,26,0.12) 42%,transparent 65%);
+          mix-blend-mode:overlay;transition:opacity .25s;}
+        .card:hover .holo{opacity:1;}
+        [data-theme="dark"] .card .holo{
+          background:radial-gradient(circle 280px at var(--mx,50%) var(--my,50%),
+            rgba(255,220,150,0.40) 0%,rgba(247,147,26,0.22) 25%,transparent 60%);
+          mix-blend-mode:screen;}
+        .card .holo-grid{position:absolute;inset:0;border-radius:20px;pointer-events:none;z-index:2;opacity:0;
+          background-image:
+            linear-gradient(0deg,rgba(247,147,26,0.10) 1px,transparent 1px),
+            linear-gradient(90deg,rgba(247,147,26,0.10) 1px,transparent 1px);
+          background-size:22px 22px;
+          mask-image:radial-gradient(circle 200px at var(--mx,50%) var(--my,50%),black 0%,transparent 70%);
+          -webkit-mask-image:radial-gradient(circle 200px at var(--mx,50%) var(--my,50%),black 0%,transparent 70%);
+          transition:opacity .25s;}
+        .card:hover .holo-grid{opacity:1;}
+        @media(hover:none){.card:hover{transform:translateY(-4px) scale(1.005);}}
+
+        /* ─── BTC CURSOR SPARKS ─────────────────────────────────────────── */
+        .btc-spark{position:fixed;top:0;left:0;width:6px;height:6px;border-radius:50%;
+          background:radial-gradient(circle,#FFD700 0%,#F7931A 55%,transparent 80%);
+          pointer-events:none;z-index:99997;box-shadow:0 0 10px rgba(247,147,26,0.85);
+          will-change:transform,opacity;}
+        @media(hover:none){.btc-spark{display:none!important;}}
+
+        /* ─── HERO HALO + LIVE TAGLINE ──────────────────────────────────── */
+        .hero{position:relative;}
+        .hero::before{content:'';position:absolute;top:30px;left:50%;transform:translateX(-50%);
+          width:380px;height:380px;border-radius:50%;
+          background:radial-gradient(circle,rgba(247,147,26,0.18) 0%,rgba(247,147,26,0.06) 35%,transparent 65%);
+          filter:blur(40px);pointer-events:none;z-index:0;animation:haloPulse 5s ease-in-out infinite;}
+        [data-theme="dark"] .hero::before{
+          background:radial-gradient(circle,rgba(247,147,26,0.30) 0%,rgba(247,147,26,0.10) 35%,transparent 65%);}
+        @keyframes haloPulse{0%,100%{opacity:.85;transform:translateX(-50%) scale(1)}50%{opacity:1;transform:translateX(-50%) scale(1.08)}}
+        .hero>*{position:relative;z-index:1;}
+        .hero-tag-line{font-family:'Orbitron',monospace;font-size:.62rem;letter-spacing:.22em;
+          color:var(--text-muted);margin-top:14px;display:inline-flex;gap:10px;align-items:center;
+          padding:6px 16px;border:1px solid var(--border-dim);border-radius:999px;
+          background:rgba(255,255,255,0.30);backdrop-filter:blur(10px);}
+        [data-theme="dark"] .hero-tag-line{background:rgba(20,20,50,0.45);}
+        .hero-tag-line .dot{width:5px;height:5px;border-radius:50%;background:var(--btc);
+          box-shadow:0 0 8px var(--btc);animation:pulseDot 1.6s ease-in-out infinite;}
+        .hero-tag-rotate{display:inline-block;color:var(--btc);min-width:130px;text-align:left;
+          font-weight:700;}
     </style>
     <script>
     (function(){
@@ -255,7 +341,31 @@
             <span class="hero-badge" id="sats-badge" style="display:none"><strong id="sats-val">0</strong> TOTAL SATS</span>
         </div>
         <p class="hero-rule">One rule: <span>collect Bitcoin</span> · dodge shitcoins · HODL your score</p>
+        <div class="hero-tag-line">
+            <span class="dot"></span>
+            <span>NETWORK</span>
+            <span class="hero-tag-rotate" id="hero-rotate">STACKING SATS</span>
+        </div>
     </section>
+
+    <div class="network-bar" id="net-bar" aria-label="Live Bitcoin network status">
+        <div class="net-stat">
+            <span class="net-label">Block Height</span>
+            <span class="net-val" id="ns-block">—</span>
+        </div>
+        <div class="net-stat">
+            <span class="net-label">Network</span>
+            <span class="net-val live up"><span class="net-pulse"></span>HODLING</span>
+        </div>
+        <div class="net-stat">
+            <span class="net-label">Hash Rate · EH/s</span>
+            <span class="net-val" id="ns-hash">—</span>
+        </div>
+        <div class="net-stat">
+            <span class="net-label">BTC / USD</span>
+            <span class="net-val" id="ns-price">—</span>
+        </div>
+    </div>
 
     <div class="filter-bar" role="group" aria-label="Filter games">
         <button class="filter-btn active" data-filter="all">ALL</button>
@@ -414,11 +524,132 @@
 <script>
 (function(){
     const bg=document.getElementById('bgCanvas'),bx=bg.getContext('2d');
-    let bW=0,bH=0,pts=[];
-    function init(){bW=bg.width=innerWidth;bH=bg.height=innerHeight;pts=[];for(let i=0;i<90;i++)pts.push({x:Math.random()*bW,y:Math.random()*bH,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,r:.5+Math.random()*1.8,a:.03+Math.random()*.12,c:Math.random()>.6?'rgba(147,197,253,0.6)':Math.random()>.5?'rgba(196,181,253,0.6)':'rgba(254,215,170,0.5)'});}
+    let bW=0,bH=0,pts=[],blocks=[];
+    function init(){
+      bW=bg.width=innerWidth;bH=bg.height=innerHeight;pts=[];blocks=[];
+      for(let i=0;i<70;i++)pts.push({x:Math.random()*bW,y:Math.random()*bH,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,r:.5+Math.random()*1.6,a:.03+Math.random()*.10,c:Math.random()>.6?'rgba(147,197,253,0.6)':Math.random()>.5?'rgba(196,181,253,0.6)':'rgba(254,215,170,0.55)'});
+      const bcount=Math.max(6,Math.min(14,Math.floor(bW/180)));
+      for(let i=0;i<bcount;i++)blocks.push({x:Math.random()*bW,y:Math.random()*bH,vy:-0.12-Math.random()*0.20,s:14+Math.random()*10,a:0.05+Math.random()*0.08,rot:(Math.random()-.5)*.3,vr:(Math.random()-.5)*.003});
+    }
     addEventListener('resize',init);init();
-    function draw(){bx.clearRect(0,0,bW,bH);pts.forEach(p=>{p.x=(p.x+p.vx+bW)%bW;p.y=(p.y+p.vy+bH)%bH;bx.save();bx.globalAlpha=p.a;bx.fillStyle=p.c;bx.beginPath();bx.arc(p.x,p.y,p.r,0,Math.PI*2);bx.fill();bx.restore();});requestAnimationFrame(draw);}
+    function draw(){
+      bx.clearRect(0,0,bW,bH);
+      pts.forEach(p=>{p.x=(p.x+p.vx+bW)%bW;p.y=(p.y+p.vy+bH)%bH;bx.save();bx.globalAlpha=p.a;bx.fillStyle=p.c;bx.beginPath();bx.arc(p.x,p.y,p.r,0,Math.PI*2);bx.fill();bx.restore();});
+      blocks.forEach(b=>{
+        b.y+=b.vy;b.rot+=b.vr;
+        if(b.y<-30){b.y=bH+30;b.x=Math.random()*bW;}
+        bx.save();bx.translate(b.x,b.y);bx.rotate(b.rot);
+        bx.globalAlpha=b.a;
+        bx.strokeStyle='rgba(247,147,26,0.95)';bx.lineWidth=1;
+        bx.strokeRect(-b.s/2,-b.s/2,b.s,b.s);
+        bx.fillStyle='rgba(247,147,26,0.85)';
+        bx.font=(b.s*.7)+'px serif';bx.textAlign='center';bx.textBaseline='middle';
+        bx.fillText('₿',0,1);
+        bx.restore();
+      });
+      requestAnimationFrame(draw);
+    }
     draw();
+})();
+
+/* ─── 3D HOLOGRAPHIC CARD TILT ─── */
+(function(){
+  if(matchMedia('(hover:none)').matches)return;
+  document.querySelectorAll('.grid .card').forEach(c=>{
+    const hg=document.createElement('div');hg.className='holo-grid';
+    const hl=document.createElement('div');hl.className='holo';
+    c.appendChild(hg);c.appendChild(hl);
+    let raf;
+    c.addEventListener('mousemove',e=>{
+      const r=c.getBoundingClientRect();
+      const mx=(e.clientX-r.left)/r.width,my=(e.clientY-r.top)/r.height;
+      const rx=(my-.5)*-7,ry=(mx-.5)*7;
+      c.style.setProperty('--mx',(mx*100)+'%');
+      c.style.setProperty('--my',(my*100)+'%');
+      cancelAnimationFrame(raf);
+      raf=requestAnimationFrame(()=>{
+        c.style.transform=`perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-6px) scale(1.012)`;
+      });
+    });
+    c.addEventListener('mouseleave',()=>{c.style.transform='';});
+  });
+})();
+
+/* ─── BTC CURSOR SPARKS ─── */
+(function(){
+  if(matchMedia('(hover:none)').matches)return;
+  const N=10,sparks=[];
+  for(let i=0;i<N;i++){
+    const s=document.createElement('div');s.className='btc-spark';
+    document.body.appendChild(s);
+    sparks.push({el:s,x:0,y:0,vx:0,vy:0,life:0});
+  }
+  let mx=-200,my=-200,moved=false;
+  document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;moved=true;});
+  let idx=0,frame=0;
+  function tick(){
+    frame++;
+    if(moved&&frame%3===0){
+      const s=sparks[idx];idx=(idx+1)%N;
+      s.x=mx+(Math.random()-.5)*4;s.y=my+(Math.random()-.5)*4;
+      s.vx=(Math.random()-.5)*.6;s.vy=-0.35-Math.random()*.4;
+      s.life=24;
+    }
+    sparks.forEach(s=>{
+      if(s.life>0){
+        s.life--;s.x+=s.vx;s.y+=s.vy;s.vy+=0.012;
+        const o=s.life/24;
+        s.el.style.opacity=String(o*0.9);
+        s.el.style.transform=`translate(${s.x|0}px,${s.y|0}px) translate(-50%,-50%) scale(${(0.4+o*0.8).toFixed(2)})`;
+      } else if(s.el.style.opacity!=='0'){
+        s.el.style.opacity='0';
+      }
+    });
+    requestAnimationFrame(tick);
+  }
+  tick();
+})();
+
+/* ─── LIVE NETWORK TICKER + HERO ROTATE ─── */
+(function(){
+  const blockEl=document.getElementById('ns-block'),hashEl=document.getElementById('ns-hash'),
+        priceEl=document.getElementById('ns-price'),rotEl=document.getElementById('hero-rotate');
+  if(!blockEl)return;
+  const epoch=Date.UTC(2026,3,25);
+  const minutesSince=Math.max(0,Math.floor((Date.now()-epoch)/60000));
+  let block=897431+Math.floor(minutesSince/10);
+  let hash=812.4+Math.sin(minutesSince/40)*8;
+  let price=104287+Math.round(Math.sin(minutesSince/120)*1800);
+  function fmt(){
+    blockEl.textContent=block.toLocaleString();
+    hashEl.textContent=hash.toFixed(1);
+    priceEl.textContent='$'+price.toLocaleString();
+  }
+  fmt();
+  function flash(el,cls){el.classList.add('flash');if(cls)el.classList.add(cls);
+    setTimeout(()=>{el.classList.remove('flash');if(cls)el.classList.remove(cls);},900);}
+  setInterval(()=>{
+    if(Math.random()<0.15){block++;blockEl.textContent=block.toLocaleString();flash(blockEl,'up');}
+    hash+=(Math.random()-.5)*1.6;hash=Math.max(782,Math.min(842,hash));
+    hashEl.textContent=hash.toFixed(1);
+    const dp=(Math.random()-.5)*180;price=Math.max(95000,Math.min(120000,Math.round(price+dp)));
+    priceEl.textContent='$'+price.toLocaleString();
+    if(Math.abs(dp)>40)flash(priceEl,dp>0?'up':'down');
+  },2200);
+
+  if(rotEl){
+    const lines=['STACKING SATS','MINING BLOCKS','HODLING STRONG','DODGING SHITCOINS','DIAMOND HANDS','TO THE MOON'];
+    let i=0;
+    setInterval(()=>{
+      i=(i+1)%lines.length;
+      rotEl.style.transition='opacity .25s,transform .25s';
+      rotEl.style.opacity='0';rotEl.style.transform='translateY(-6px)';
+      setTimeout(()=>{
+        rotEl.textContent=lines[i];
+        rotEl.style.opacity='1';rotEl.style.transform='translateY(0)';
+      },250);
+    },2600);
+  }
 })();
 
 const veil=document.getElementById('pg-veil');
