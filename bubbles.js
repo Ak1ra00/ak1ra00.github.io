@@ -310,28 +310,44 @@ function updateAngleFromPointer(clientX, clientY){
   pointerClientX = clientX;
 }
 
+// Prevent page scroll while dragging to aim on the canvas
+gc.style.touchAction = 'none';
+
 gc.addEventListener('pointerdown',e=>{
+  e.preventDefault();
   if(gameState!=='PLAY') return;
   aiming=true;
   updateAngleFromPointer(e.clientX, e.clientY);
 });
 
 gc.addEventListener('pointermove',e=>{
+  e.preventDefault();
   if(gameState!=='PLAY') return;
   updateAngleFromPointer(e.clientX, e.clientY);
 });
 
 gc.addEventListener('pointerup',e=>{
+  e.preventDefault();
   if(gameState!=='PLAY') return;
   aiming=false;
   updateAngleFromPointer(e.clientX, e.clientY);
   shoot();
 });
 
-document.getElementById('btnLeft').addEventListener('pointerdown',e=>{
-  e.preventDefault();
-  if(gameState!=='PLAY') return;
-  shooter.angle = clamp(shooter.angle - 0.18, -Math.PI + 0.10, -0.10);
+// Smooth continuous aim buttons — direction applied each frame in loop()
+let aimDir = 0;
+
+function startAim(dir, e){ e.preventDefault(); aimDir = dir; }
+function stopAim(e){ e.preventDefault(); aimDir = 0; }
+
+['btnLeft','btnRight'].forEach(id=>{
+  const btn = document.getElementById(id);
+  if(!btn) return;
+  const dir = id === 'btnLeft' ? -1 : 1;
+  btn.addEventListener('pointerdown', e=>startAim(dir, e));
+  btn.addEventListener('pointerup',   stopAim);
+  btn.addEventListener('pointerleave',stopAim);
+  btn.addEventListener('pointercancel',stopAim);
 });
 
 document.getElementById('btnFire').addEventListener('click',()=>{
@@ -702,6 +718,7 @@ function loop(ts){
   lastTs = ts;
 
   if(gameState==='PLAY' && !paused){
+    if(aimDir !== 0) shooter.angle = clamp(shooter.angle + aimDir * 0.003 * dt, -Math.PI + 0.10, -0.10);
     if(moving) stepShot(dt);
   }
 
@@ -725,16 +742,6 @@ if(pauseBtn) pauseBtn.addEventListener('click',togglePause);
 
 const sndBtn = document.getElementById('sndBtn');
 if(sndBtn) sndBtn.addEventListener('click',toggleSound);
-
-// tap helpers for mobile buttons
-const btnLeft = document.getElementById('btnLeft');
-if(btnLeft){
-  btnLeft.addEventListener('pointerdown',e=>{
-    e.preventDefault();
-    if(gameState!=='PLAY') return;
-    updateAngleFromPointer(pointerX-60);
-  });
-}
 
 const btnFire2 = document.getElementById('btnFire');
 if(btnFire2){
