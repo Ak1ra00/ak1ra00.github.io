@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atlas Bitcoin Arcade – soufianekh.space</title>
+    <meta name="description" content="Play 11 Bitcoin-themed arcade games. Pac-Man, Snake, Tetris, Chess and more — free to play.">
+    <meta name="theme-color" content="#EEF2FF">
+    <link rel="canonical" href="https://soufianekh.space/">
+    <meta property="og:title" content="Atlas Bitcoin Arcade">
+    <meta property="og:description" content="11 Bitcoin-themed arcade games. Free to play.">
+    <meta property="og:image" content="https://soufianekh.space/logo.svg">
+    <meta property="og:type" content="website">
+    <link rel="icon" href="logo.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        :root{
+          --btc:#F7931A;--btc-warm:rgba(247,147,26,0.72);--btc-soft:rgba(247,147,26,0.18);--btc-muted:rgba(247,147,26,0.10);
+          --bg:#EEF2FF;--bg-mid:#DDE6FF;--bg-deep:#C7D8FF;
+          --panel:rgba(255,255,255,0.52);--panel-deep:rgba(255,255,255,0.38);
+          --border:rgba(255,255,255,0.72);--border-dim:rgba(180,195,230,0.35);--spec:rgba(255,255,255,0.90);
+          --text-primary:#1a1a2e;--text-secondary:#4a5568;--text-muted:#8a94a8;
+          --green:#34C759;--gold:#FFD700;
+          --shadow-glass:0 8px 32px rgba(100,120,180,0.18),0 2px 8px rgba(100,120,180,0.12);
+          --shadow-hover:0 20px 60px rgba(100,120,180,0.28),0 4px 16px rgba(100,120,180,0.20);
+        }
+        [data-theme="dark"] {
+          --bg:         #0d0d1a;
+          --bg-mid:     #111128;
+          --bg-deep:    #161633;
+          --panel:      rgba(20,20,50,0.72);
+          --panel-deep: rgba(15,15,40,0.85);
+          --border:     rgba(100,120,200,0.35);
+          --border-dim: rgba(60,80,160,0.20);
+          --text-primary:   #e8eaf6;
+          --text-secondary: #8892b0;
+          --text-muted:     #546080;
+          --shadow-glass: 0 8px 32px rgba(0,0,30,0.45), 0 2px 8px rgba(0,0,20,0.30);
+          --shadow-hover: 0 20px 60px rgba(0,0,30,0.60), 0 4px 16px rgba(0,0,20,0.40);
+        }
+        [data-theme="dark"] body {
+          background:
+            radial-gradient(ellipse 80% 60% at 20% 10%, rgba(30,20,80,0.70) 0%, transparent 60%),
+            radial-gradient(ellipse 70% 80% at 80% 90%, rgba(50,10,60,0.60) 0%, transparent 55%),
+            radial-gradient(ellipse 60% 50% at 60% 30%, rgba(100,60,10,0.25) 0%, transparent 50%),
+            linear-gradient(160deg, #0d0d1a 0%, #111128 45%, #161633 100%);
+        }
+        [data-theme="dark"] #bgCanvas {
+          opacity: 0.60;
+          mix-blend-mode: screen;
+        }
+        [data-theme="dark"] .nav {
+          background: rgba(10,10,30,0.80);
+          border-bottom-color: rgba(100,120,200,0.25);
+        }
+        [data-theme="dark"] #mob-nav {
+          background: rgba(10,10,30,0.95);
+        }
+        [data-theme="dark"] .card {
+          background: var(--panel);
+          border-color: var(--border);
+        }
+        [data-theme="dark"] .filter-btn {
+          background: rgba(20,20,50,0.65);
+          border-color: rgba(100,120,200,0.30);
+          color: var(--text-secondary);
+        }
+        [data-theme="dark"] .hero-badge {
+          background: rgba(20,20,50,0.65);
+          border-color: rgba(100,120,200,0.30);
+        }
+        [data-theme="dark"] #scroll-top {
+          background: rgba(20,20,60,0.70);
+          border-color: rgba(100,120,200,0.40);
+          color: var(--text-primary);
+        }
+        body{font-family:'SF Pro Display','Inter',-apple-system,'Rajdhani',sans-serif;background:radial-gradient(ellipse 80% 60% at 20% 10%,rgba(199,216,255,0.85) 0%,transparent 60%),radial-gradient(ellipse 70% 80% at 80% 90%,rgba(221,214,254,0.70) 0%,transparent 55%),radial-gradient(ellipse 60% 50% at 60% 30%,rgba(254,215,170,0.35) 0%,transparent 50%),linear-gradient(160deg,#EEF2FF 0%,#E0E7FF 45%,#EDE9FE 100%);background-attachment:fixed;min-height:100vh;color:var(--text-primary);overflow-x:hidden;}
+        body.nav-open{overflow:hidden;}
+        .skip-link{position:absolute;top:-50px;left:16px;background:rgba(255,255,255,0.85);color:var(--text-primary);padding:8px 16px;border-radius:8px;font-size:.8rem;font-family:'Orbitron',monospace;text-decoration:none;z-index:99999;border:1px solid rgba(0,0,0,0.10);backdrop-filter:blur(12px);transition:top .2s;}
+        .skip-link:focus{top:16px;}
+        .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+        .scanlines{display:none;}
+        #bgCanvas{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.35;mix-blend-mode:multiply;}
+        #pg-veil{position:fixed;inset:0;z-index:99998;background:var(--bg);opacity:0;pointer-events:none;transition:opacity .22s;}
+        #pg-veil.out{opacity:1;pointer-events:all;}
+        #mob-nav{position:fixed;inset:0;z-index:10010;background:rgba(238,242,255,0.92);backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);display:flex;flex-direction:column;padding:20px;transform:translateX(100%);transition:transform .3s cubic-bezier(0.34,1.56,0.64,1);}
+        #mob-nav.open{transform:translateX(0);}
+        #mob-nav a{color:var(--text-secondary);text-decoration:none;font-family:'Orbitron',monospace;font-size:.85rem;letter-spacing:.08em;padding:14px 18px;border-radius:12px;transition:color .18s,background .18s;}
+        #mob-nav a:hover{color:var(--btc);background:var(--btc-muted);}
+        #mob-nav a.deepsea{color:#0891b2;}
+        .mob-close{align-self:flex-end;background:rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.10);border-radius:50%;width:36px;height:36px;font-size:1.1rem;cursor:pointer;color:var(--text-muted);transition:color .18s;font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.08em;padding:6px 12px;border-radius:8px;width:auto;height:auto;}
+        .mob-close:hover{color:var(--btc);}
+        .mob-links{display:flex;flex-direction:column;gap:4px;margin-top:20px;overflow-y:auto;}
+        .nav{position:sticky;top:0;z-index:10002;width:100%;background:rgba(238,242,255,0.72);backdrop-filter:blur(24px) saturate(200%);-webkit-backdrop-filter:blur(24px) saturate(200%);border-bottom:1px solid rgba(255,255,255,0.60);box-shadow:0 1px 0 rgba(180,195,230,0.25),0 4px 20px rgba(100,120,180,0.08);}
+        .nav-inner{max-width:1100px;margin:0 auto;padding:0 20px;height:54px;display:flex;justify-content:space-between;align-items:center;gap:16px;}
+        .nav-logo{font-family:'Orbitron',monospace;font-size:1rem;font-weight:900;color:var(--btc);text-decoration:none;letter-spacing:.06em;text-shadow:none;flex-shrink:0;}
+        .nav-links{display:flex;gap:10px;align-items:center;flex-wrap:nowrap;}
+        .nav-links a{color:var(--text-secondary);text-decoration:none;font-size:.62rem;font-family:'Orbitron',monospace;letter-spacing:.05em;transition:color .18s;white-space:nowrap;}
+        .nav-links a:hover{color:var(--btc);}
+        .nav-links a.deepsea{color:#0891b2;}
+        .hamburger{display:none;flex-direction:column;justify-content:center;gap:5px;background:none;border:none;cursor:pointer;padding:8px;z-index:10003;flex-shrink:0;}
+        .hamburger span{display:block;width:22px;height:2px;background:var(--text-primary);border-radius:2px;transition:transform .25s,opacity .25s;}
+        .hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+        .hamburger.open span:nth-child(2){opacity:0;transform:scaleX(0);}
+        .hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+        @media(max-width:760px){.nav-links{display:none;}.hamburger{display:flex;}}
+        .page-wrap{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;width:100%;animation:pageIn .5s cubic-bezier(0.34,1.56,0.64,1) both;}
+        @keyframes pageIn{from{opacity:0;transform:translateY(10px) scale(0.99)}to{opacity:1;transform:translateY(0) scale(1)}}
+        .hero{text-align:center;padding:60px 20px 36px;width:100%;max-width:1100px;}
+        .hero-logo{width:96px;height:auto;margin-bottom:18px;filter:drop-shadow(0 4px 16px rgba(247,147,26,0.30)) drop-shadow(0 0 40px rgba(247,147,26,0.15));animation:float 4s cubic-bezier(0.45,0.05,0.55,0.95) infinite;}
+        @keyframes float{0%,100%{transform:translateY(0) rotate(0deg)}25%{transform:translateY(-8px) rotate(1deg)}75%{transform:translateY(-4px) rotate(-0.5deg)}}
+        .hero h1{font-family:'Orbitron',monospace;font-size:clamp(2rem,5vw,3.8rem);font-weight:900;background:linear-gradient(135deg,#B35F00 0%,#F7931A 35%,#FFD700 60%,#F7931A 85%,#B35F00 100%);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shimmer 5s linear infinite;filter:none;letter-spacing:.04em;line-height:1.1;margin-bottom:16px;}
+        @keyframes shimmer{to{background-position:200% center}}
+        .hero-badges{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:20px 0 12px;}
+        .hero-badge{font-family:'Orbitron',monospace;font-size:.58rem;letter-spacing:.14em;padding:6px 16px;border:1px solid var(--border);border-radius:999px;background:rgba(255,255,255,0.55);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:var(--text-secondary);box-shadow:inset 0 1px 0 rgba(255,255,255,0.80);}
+        .hero-badge strong{color:var(--btc);}
+        .hero-rule{font-family:'Orbitron',monospace;font-size:.78rem;color:var(--text-muted);letter-spacing:.06em;margin-top:4px;}
+        .hero-rule span{color:var(--btc);}
+        .filter-bar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;padding:0 20px 28px;width:100%;max-width:1100px;}
+        .filter-btn{font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.12em;padding:8px 20px;background:rgba(255,255,255,0.50);border:1px solid rgba(255,255,255,0.70);border-radius:999px;color:var(--text-secondary);cursor:pointer;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.80),0 2px 8px rgba(100,120,180,0.10);transition:all .22s cubic-bezier(0.34,1.56,0.64,1);}
+        .filter-btn:hover{color:var(--btc);background:rgba(255,255,255,0.70);border-color:rgba(255,255,255,0.90);}
+        .filter-btn.active{color:#fff;background:var(--btc);border-color:var(--btc);box-shadow:0 4px 20px rgba(247,147,26,0.40),inset 0 1px 0 rgba(255,220,150,0.40);}
+        .main{width:100%;max-width:1100px;padding:0 20px 52px;}
+        .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;}
+        .card{background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:28px 22px 22px;display:flex;flex-direction:column;align-items:center;gap:10px;text-decoration:none;color:inherit;backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);box-shadow:var(--shadow-glass),inset 0 1px 0 rgba(255,255,255,0.85),inset 0 -1px 0 rgba(180,195,230,0.20);transition:border-color .28s cubic-bezier(0.34,1.56,0.64,1),box-shadow .28s cubic-bezier(0.34,1.56,0.64,1),transform .28s cubic-bezier(0.34,1.56,0.64,1);position:relative;overflow:hidden;opacity:0;animation:cardIn .6s cubic-bezier(0.34,1.56,0.64,1) forwards;}
+        @keyframes cardIn{from{opacity:0;transform:translateY(18px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+        .card:nth-child(1){animation-delay:.04s}.card:nth-child(2){animation-delay:.08s}.card:nth-child(3){animation-delay:.12s}.card:nth-child(4){animation-delay:.16s}.card:nth-child(5){animation-delay:.20s}.card:nth-child(6){animation-delay:.24s}.card:nth-child(7){animation-delay:.28s}.card:nth-child(8){animation-delay:.32s}.card:nth-child(9){animation-delay:.36s}.card:nth-child(10){animation-delay:.40s}.card:nth-child(11){animation-delay:.44s}
+        .card::before{content:'';position:absolute;top:0;left:8%;right:8%;height:1px;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.95) 30%,rgba(255,255,255,1.00) 50%,rgba(255,255,255,0.95) 70%,transparent 100%);border-radius:0 0 50% 50%;pointer-events:none;z-index:1;}
+        .card::after{content:'';position:absolute;inset:0;border-radius:20px;background:linear-gradient(145deg,rgba(255,255,255,0.20) 0%,transparent 40%,transparent 60%,rgba(255,255,255,0.08) 100%);pointer-events:none;z-index:0;}
+        .card:hover{border-color:rgba(255,255,255,0.90);box-shadow:var(--shadow-hover),inset 0 1px 0 rgba(255,255,255,0.95),inset 0 -1px 0 rgba(180,195,230,0.25),0 0 0 1.5px rgba(247,147,26,0.30);transform:translateY(-6px) scale(1.01);}
+        .card-og{border-color:rgba(247,147,26,0.35);background:rgba(255,248,240,0.58);}
+        .card-played{position:absolute;top:14px;right:14px;width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);display:none;}
+        .card-played.show{display:block;}
+        .card-icon{font-size:2.8rem;line-height:1;transition:transform .28s cubic-bezier(0.34,1.56,0.64,1);position:relative;z-index:2;}
+        .card:hover .card-icon{transform:scale(1.14) rotate(-3deg);}
+        .card-title{font-family:'Orbitron',monospace;font-size:.92rem;font-weight:700;color:var(--text-primary);text-align:center;letter-spacing:.04em;position:relative;z-index:2;}
+        .card-desc{font-size:.80rem;color:var(--text-secondary);line-height:1.5;text-align:center;position:relative;z-index:2;}
+        .card-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;position:relative;z-index:2;}
+        .tag{font-size:.58rem;font-family:'Orbitron',monospace;letter-spacing:.1em;color:var(--text-muted);border:1px solid rgba(0,0,0,0.08);border-radius:5px;padding:2px 7px;background:rgba(255,255,255,0.40);}
+        .badge{font-size:.58rem;font-family:'Orbitron',monospace;letter-spacing:.1em;border-radius:5px;padding:2px 8px;}
+        .badge-og{background:rgba(247,147,26,0.12);border:1px solid rgba(247,147,26,0.40);color:#B35F00;}
+        .badge-new{background:rgba(52,199,89,0.10);border:1px solid rgba(52,199,89,0.35);color:#1a7a34;}
+        .card-score{font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.08em;color:var(--btc);padding:4px 12px;border-radius:999px;background:var(--btc-muted);border:1px solid var(--btc-soft);display:none;position:relative;z-index:2;}
+        .card-score.show{display:block;}
+        .play-btn{font-family:'Orbitron',monospace;background:rgba(247,147,26,0.90);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,220,150,0.50);padding:11px 32px;border-radius:999px;color:#fff;font-weight:700;font-size:.82rem;cursor:pointer;letter-spacing:.08em;box-shadow:0 4px 20px rgba(247,147,26,0.28),inset 0 1px 0 rgba(255,235,180,0.50);transition:box-shadow .22s cubic-bezier(0.34,1.56,0.64,1),transform .22s cubic-bezier(0.34,1.56,0.64,1);width:100%;margin-top:4px;position:relative;z-index:2;}
+        .play-btn:hover{box-shadow:0 8px 32px rgba(247,147,26,0.50),inset 0 1px 0 rgba(255,235,180,0.60);transform:scale(1.03);}
+        .card.hidden{display:none!important;}
+        #scroll-top{position:fixed;bottom:28px;right:28px;z-index:1000;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.65);border:1px solid rgba(255,255,255,0.85);cursor:pointer;color:var(--text-primary);font-size:1rem;font-weight:700;backdrop-filter:blur(16px) saturate(180%);-webkit-backdrop-filter:blur(16px) saturate(180%);box-shadow:0 4px 18px rgba(100,120,180,0.20),inset 0 1px 0 rgba(255,255,255,0.90);opacity:0;pointer-events:none;transition:opacity .22s,transform .22s cubic-bezier(0.34,1.56,0.64,1);transform:translateY(12px);}
+        #scroll-top.show{opacity:1;pointer-events:all;transform:translateY(0);}
+        .footer{position:relative;z-index:1;width:100%;max-width:1100px;border-top:1px solid var(--border-dim);padding:32px 20px 28px;margin-top:8px;text-align:center;}
+        .footer-links{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-bottom:16px;}
+        .footer-links a{font-family:'Orbitron',monospace;font-size:.58rem;color:var(--text-muted);text-decoration:none;letter-spacing:.08em;transition:color .18s;}
+        .footer-links a:hover{color:var(--btc);}
+        .footer-copy{color:var(--text-muted);font-size:.72rem;}
+        .footer-copy a{color:var(--text-secondary);text-decoration:none;}
+        .footer-copy a:hover{color:var(--btc);}
+        @media(max-width:480px){.hero{padding:40px 16px 28px;}.grid{grid-template-columns:1fr;gap:14px;}.card{padding:22px 18px 18px;}#scroll-top{bottom:18px;right:18px;}}
+        #theme-toggle {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          background: var(--panel);
+          border: 1px solid var(--border);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          cursor: pointer;
+          font-size: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0;
+          transition: transform .22s cubic-bezier(0.34,1.56,0.64,1), background .2s;
+          flex-shrink: 0;
+        }
+        #theme-toggle:hover { transform: rotate(20deg) scale(1.12); }
+        @media (max-width: 640px) {
+          .cards-grid { grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 12px; }
+        }
+        @media (max-width: 400px) {
+          .cards-grid { grid-template-columns: 1fr; }
+        }
+        .hamburger { min-width: 44px; min-height: 44px; }
+        .mob-close { min-height: 44px; padding: 12px 20px; }
+        .filter-btn { min-height: 40px; }
+        @media (max-width: 380px) {
+          .nav-logo { font-size: 14px; }
+          #theme-toggle { width: 32px; height: 32px; font-size: 14px; }
+        }
+
+        /* ─── BITCOIN NETWORK STATUS BAR ────────────────────────────────── */
+        .network-bar{display:flex;gap:0;flex-wrap:wrap;justify-content:center;align-items:stretch;
+          width:min(1100px,calc(100% - 40px));margin:-8px auto 28px;padding:8px 6px;
+          background:linear-gradient(135deg,rgba(255,255,255,0.55) 0%,rgba(255,255,255,0.30) 100%);
+          border:1px solid var(--border);border-radius:18px;
+          backdrop-filter:blur(20px) saturate(200%);-webkit-backdrop-filter:blur(20px) saturate(200%);
+          box-shadow:var(--shadow-glass),inset 0 1px 0 rgba(255,255,255,0.85);
+          position:relative;overflow:hidden;z-index:2;}
+        [data-theme="dark"] .network-bar{
+          background:linear-gradient(135deg,rgba(20,20,50,0.65) 0%,rgba(15,15,40,0.45) 100%);}
+        .network-bar::before{content:'';position:absolute;inset:0;
+          background:linear-gradient(90deg,transparent 0%,rgba(247,147,26,0.16) 50%,transparent 100%);
+          transform:translateX(-100%);animation:netSweep 7s ease-in-out infinite;pointer-events:none;}
+        @keyframes netSweep{0%,100%{transform:translateX(-100%)}50%{transform:translateX(100%)}}
+        .net-stat{flex:1;min-width:130px;padding:7px 12px;display:flex;flex-direction:column;
+          align-items:center;gap:2px;border-right:1px solid var(--border-dim);position:relative;z-index:1;}
+        .net-stat:last-child{border-right:none;}
+        .net-label{font-family:'Orbitron',monospace;font-size:.5rem;letter-spacing:.18em;
+          color:var(--text-muted);text-transform:uppercase;}
+        .net-val{font-family:'Orbitron',monospace;font-size:.92rem;font-weight:900;color:var(--btc);
+          letter-spacing:.04em;text-shadow:0 0 14px rgba(247,147,26,0.30);
+          font-variant-numeric:tabular-nums;transition:color .3s,transform .25s;}
+        .net-val.flash{transform:scale(1.08);}
+        .net-val.up{color:var(--green);}
+        .net-val.down{color:#ef4444;}
+        .net-val.live{font-size:.62rem;letter-spacing:.18em;}
+        .net-pulse{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);
+          margin-right:6px;box-shadow:0 0 8px var(--green);animation:pulseDot 1.4s ease-in-out infinite;
+          vertical-align:middle;}
+        @keyframes pulseDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.65)}}
+        @media(max-width:520px){
+          .net-stat{min-width:50%;border-right:none;border-bottom:1px solid var(--border-dim);padding:6px 10px;}
+          .net-stat:nth-last-child(-n+2){border-bottom:none;}
+          .net-val{font-size:.78rem;}.net-val.live{font-size:.55rem;}
+        }
+
+        /* ─── 3D HOLOGRAPHIC CARD TILT ──────────────────────────────────── */
+        .grid{perspective:1400px;}
+        .card{transform-style:preserve-3d;will-change:transform;}
+        .card .holo{position:absolute;inset:0;border-radius:20px;pointer-events:none;z-index:3;opacity:0;
+          background:radial-gradient(circle 280px at var(--mx,50%) var(--my,50%),
+            rgba(255,255,255,0.55) 0%,rgba(255,220,150,0.30) 22%,rgba(247,147,26,0.12) 42%,transparent 65%);
+          mix-blend-mode:overlay;transition:opacity .25s;}
+        .card:hover .holo{opacity:1;}
+        [data-theme="dark"] .card .holo{
+          background:radial-gradient(circle 280px at var(--mx,50%) var(--my,50%),
+            rgba(255,220,150,0.40) 0%,rgba(247,147,26,0.22) 25%,transparent 60%);
+          mix-blend-mode:screen;}
+        .card .holo-grid{position:absolute;inset:0;border-radius:20px;pointer-events:none;z-index:2;opacity:0;
+          background-image:
+            linear-gradient(0deg,rgba(247,147,26,0.10) 1px,transparent 1px),
+            linear-gradient(90deg,rgba(247,147,26,0.10) 1px,transparent 1px);
+          background-size:22px 22px;
+          mask-image:radial-gradient(circle 200px at var(--mx,50%) var(--my,50%),black 0%,transparent 70%);
+          -webkit-mask-image:radial-gradient(circle 200px at var(--mx,50%) var(--my,50%),black 0%,transparent 70%);
+          transition:opacity .25s;}
+        .card:hover .holo-grid{opacity:1;}
+        @media(hover:none){.card:hover{transform:translateY(-4px) scale(1.005);}}
+
+        /* ─── BTC CURSOR SPARKS ─────────────────────────────────────────── */
+        .btc-spark{position:fixed;top:0;left:0;width:6px;height:6px;border-radius:50%;
+          background:radial-gradient(circle,#FFD700 0%,#F7931A 55%,transparent 80%);
+          pointer-events:none;z-index:99997;box-shadow:0 0 10px rgba(247,147,26,0.85);
+          will-change:transform,opacity;}
+        @media(hover:none){.btc-spark{display:none!important;}}
+
+        /* ─── HERO HALO + LIVE TAGLINE ──────────────────────────────────── */
+        .hero{position:relative;}
+        .hero::before{content:'';position:absolute;top:30px;left:50%;transform:translateX(-50%);
+          width:380px;height:380px;border-radius:50%;
+          background:radial-gradient(circle,rgba(247,147,26,0.18) 0%,rgba(247,147,26,0.06) 35%,transparent 65%);
+          filter:blur(40px);pointer-events:none;z-index:0;animation:haloPulse 5s ease-in-out infinite;}
+        [data-theme="dark"] .hero::before{
+          background:radial-gradient(circle,rgba(247,147,26,0.30) 0%,rgba(247,147,26,0.10) 35%,transparent 65%);}
+        @keyframes haloPulse{0%,100%{opacity:.85;transform:translateX(-50%) scale(1)}50%{opacity:1;transform:translateX(-50%) scale(1.08)}}
+        .hero>*{position:relative;z-index:1;}
+        .hero-tag-line{font-family:'Orbitron',monospace;font-size:.62rem;letter-spacing:.22em;
+          color:var(--text-muted);margin-top:14px;display:inline-flex;gap:10px;align-items:center;
+          padding:6px 16px;border:1px solid var(--border-dim);border-radius:999px;
+          background:rgba(255,255,255,0.30);backdrop-filter:blur(10px);}
+        [data-theme="dark"] .hero-tag-line{background:rgba(20,20,50,0.45);}
+        .hero-tag-line .dot{width:5px;height:5px;border-radius:50%;background:var(--btc);
+          box-shadow:0 0 8px var(--btc);animation:pulseDot 1.6s ease-in-out infinite;}
+        .hero-tag-rotate{display:inline-block;color:var(--btc);min-width:160px;text-align:left;
+          font-weight:700;}
+        .hero-tag-rotate::after{content:'';display:inline-block;width:.55em;height:.95em;
+          background:var(--btc);margin-left:2px;vertical-align:-2px;
+          animation:caretBlink 1s steps(2) infinite;box-shadow:0 0 6px var(--btc);}
+        @keyframes caretBlink{0%,49%{opacity:1}50%,100%{opacity:0}}
+
+        /* ─── BOOT SEQUENCE ─────────────────────────────────────────────── */
+        #boot-screen{position:fixed;inset:0;z-index:100000;background:#040410;
+          display:flex;align-items:center;justify-content:center;
+          animation:bootOut .45s 1.7s forwards;}
+        #boot-screen::before{content:'';position:absolute;inset:0;
+          background:
+            radial-gradient(ellipse 60% 50% at 50% 50%,rgba(247,147,26,0.18) 0%,transparent 60%),
+            repeating-linear-gradient(0deg,rgba(0,255,255,0.03) 0px,rgba(0,255,255,0.03) 1px,transparent 1px,transparent 4px);
+          pointer-events:none;}
+        @keyframes bootOut{to{opacity:0;visibility:hidden;pointer-events:none;}}
+        .boot-inner{text-align:center;position:relative;z-index:1;}
+        .boot-logo{font-family:'Orbitron',monospace;font-size:5rem;font-weight:900;color:var(--btc);
+          text-shadow:0 0 24px rgba(247,147,26,0.85),0 0 60px rgba(247,147,26,0.45);
+          animation:bootLogo 1s cubic-bezier(0.34,1.56,0.64,1);margin-bottom:14px;line-height:1;}
+        @keyframes bootLogo{0%{transform:scale(0) rotate(-220deg);opacity:0;filter:blur(20px)}
+          70%{transform:scale(1.18) rotate(8deg);opacity:1;filter:blur(0)}
+          100%{transform:scale(1) rotate(0);opacity:1;filter:blur(0)}}
+        .boot-title{font-family:'Orbitron',monospace;font-size:.7rem;letter-spacing:.4em;
+          color:#fff;opacity:0;animation:bootFade .5s .35s forwards;}
+        @keyframes bootFade{to{opacity:1}}
+        .boot-lines{font-family:'Orbitron',monospace;font-size:.55rem;letter-spacing:.1em;color:#00FFFF;
+          text-shadow:0 0 6px rgba(0,255,255,0.6);text-align:left;margin:22px auto 14px;
+          max-width:280px;min-height:84px;}
+        .boot-line{opacity:0;animation:bootType .25s forwards;}
+        .boot-line .ok{color:var(--green);float:right;}
+        .boot-line:nth-child(1){animation-delay:.55s}
+        .boot-line:nth-child(2){animation-delay:.85s}
+        .boot-line:nth-child(3){animation-delay:1.10s}
+        .boot-line:nth-child(4){animation-delay:1.35s}
+        @keyframes bootType{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+        .boot-bar{width:240px;height:2px;background:rgba(247,147,26,0.18);margin:14px auto 0;
+          overflow:hidden;border-radius:2px;}
+        .boot-bar-fill{height:100%;width:0;background:linear-gradient(90deg,#F7931A,#FFD700);
+          box-shadow:0 0 12px #F7931A;animation:bootFill 1.5s .15s ease-out forwards;}
+        @keyframes bootFill{to{width:100%}}
+        #boot-screen.skip{display:none;}
+
+        /* ─── LIVE MEMPOOL MINING STRIP ─────────────────────────────────── */
+        .mempool{display:flex;align-items:center;gap:12px;
+          width:min(1100px,calc(100% - 40px));margin:-12px auto 28px;padding:9px 16px;
+          background:linear-gradient(135deg,rgba(0,0,0,0.04) 0%,rgba(247,147,26,0.04) 100%);
+          border:1px solid var(--border-dim);border-radius:14px;
+          backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+          position:relative;z-index:2;overflow:hidden;}
+        [data-theme="dark"] .mempool{
+          background:linear-gradient(135deg,rgba(15,15,40,0.45) 0%,rgba(20,20,50,0.55) 100%);}
+        .mp-label{font-family:'Orbitron',monospace;font-size:.52rem;letter-spacing:.2em;
+          color:var(--text-muted);flex-shrink:0;text-transform:uppercase;}
+        .mp-label .mining-emoji{margin-right:5px;animation:miningSpin 4s linear infinite;display:inline-block;}
+        @keyframes miningSpin{0%,100%{transform:rotate(0)}25%{transform:rotate(-12deg)}75%{transform:rotate(12deg)}}
+        .mp-blocks{display:flex;gap:5px;flex:1;overflow:hidden;align-items:center;}
+        .mp-blk{width:22px;height:22px;border-radius:4px;flex-shrink:0;position:relative;
+          background:linear-gradient(135deg,rgba(247,147,26,0.20) 0%,rgba(247,147,26,0.06) 100%);
+          border:1px solid rgba(247,147,26,0.40);display:flex;align-items:center;justify-content:center;
+          font-family:'Orbitron',monospace;font-size:.45rem;font-weight:700;color:var(--btc);
+          letter-spacing:0;transition:transform .3s,box-shadow .3s,opacity .4s;
+          box-shadow:inset 0 1px 0 rgba(255,235,180,0.30);}
+        .mp-blk.pending{opacity:.55;border-color:rgba(0,255,255,0.30);
+          background:linear-gradient(135deg,rgba(0,255,255,0.08) 0%,rgba(0,255,255,0.02) 100%);
+          color:rgba(0,255,255,0.85);}
+        .mp-blk.mining{animation:mpMine 1.4s ease-out;}
+        @keyframes mpMine{0%{transform:scale(.7);box-shadow:0 0 0 rgba(247,147,26,0)}
+          40%{transform:scale(1.18);box-shadow:0 0 18px rgba(247,147,26,0.95),inset 0 1px 0 rgba(255,235,180,0.50)}
+          100%{transform:scale(1);box-shadow:inset 0 1px 0 rgba(255,235,180,0.30)}}
+        .mp-blk.confirmed{animation:mpEnter .5s ease-out;}
+        @keyframes mpEnter{from{transform:translateX(-30px);opacity:0}to{transform:translateX(0);opacity:1}}
+        .mp-blk::before{content:'';position:absolute;inset:0;border-radius:4px;
+          background:linear-gradient(90deg,transparent 0%,rgba(255,235,180,0.55) 50%,transparent 100%);
+          transform:translateX(-110%);}
+        .mp-blk.mining::before{animation:mpSweep 1.1s ease-out;}
+        @keyframes mpSweep{0%{transform:translateX(-110%)}100%{transform:translateX(110%)}}
+        .mp-tps{font-family:'Orbitron',monospace;font-size:.55rem;letter-spacing:.12em;color:var(--btc);
+          flex-shrink:0;font-variant-numeric:tabular-nums;text-shadow:0 0 6px rgba(247,147,26,0.30);}
+        @media(max-width:560px){
+          .mempool{flex-wrap:wrap;justify-content:center;padding:8px 12px;}
+          .mp-blocks{justify-content:center;}.mp-tps{margin-left:auto;}
+        }
+
+        /* ─── CHROMATIC GLITCH ON CARD HOVER ────────────────────────────── */
+        .card-title{transition:text-shadow .25s,letter-spacing .25s;}
+        .card:hover .card-title{
+          text-shadow:-1.4px 0 rgba(0,255,255,0.85),1.4px 0 rgba(255,0,170,0.85);
+          letter-spacing:.06em;
+          animation:titleGlitch .5s steps(2) infinite;}
+        @keyframes titleGlitch{
+          0%,100%{text-shadow:-1.4px 0 rgba(0,255,255,0.85),1.4px 0 rgba(255,0,170,0.85)}
+          50%{text-shadow:1.4px 0 rgba(0,255,255,0.85),-1.4px 0 rgba(255,0,170,0.85)}}
+
+        /* ─── CARD CLICK BURST ──────────────────────────────────────────── */
+        .click-burst{position:fixed;width:5px;height:5px;border-radius:50%;
+          background:radial-gradient(circle,#FFE08A 0%,#F7931A 55%,transparent 80%);
+          box-shadow:0 0 10px rgba(247,147,26,0.9);pointer-events:none;z-index:99996;
+          will-change:transform,opacity;animation:burstOut .8s cubic-bezier(0.16,0.84,0.44,1) forwards;}
+        @keyframes burstOut{
+          0%{transform:translate(-50%,-50%) scale(1.2);opacity:1}
+          100%{transform:translate(calc(-50% + var(--bx)),calc(-50% + var(--by))) scale(0.2);opacity:0}}
+
+        /* ─── VIEWPORT SCAN LINE (subtle) ───────────────────────────────── */
+        body::after{content:'';position:fixed;left:0;right:0;height:140px;top:-140px;
+          background:linear-gradient(180deg,transparent 0%,rgba(0,255,255,0.045) 50%,transparent 100%);
+          pointer-events:none;z-index:1;animation:viewScan 9s linear infinite;will-change:transform;
+          mix-blend-mode:screen;}
+        @keyframes viewScan{0%{transform:translateY(0)}100%{transform:translateY(calc(100vh + 280px))}}
+        @media(prefers-reduced-motion:reduce){body::after,.mp-blk.mining,.boot-logo,.hero-logo{animation:none!important;}}
+    </style>
+    <script>
+    (function(){
+      var s = localStorage.getItem('atlas_theme');
+      var d = s ? s === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if(d) document.documentElement.setAttribute('data-theme','dark');
+    })();
+    </script>
+</head>
+<script src="auth.js"></script>
+<body>
+<div id="boot-screen" aria-hidden="true">
+    <div class="boot-inner">
+        <div class="boot-logo">₿</div>
+        <div class="boot-title">ATLAS://NETWORK</div>
+        <div class="boot-lines">
+            <div class="boot-line">&gt; INIT BTC LAYER<span class="ok">[OK]</span></div>
+            <div class="boot-line">&gt; SYNC BLOCKCHAIN<span class="ok">[OK]</span></div>
+            <div class="boot-line">&gt; START MINING RIG<span class="ok">[OK]</span></div>
+            <div class="boot-line">&gt; LOAD ARCADE GRID<span class="ok">[OK]</span></div>
+        </div>
+        <div class="boot-bar"><div class="boot-bar-fill"></div></div>
+    </div>
+</div>
+<a class="skip-link" href="#games-grid">Skip to games</a>
+<div id="pg-veil"></div>
+<div class="scanlines"></div>
+<canvas id="bgCanvas"></canvas>
+
+<nav id="mob-nav" aria-label="Mobile navigation">
+    <button class="mob-close" id="mob-close">✕ CLOSE</button>
+    <a href="pacman.html">PAC-MAN</a>
+    <a href="snake.html">SNAKE</a>
+    <a href="pong.html">PONG</a>
+    <a href="invaders.html">INVADERS</a>
+    <a href="flappy.html">FLAPPY</a>
+    <a href="tetris.html">TETRIS</a>
+    <a href="chess.html">CHESS</a>
+    <a href="sato.html">SATO BROS</a>
+    <a href="moon.html">TO THE MOON</a>
+    <a href="stacksats.html">STACK SATS</a>
+    <a href="bubbles.html">BUBBLES</a>
+    <a href="https://github.com/ak1ra00/hw-flash/releases/latest" target="_blank" rel="noopener" class="deepsea">⚓ DEEPSEA</a>
+  <div id="auth-nav-wrap-mobile" style="padding:12px 8px 4px;border-top:1px solid var(--border-dim);margin-top:8px;"></div>
+</nav>
+
+<header class="nav">
+    <div class="nav-inner">
+        <a class="nav-logo" href="/">₿ ATLAS ARCADE</a>
+        <div class="nav-links">
+            <a href="pacman.html">Pac-Man</a>
+            <a href="snake.html">Snake</a>
+            <a href="pong.html">Pong</a>
+            <a href="invaders.html">Invaders</a>
+            <a href="flappy.html">Flappy</a>
+            <a href="tetris.html">Tetris</a>
+            <a href="chess.html">Chess</a>
+            <a href="sato.html">Sato</a>
+            <a href="moon.html">Moon</a>
+            <a href="stacksats.html">Stack Sats</a>
+            <a href="bubbles.html">Bubbles</a>
+            <a href="https://github.com/ak1ra00/hw-flash/releases/latest" target="_blank" rel="noopener" class="deepsea">⚓ DeepSea</a>
+        </div>
+        <button class="hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+            <span></span><span></span><span></span>
+        </button>
+        <button id="theme-toggle" aria-label="Toggle dark/light theme" title="Toggle theme">🌙</button>
+    </div>
+</header>
+
+<div class="page-wrap">
+    <section class="hero">
+        <img src="logo.svg" alt="Atlas holding Bitcoin" class="hero-logo">
+        <h1>ATLAS BITCOIN<br>ARCADE</h1>
+        <div class="hero-badges">
+            <span class="hero-badge"><strong>11</strong> GAMES</span>
+            <span class="hero-badge"><strong>₿</strong> BITCOIN ONLY</span>
+            <span class="hero-badge">FREE TO PLAY</span>
+            <span class="hero-badge" id="sats-badge" style="display:none"><strong id="sats-val">0</strong> TOTAL SATS</span>
+        </div>
+        <p class="hero-rule">One rule: <span>collect Bitcoin</span> · dodge shitcoins · HODL your score</p>
+        <div class="hero-tag-line">
+            <span class="dot"></span>
+            <span>NETWORK</span>
+            <span class="hero-tag-rotate" id="hero-rotate">STACKING SATS</span>
+        </div>
+    </section>
+
+    <div class="network-bar" id="net-bar" aria-label="Live Bitcoin network status">
+        <div class="net-stat">
+            <span class="net-label">Block Height</span>
+            <span class="net-val" id="ns-block">—</span>
+        </div>
+        <div class="net-stat">
+            <span class="net-label">Network</span>
+            <span class="net-val live up"><span class="net-pulse"></span>HODLING</span>
+        </div>
+        <div class="net-stat">
+            <span class="net-label">Hash Rate · EH/s</span>
+            <span class="net-val" id="ns-hash">—</span>
+        </div>
+        <div class="net-stat">
+            <span class="net-label">BTC / USD</span>
+            <span class="net-val" id="ns-price">—</span>
+        </div>
+    </div>
+
+    <div class="mempool" aria-label="Live mempool mining strip">
+        <div class="mp-label"><span class="mining-emoji">⛏</span>MEMPOOL</div>
+        <div class="mp-blocks" id="mp-blocks"></div>
+        <div class="mp-tps" id="mp-tps">— TX</div>
+    </div>
+
+    <div class="filter-bar" role="group" aria-label="Filter games">
+        <button class="filter-btn active" data-filter="all">ALL</button>
+        <button class="filter-btn" data-filter="action">ACTION</button>
+        <button class="filter-btn" data-filter="puzzle">PUZZLE</button>
+        <button class="filter-btn" data-filter="strategy">STRATEGY</button>
+        <button class="filter-btn" data-filter="platform">PLATFORM</button>
+    </div>
+
+    <main id="games-grid" class="main">
+        <section class="grid" aria-label="Arcade titles">
+
+            <a class="card card-og" href="pacman.html" data-category="action" data-score="">
+                <div class="card-played"></div>
+                <div class="card-icon">🪙</div>
+                <div class="card-title">BITCOIN PAC-MAN</div>
+                <div class="card-desc">Navigate the maze. Collect BTC while dodging ETH, XRP, DOGE, SOL and PEPE ghosts. Find power pellets to fight back.</div>
+                <div class="card-meta"><span class="tag">Maze</span><span class="tag">Multi-level</span><span class="badge badge-og">ORIGINAL</span></div>
+                <div class="card-score"></div>
+                <span class="play-btn" aria-hidden="true">▶ PLAY NOW</span>
+                <span class="sr-only">Play Bitcoin Pac-Man</span>
+            </a>
+
+            <a class="card" href="snake.html" data-category="action" data-score="btc_snake_hs">
+                <div class="card-played"></div>
+                <div class="card-icon">🐍</div>
+                <div class="card-title">BITCOIN SNAKE</div>
+                <div class="card-desc">Grow your Bitcoin snake by collecting BTC coins. Shitcoin obstacles appear on the grid — touch one and lose a life.</div>
+                <div class="card-meta"><span class="tag">Snake</span><span class="tag">Classic</span><span class="badge badge-new">NEW</span></div>
+                <div class="card-score"></div>
+                <span class="play-btn" aria-hidden="true">▶ PLAY NOW</span>
+                <span class="sr-only">Play Bitcoin Snake</span>
+            </a>
+
+            <a class="card" href="pong.html" data-category="action" data-score="btc_pong_hs">
+                <div class="card-played"></div>
+                <div class="card-icon">🏓</div>
+                <div class="card-title">BITCOIN PONG</div>
+                <div class="card-desc">Bounce the BTC coin past the ETH AI paddle. First to 7 wins the block. Rally streaks boost your score.</div>
+                <div class="card-meta"><span class="tag">Pong</span><span class="tag">1v1 AI</span><span class="badge badge-new">NEW</span></div>
+                <div class="card-score"></div>
+                <span class="play-btn" aria-hidden="true">▶ PLAY NOW</span>
+                <span class="sr-only">Play Bitcoin Pong</span>
+            </a>
+
+            <a class="card" href="invaders.html" data-category="action" data-score="btc_inv_hs">
+                <div class="card-played"></div>
+                <div class="card-icon">🚀</div>
+                <div class="card-title">BITCOIN INVADERS</div>
+                <div class="card-desc">Defend your HODL stash from waves of shitcoin invaders. ETH, XRP, DOGE, SOL and PEPE descend from above — shoot them down.</div>
+                <div class="card-meta"><span class="tag">Shooter</span><span class="tag">Waves</span><span class="badge badge-new">NEW</span></div>
+                <div class="card-score"></div>
+                <span class="play-btn" aria-hidden="true">▶ PLAY NOW</span>
+                <span class="sr-only">Play Bitcoin Invaders</span>
+            </a>
+
+            <a class="card" href="flappy.html" data-category="action" data-score="btc_flappy_hs">
+                <div class="card-played"></div>
+                <div class="card-icon">🟡</div>
+                <div class="card-title">FLAPPY BITCOIN</div>
+                <div class="card-desc">Tap to keep the BTC coin airborne. Navigate through gaps in shitcoin pipe walls and collect bonus Bitcoin along the way.</div>
+                <div class="card-meta"><span class="tag">Endless</span><span class="tag">Tap to play</span><span class="badge badge-new">NEW</span></div>
+                <div class="card-score"></div>
+                <span class="play-btn" aria-hidden="true">▶ PLAY NOW</span>
+                <span class="sr-only">Play Flappy Bitcoin</span>
+            </a>
+
+            <a class="card" href="tetris.html" data-category="puzzle" data-score="btc_tetris_hs">
+                <div class="card-played"></div>
+                <div class="card-icon">🟧</div>
+                <div class="card-title">BITCOIN TETRIS</div>
+                <div class="card-desc">Stack Bitcoin blocks, clear lines, and HODL your score. Shitcoin pieces occasionally fall — they score 50% less when cleared.</div>
+                <div class="card-meta"><span class="tag">Puzzle</span><span class="tag">Strategy</span><span class="badge badge-new">NEW</span></div>
+                <div class="card-score"></div>
+                <span class="play-btn" aria-hidden="true">▶ PLAY NOW</span>
+                <span class="sr-only">Play Bitcoin Tetris</span>
+            </a>
+
+            <a class="card" href="chess.html" data-category="strategy" data-score="">
+                <div class="card-played"></div>
+                <div class="card-icon">♟️</div>
+                <div class="card-title">BITCOIN CHESS</div>
+                <div class="card-desc">Full chess with AI opponent. HODL your King while capturing shitcoin pieces. Castling, en passant, promotion — all rules included.</div>
+                <div class="card-meta"><span class="tag">Chess</span><span class="tag">vs AI</span><span class="badge badge-new">NEW</span></div>
+                <div class="card-score"></div>
+                <span class="play-btn" aria-hidden="true">▶ PLAY NOW</span>
+                <span class="sr-only">Play Bitcoin Chess</span>
+            </a>
+
+            <a class="card" href="sato.html" data-category="platform" data-score="sato_hs">
+                <div class="card-played"></div>
+                <div class="card-icon">🎮</div>
+                <div class="card-title">SATO BROS</div>
+                <div class="card-desc">Run, jump and stomp shitcoin enemies in this Game Boy-style Bitcoin platformer. Collect every ₿ coin across 2 levels — Mario-style HODL action.</div>
+                <div class="card-meta"><span class="tag">Platformer</span><span class="tag">Multi-level</span><span class="badge badge-new">NEW</span></div>
+                <div class="card-score"></div>
+                <span class="play-btn" aria-hidden="true">▶ PLAY NOW</span>
+                <span class="sr-only">Play Sato Bros</span>
+            </a>
+
+            <a class="card" href="moon.html" data-category="action" data-score="moon_hs">
+                <div class="card-played"></div>
+                <div class="card-icon">🌙</div>
+                <div class="card-title">TO THE MOON</div>
+                <div class="card-desc">Auto-jump your Bitcoin astronaut ever higher. Collect ₿ coins, stomp ETH/DOGE/PEPE enemies, snag jetpack power-ups. How high can you HODL?</div>
+                <div class="card-meta"><span class="tag">Jumper</span><span class="tag">Endless</span><span class="badge badge-new">NEW</span></div>
+                <div class="card-score"></div>
+                <span class="play-btn" aria-hidden="true">▶ PLAY NOW</span>
+                <span class="sr-only">Play To The Moon</span>
+            </a>
+
+            <a class="card" href="stacksats.html" data-category="puzzle" data-score="stack_hs">
+                <div class="card-played"></div>
+                <div class="card-icon">⚡</div>
+                <div class="card-title">STACK SATS</div>
+                <div class="card-desc">Tap to drop swinging Bitcoin blocks and stack them perfectly. Chain perfect drops for combos and max your sats. One bad drop and it's over.</div>
+                <div class="card-meta"><span class="tag">Stacking</span><span class="tag">Timing</span><span class="badge badge-new">NEW</span></div>
+                <div class="card-score"></div>
+                <span class="play-btn" aria-hidden="true">▶ PLAY NOW</span>
+                <span class="sr-only">Play Stack Sats</span>
+            </a>
+
+            <a class="card" href="hashbreaker.html" data-category="action" data-score="hash_hs">
+                <div class="card-played"></div>
+                <div class="card-icon">⛏️</div>
+                <div class="card-title">HASHBREAKER</div>
+                <div class="card-desc">Mine Bitcoin by smashing blockchain blocks with your ASIC rig. Dodge indestructible FED blocks, catch power-ups, and clear the chain before the bears arrive.</div>
+                <div class="card-meta"><span class="tag">Breakout</span><span class="tag">Mining</span><span class="badge badge-new">NEW</span></div>
+                <div class="card-score"></div>
+                <span class="play-btn" aria-hidden="true">▶ PLAY NOW</span>
+                <span class="sr-only">Play Hashbreaker</span>
+            </a>
+
+            <a class="card" href="bubbles.html" data-category="puzzle" data-score="btc_bubbles_hs">
+                <div class="card-played"></div>
+                <div class="card-icon">🫧</div>
+                <div class="card-title">BUBBLE BURST</div>
+                <div class="card-desc">Aim your BTC cannon, match 3+ shitcoin bubbles, and pop ETH, XRP, DOGE &amp; PEPE clusters before they crash your stack.</div>
+                <div class="card-meta"><span class="tag">Puzzle</span><span class="tag">Shooter</span><span class="badge badge-new">NEW</span></div>
+                <div class="card-score"></div>
+                <span class="play-btn" aria-hidden="true">▶ PLAY NOW</span>
+                <span class="sr-only">Play Bitcoin Bubble Burst</span>
+            </a>
+
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="pacman.html">Pac-Man</a>
+            <a href="snake.html">Snake</a>
+            <a href="pong.html">Pong</a>
+            <a href="invaders.html">Invaders</a>
+            <a href="flappy.html">Flappy Bitcoin</a>
+            <a href="tetris.html">Tetris</a>
+            <a href="chess.html">Chess</a>
+            <a href="sato.html">Sato Bros</a>
+            <a href="moon.html">To The Moon</a>
+            <a href="stacksats.html">Stack Sats</a>
+            <a href="bubbles.html">Bubbles</a>
+        </div>
+        <p class="footer-copy">Atlas Bitcoin Arcade · Made with ❤ by <a href="https://twitter.com/justice__gate" target="_blank">@justice__gate</a></p>
+    </footer>
+</div>
+
+<button id="scroll-top" aria-label="Back to top">↑</button>
+
+<script>
+(function(){
+    const bg=document.getElementById('bgCanvas'),bx=bg.getContext('2d');
+    let bW=0,bH=0,pts=[],blocks=[];
+    function init(){
+      bW=bg.width=innerWidth;bH=bg.height=innerHeight;pts=[];blocks=[];
+      for(let i=0;i<70;i++)pts.push({x:Math.random()*bW,y:Math.random()*bH,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,r:.5+Math.random()*1.6,a:.03+Math.random()*.10,c:Math.random()>.6?'rgba(147,197,253,0.6)':Math.random()>.5?'rgba(196,181,253,0.6)':'rgba(254,215,170,0.55)'});
+      const bcount=Math.max(6,Math.min(14,Math.floor(bW/180)));
+      for(let i=0;i<bcount;i++)blocks.push({x:Math.random()*bW,y:Math.random()*bH,vy:-0.12-Math.random()*0.20,s:14+Math.random()*10,a:0.05+Math.random()*0.08,rot:(Math.random()-.5)*.3,vr:(Math.random()-.5)*.003});
+    }
+    addEventListener('resize',init);init();
+    function draw(){
+      bx.clearRect(0,0,bW,bH);
+      pts.forEach(p=>{p.x=(p.x+p.vx+bW)%bW;p.y=(p.y+p.vy+bH)%bH;bx.save();bx.globalAlpha=p.a;bx.fillStyle=p.c;bx.beginPath();bx.arc(p.x,p.y,p.r,0,Math.PI*2);bx.fill();bx.restore();});
+      blocks.forEach(b=>{
+        b.y+=b.vy;b.rot+=b.vr;
+        if(b.y<-30){b.y=bH+30;b.x=Math.random()*bW;}
+        bx.save();bx.translate(b.x,b.y);bx.rotate(b.rot);
+        bx.globalAlpha=b.a;
+        bx.strokeStyle='rgba(247,147,26,0.95)';bx.lineWidth=1;
+        bx.strokeRect(-b.s/2,-b.s/2,b.s,b.s);
+        bx.fillStyle='rgba(247,147,26,0.85)';
+        bx.font=(b.s*.7)+'px serif';bx.textAlign='center';bx.textBaseline='middle';
+        bx.fillText('₿',0,1);
+        bx.restore();
+      });
+      requestAnimationFrame(draw);
+    }
+    draw();
+})();
+
+/* ─── 3D HOLOGRAPHIC CARD TILT ─── */
+(function(){
+  if(matchMedia('(hover:none)').matches)return;
+  document.querySelectorAll('.grid .card').forEach(c=>{
+    const hg=document.createElement('div');hg.className='holo-grid';
+    const hl=document.createElement('div');hl.className='holo';
+    c.appendChild(hg);c.appendChild(hl);
+    let raf;
+    c.addEventListener('mousemove',e=>{
+      const r=c.getBoundingClientRect();
+      const mx=(e.clientX-r.left)/r.width,my=(e.clientY-r.top)/r.height;
+      const rx=(my-.5)*-7,ry=(mx-.5)*7;
+      c.style.setProperty('--mx',(mx*100)+'%');
+      c.style.setProperty('--my',(my*100)+'%');
+      cancelAnimationFrame(raf);
+      raf=requestAnimationFrame(()=>{
+        c.style.transform=`perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-6px) scale(1.012)`;
+      });
+    });
+    c.addEventListener('mouseleave',()=>{c.style.transform='';});
+  });
+})();
+
+/* ─── BTC CURSOR SPARKS ─── */
+(function(){
+  if(matchMedia('(hover:none)').matches)return;
+  const N=10,sparks=[];
+  for(let i=0;i<N;i++){
+    const s=document.createElement('div');s.className='btc-spark';
+    document.body.appendChild(s);
+    sparks.push({el:s,x:0,y:0,vx:0,vy:0,life:0});
+  }
+  let mx=-200,my=-200,moved=false;
+  document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;moved=true;});
+  let idx=0,frame=0;
+  function tick(){
+    frame++;
+    if(moved&&frame%3===0){
+      const s=sparks[idx];idx=(idx+1)%N;
+      s.x=mx+(Math.random()-.5)*4;s.y=my+(Math.random()-.5)*4;
+      s.vx=(Math.random()-.5)*.6;s.vy=-0.35-Math.random()*.4;
+      s.life=24;
+    }
+    sparks.forEach(s=>{
+      if(s.life>0){
+        s.life--;s.x+=s.vx;s.y+=s.vy;s.vy+=0.012;
+        const o=s.life/24;
+        s.el.style.opacity=String(o*0.9);
+        s.el.style.transform=`translate(${s.x|0}px,${s.y|0}px) translate(-50%,-50%) scale(${(0.4+o*0.8).toFixed(2)})`;
+      } else if(s.el.style.opacity!=='0'){
+        s.el.style.opacity='0';
+      }
+    });
+    requestAnimationFrame(tick);
+  }
+  tick();
+})();
+
+/* ─── HERO TYPEWRITER ─── */
+(function(){
+  const rotEl=document.getElementById('hero-rotate');
+  if(!rotEl)return;
+  const lines=['STACKING SATS','MINING BLOCKS','HODLING STRONG','DODGING SHITCOINS','DIAMOND HANDS','TO THE MOON','HASHING POWER'];
+  let li=0;
+  async function cycle(){
+    while(true){
+      const t=lines[li];
+      for(let c=1;c<=t.length;c++){rotEl.textContent=t.slice(0,c);await new Promise(r=>setTimeout(r,55));}
+      await new Promise(r=>setTimeout(r,1700));
+      for(let c=t.length;c>=0;c--){rotEl.textContent=t.slice(0,c);await new Promise(r=>setTimeout(r,28));}
+      await new Promise(r=>setTimeout(r,260));
+      li=(li+1)%lines.length;
+    }
+  }
+  cycle();
+})();
+
+/* ─── REAL-TIME BTC NETWORK + MEMPOOL (mempool.space API) ─── */
+(function(){
+  const blockEl=document.getElementById('ns-block'),hashEl=document.getElementById('ns-hash'),
+        priceEl=document.getElementById('ns-price');
+  const mpWrap=document.getElementById('mp-blocks'),mpTpsEl=document.getElementById('mp-tps');
+  if(!blockEl)return;
+  const API='https://mempool.space/api';
+  let lastBlock=0,lastPrice=0,booted=false;
+
+  function flash(el,cls){
+    if(!el)return;
+    el.classList.add('flash');if(cls)el.classList.add(cls);
+    setTimeout(()=>{el.classList.remove('flash');if(cls)el.classList.remove(cls);},900);
+  }
+  async function getJSON(path,asText){
+    try{
+      const r=await fetch(API+path,{cache:'no-store'});
+      if(!r.ok)return null;
+      return asText?r.text():r.json();
+    }catch(e){return null;}
+  }
+
+  async function refreshHeader(){
+    const [h,hr,p]=await Promise.all([
+      getJSON('/blocks/tip/height',true),
+      getJSON('/v1/mining/hashrate/3d'),
+      getJSON('/v1/prices')
+    ]);
+    if(h!=null){
+      const nb=parseInt(String(h).trim());
+      if(nb && nb!==lastBlock){
+        const isAdvance=lastBlock!==0 && nb>lastBlock;
+        lastBlock=nb;
+        blockEl.textContent=nb.toLocaleString();
+        if(isAdvance)flash(blockEl,'up');
+      }
+    }
+    if(hr && typeof hr.currentHashrate==='number'){
+      hashEl.textContent=(hr.currentHashrate/1e18).toFixed(1);
+    }
+    if(p && typeof p.USD==='number'){
+      const np=p.USD;
+      const dp=lastPrice?np-lastPrice:0;
+      lastPrice=np;
+      priceEl.textContent='$'+Math.round(np).toLocaleString();
+      if(Math.abs(dp)>0.5)flash(priceEl,dp>0?'up':'down');
+    }
+  }
+
+  function buildStrip(confirmed,pending){
+    if(!mpWrap||!Array.isArray(confirmed))return;
+    const newTop=confirmed[0]?.height||0;
+    const prevTop=parseInt(mpWrap.dataset.topHeight||'0');
+    const isNewBlock=prevTop && newTop>prevTop;
+    mpWrap.dataset.topHeight=String(newTop);
+
+    mpWrap.innerHTML='';
+    // Last 5 confirmed (oldest left → newest right at the boundary with pending)
+    const recent=confirmed.slice(0,5).reverse();
+    recent.forEach((b,i)=>{
+      const el=document.createElement('div');
+      el.className='mp-blk';
+      el.textContent=String(b.height).slice(-3);
+      el.title='Block '+b.height.toLocaleString()+' · '+(b.tx_count||0).toLocaleString()+' tx';
+      if(isNewBlock && b.height===newTop && i===recent.length-1){
+        el.classList.add('mining');
+        setTimeout(()=>el.classList.remove('mining'),1400);
+      }
+      mpWrap.appendChild(el);
+    });
+    // Next 3 pending mempool blocks
+    if(Array.isArray(pending)){
+      pending.slice(0,3).forEach(b=>{
+        const el=document.createElement('div');
+        el.className='mp-blk pending';
+        const tx=b.nTx||0;
+        el.textContent=tx>=1000?Math.floor(tx/1000)+'k':String(tx);
+        const fee=b.medianFee?Math.round(b.medianFee):0;
+        el.title='Pending: '+tx.toLocaleString()+' tx · ~'+fee+' sat/vB';
+        mpWrap.appendChild(el);
+      });
+    }
+  }
+
+  async function refreshMempool(){
+    const [blocks,pending,stats]=await Promise.all([
+      getJSON('/v1/blocks'),
+      getJSON('/v1/fees/mempool-blocks'),
+      getJSON('/mempool')
+    ]);
+    if(blocks)buildStrip(blocks,pending||[]);
+    if(stats && typeof stats.count==='number' && mpTpsEl){
+      mpTpsEl.textContent=stats.count.toLocaleString()+' TX';
+    }
+  }
+
+  async function refreshAll(){
+    await Promise.all([refreshHeader(),refreshMempool()]);
+    if(!booted){booted=true;}
+  }
+  refreshAll();
+  setInterval(refreshAll,30000);
+})();
+
+/* ─── BOOT SCREEN DISMISS ─── */
+(function(){
+  const boot=document.getElementById('boot-screen');
+  if(!boot)return;
+  if(sessionStorage.getItem('atlas_booted')){boot.classList.add('skip');return;}
+  sessionStorage.setItem('atlas_booted','1');
+  setTimeout(()=>{boot.style.display='none';},2200);
+})();
+
+/* ─── CARD CLICK PARTICLE BURST ─── */
+(function(){
+  document.querySelectorAll('a.card').forEach(c=>{
+    c.addEventListener('click',e=>{
+      const x=e.clientX,y=e.clientY;
+      if(x<0||y<0)return;
+      const N=22;
+      for(let i=0;i<N;i++){
+        const p=document.createElement('div');p.className='click-burst';
+        const a=(i/N)*Math.PI*2+(Math.random()-.5)*0.4;
+        const v=60+Math.random()*120;
+        p.style.left=x+'px';p.style.top=y+'px';
+        p.style.setProperty('--bx',(Math.cos(a)*v).toFixed(0)+'px');
+        p.style.setProperty('--by',(Math.sin(a)*v).toFixed(0)+'px');
+        document.body.appendChild(p);
+        setTimeout(()=>p.remove(),820);
+      }
+    });
+  });
+})();
+
+const veil=document.getElementById('pg-veil');
+document.querySelectorAll('a.card').forEach(c=>{
+    c.addEventListener('click',e=>{
+        const h=c.getAttribute('href');
+        if(!h||h.startsWith('http')||h.startsWith('#'))return;
+        e.preventDefault();veil.classList.add('out');
+        setTimeout(()=>{location.href=h;},230);
+    });
+});
+
+const ham=document.getElementById('hamburger'),mob=document.getElementById('mob-nav'),mc=document.getElementById('mob-close');
+function openM(){mob.classList.add('open');ham.classList.add('open');ham.setAttribute('aria-expanded','true');document.body.classList.add('nav-open');}
+function closeM(){mob.classList.remove('open');ham.classList.remove('open');ham.setAttribute('aria-expanded','false');document.body.classList.remove('nav-open');}
+ham.addEventListener('click',()=>mob.classList.contains('open')?closeM():openM());
+mc.addEventListener('click',closeM);
+mob.querySelectorAll('a').forEach(a=>a.addEventListener('click',closeM));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeM();});
+
+document.querySelectorAll('.filter-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+        document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        const f=btn.dataset.filter;
+        document.querySelectorAll('.card').forEach(c=>c.classList.toggle('hidden',f!=='all'&&c.dataset.category!==f));
+    });
+});
+
+document.addEventListener('DOMContentLoaded',()=>{
+    const grid=document.querySelector('.grid');
+    const cards=[...grid.querySelectorAll('.card')];
+    const played=[],unplayed=[];
+    let total=0;
+    cards.forEach(c=>{
+        const key=c.dataset.score;
+        const score=key?Auth.getScore(key):0;
+        if(score>0){
+            c.querySelector('.card-score').textContent='⚡ BEST: '+score.toLocaleString()+' SATS';
+            c.querySelector('.card-score').classList.add('show');
+            c.querySelector('.card-played').classList.add('show');
+            total+=score;played.push(c);
+        }else{unplayed.push(c);}
+    });
+    if(played.length)[...played,...unplayed].forEach((c,i)=>{c.style.animationDelay=(0.04+i*0.04)+'s';grid.appendChild(c);});
+    if(total>0){document.getElementById('sats-val').textContent=total.toLocaleString();document.getElementById('sats-badge').style.display='';}
+});
+
+const stb=document.getElementById('scroll-top');
+window.addEventListener('scroll',()=>stb.classList.toggle('show',scrollY>400),{passive:true});
+stb.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+
+(function(){
+  var btn = document.getElementById('theme-toggle');
+  if(!btn) return;
+  btn.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙';
+  btn.addEventListener('click', function(){
+    var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    if(dark){
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('atlas_theme','light');
+      btn.textContent = '🌙';
+    } else {
+      document.documentElement.setAttribute('data-theme','dark');
+      localStorage.setItem('atlas_theme','dark');
+      btn.textContent = '☀️';
+    }
+  });
+})();
+</script>
+</body>
+</html>
