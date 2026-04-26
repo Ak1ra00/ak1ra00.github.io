@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Flappy Bitcoin — BTC Arcade</title>
-<script type="text/javascript" nonce="128168fcf1654c3098c41332ec5" src="//local.adguard.org?ts=1777178336676&amp;type=content-script&amp;dmn=ppl-ai-code-interpreter-files.s3.amazonaws.com&amp;url=https%3A%2F%2Fppl-ai-code-interpreter-files.s3.amazonaws.com%2Fweb%2Fdirect-files%2F13df698a8dbbb60b71052b376bd7e67e%2F0bc39c71-0adb-475b-bae0-3e1f22e5be0a%2Fb5b591f9.html%3Fresponse-content-disposition%3Dattachment%253B%2520filename%253D%2522flappy_fixed.html%2522%253B%2520filename%252A%253DUTF-8%2527%2527flappy_fixed.html%26AWSAccessKeyId%3DASIA2F3EMEYE7PHDUU32%26Signature%3DwPsRez4aBjN%252F%252FHU0KkNqiOGzqto%253D%26x-amz-security-token%3DIQoJb3JpZ2luX2VjEN3%252F%252F%252F%252F%252F%252F%252F%252F%252F%252FwEaCXVzLWVhc3QtMSJGMEQCICjMltny6X8ekzgJcvcZj3%252FmbjekgxnID74kmX7%252F1h0UAiAB%252FRHyUg0PWcvOf41tTGbeBBGOtS4FBVPp%252Fh6GfCuKqSr8BAim%252F%252F%252F%252F%252F%252F%252F%252F%252F%252F8BEAEaDDY5OTc1MzMwOTcwNSIMTAWLPfsnWvEt6tiqKtAERKdPlsO2hvwuP3qW2eShfzaB2BrQWkxwo1Y84%252BdsRoVl%252FYp75F%252FacA%252BKRwRnCHKJbfOj6VTUkqRBm9CN32TSybmtWPS7JcrAqM0plmIFs%252F1KUabKBtocoPaxsqBBk6qQHQJrZhY9g9lEegT0PJdiSi1Pac3SuQiZdKCb4bUJaqFL6LXO96AyL0Qy46RC%252F3QGfQ0XER1KSQZSJLcc3t9%252BhU5VUvoZGTI9QSxC4pB4jwRb%252B9H%252BMgmswfVwHJ3azaY01MDVbKNb%252F5zbQ4G%252BWKrKgv7Ggine3o0%252BG0ZHhbm4j490mwaFSXA2d9fhzpem0hpzJCPvtYD%252BJpF386lpWUKFG39A7bwibYHxpazEduGnsXRENLUmrz43x3RMrw0oqVD9VHv5W2i%252FwcWOULSPA6xSiamykS1hAT7dFOFfDER0rqe%252BfIN2JBlSFXRD%252Bxoyrk9eUmjDhVM%252FNDfC6M3wi2kheakBjsQSkmvyBN%252FzUAjvM3jhZHDw4KFIOFHzuPJ4xaPZZfaGAMCZerf6VUaUKrRr%252BOWFlR2E%252FSJU4L1ngVwJiZsIGWGK7Hw53V7gCZpbLbLbIQ4yhgFZ0T%252F%252Fu8jibR09fsCg4QljXw2joXE5i5wfrFHdvBgowewyjvC7hN2%252BxNxI%252BVY7JUv%252BEtoVU16eEWoyGJMVjluqX0e99WfvrqTfFzBi4uJVCa9VmY4SotxhLCZSoUt9wLzZXad5Z%252BZ86advYfrDmD76rg9x0z3dpN4YVq40ZnnMu1RzHqfKLGm7EA%252BUev4aQORnH49rYlM25ZfZwjD9rbbPBjqZAbaYOHyvXZUwxvBVN8zjD9UPygDgvYUdvMb4UM3LhI1%252FQvJ1%252FI5kpFwV9gq4me0IZRC%252FLwdI1AKAZv5pDYPaBmTJ%252BDiqMDpHzHJ0keZoBUBjvT%252B0zhV2%252FwSt2Af4RlYRr4mN0zpZUYQGv4AXAOLxrwrwrJex%252BSj93HfJpxy27%252FJl5FyWzZuw6DV5TmhTL2h5jajAxZ6gQPOfFg%253D%253D%26Expires%3D1777178991&amp;app=brave.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1&amp;stealth=1&amp;st-dnt"></script><link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
   --btc: #F7931A;
@@ -404,8 +404,8 @@ let gapSize      = 900;
 let lastDiffLevel= 0;
 
 // ─── PLAYER ──────────────────────────────────────────────────────────────────
-const GRAVITY     = 1.8;
-const FLAP_VEL    = -32;
+const GRAVITY     = 1.1;
+const FLAP_VEL    = -22;
 const PLAYER_R    = 44;
 const PLAYER_X    = 480;
 
@@ -481,7 +481,7 @@ function getMedal(s){
 
 // ─── RESET / INIT ─────────────────────────────────────────────────────────────
 function resetGame(){
-  player   = { x: PLAYER_X, y: 600, vy: 0, angle: 0 };
+  player   = { x: PLAYER_X, y: 1000, vy: 0, angle: 0 };
   trail    = [];
   pipes    = [];
   particles= [];
@@ -923,6 +923,7 @@ function update(){
 
   // Physics
   player.vy += GRAVITY;
+  if(player.vy > 28) player.vy = 28;  // terminal velocity cap
   player.y  += player.vy;
 
   // Tilt angle: map vy to angle
@@ -1044,6 +1045,7 @@ function handleFlap(){
     introOverlay.classList.add('hidden');
     resetGame();
     state = 'playing';
+    player.vy = FLAP_VEL;  // give initial upward impulse
     return;
   }
   if(state === 'playing'){
@@ -1056,6 +1058,7 @@ function handleRestart(){
     gameoverOverlay.classList.add('hidden');
     resetGame();
     state = 'playing';
+    player.vy = FLAP_VEL;  // give initial upward impulse
   }
 }
 
