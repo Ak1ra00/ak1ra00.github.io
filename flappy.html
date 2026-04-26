@@ -399,7 +399,7 @@ let raf       = null;
 
 // ─── DIFFICULTY ──────────────────────────────────────────────────────────────
 let pipeSpeed    = 9.6;
-let spawnInterval= 200;
+let spawnInterval= 260;
 let gapSize      = 900;
 let lastDiffLevel= 0;
 
@@ -488,8 +488,8 @@ function resetGame(){
   floatTexts=[];
   score    = 0;
   frame    = 0;
-  pipeSpeed    = 5.2;
-  spawnInterval= 200;
+  pipeSpeed    = 4.8;
+  spawnInterval= 260;
   gapSize      = 520;
   lastDiffLevel= 0;
 }
@@ -913,13 +913,13 @@ function update(){
   if(diffLevel > lastDiffLevel){
     const steps = diffLevel - lastDiffLevel;
     pipeSpeed     = Math.min(11.0, pipeSpeed + 0.25 * steps);
-    spawnInterval = Math.max(130, spawnInterval - 4 * steps);
+    spawnInterval = Math.max(160, spawnInterval - 3 * steps);
     gapSize       = Math.max(340, gapSize - 8 * steps);
     lastDiffLevel = diffLevel;
   }
 
   // Spawn pipes
-  if(frame % spawnInterval === 0) spawnPipe();
+  if(frame >= 180 && (frame - 180) % spawnInterval === 0) spawnPipe();
 
   // Physics
   player.vy += GRAVITY;
