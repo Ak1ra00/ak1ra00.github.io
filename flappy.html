@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Flappy Bitcoin — BTC Arcade</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -34,6 +34,8 @@ body {
   flex-direction: column;
   align-items: center;
   overflow-x: hidden;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Scanlines overlay */
@@ -116,13 +118,17 @@ body::after {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.5rem 1rem;
+  padding: 1rem 0.5rem;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
 }
 
 .canvas-container {
   position: relative;
-  width: 480px;
-  height: 600px;
+  width: 100%;
+  max-width: 480px;
+  aspect-ratio: 960 / 1200;
   border: 2px solid rgba(247,147,26,0.45);
   border-radius: 8px;
   box-shadow:
@@ -130,12 +136,16 @@ body::after {
     0 0 60px rgba(247,147,26,0.2),
     inset 0 0 30px rgba(0,0,0,0.6);
   overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 canvas {
   display: block;
   width: 100%;
   height: 100%;
+  image-rendering: auto;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* OVERLAY SCREENS */
@@ -293,26 +303,6 @@ canvas {
   background: linear-gradient(90deg, transparent, var(--btc), transparent);
   margin: 0.3rem 0;
 }
-
-/* Mobile canvas scaling */
-@media (max-width: 520px) {
-  .canvas-container {
-    width: 340px;
-    height: 425px;
-  }
-}
-
-/* Mobile responsive sizing */
-#game-wrap, .game-wrap {
-  max-width: min(480px, 100vw);
-  margin: 0 auto;
-  width: 100%;
-}
-canvas {
-  width: 100%;
-  height: auto;
-  display: block;
-}
 </style>
 </head>
 <script src="auth.js"></script>
@@ -332,7 +322,7 @@ canvas {
 
 <div class="game-wrap">
   <div class="canvas-container" id="canvasContainer">
-    <canvas id="gameCanvas" width="480" height="600"></canvas>
+    <canvas id="gameCanvas" width="1920" height="2400"></canvas>
 
     <!-- Flash effect -->
     <div class="flash" id="flashEl"></div>
@@ -376,8 +366,8 @@ canvas {
 // ─── CANVAS & CTX ────────────────────────────────────────────────────────────
 const canvas = document.getElementById('gameCanvas');
 const ctx    = canvas.getContext('2d');
-const W = canvas.width;  // 480
-const H = canvas.height; // 600
+const W = canvas.width;  // 1920
+const H = canvas.height; // 2400
 
 // ─── DOM REFS ────────────────────────────────────────────────────────────────
 const introOverlay   = document.getElementById('introOverlay');
@@ -408,18 +398,18 @@ let frame     = 0;
 let raf       = null;
 
 // ─── DIFFICULTY ──────────────────────────────────────────────────────────────
-let pipeSpeed    = 2.8;
+let pipeSpeed    = 11.2;
 let spawnInterval= 90;
-let gapSize      = 160;
+let gapSize      = 640;
 let lastDiffLevel= 0;
 
 // ─── PLAYER ──────────────────────────────────────────────────────────────────
-const GRAVITY     = 0.45;
-const FLAP_VEL    = -8;
-const PLAYER_R    = 18;
-const PLAYER_X    = 120;
+const GRAVITY     = 1.8;
+const FLAP_VEL    = -32;
+const PLAYER_R    = 72;
+const PLAYER_X    = 480;
 
-let player = { x: PLAYER_X, y: 300, vy: 0, angle: 0 };
+let player = { x: PLAYER_X, y: 1200, vy: 0, angle: 0 };
 
 // Trail positions
 let trail = [];
@@ -491,28 +481,28 @@ function getMedal(s){
 
 // ─── RESET / INIT ─────────────────────────────────────────────────────────────
 function resetGame(){
-  player   = { x: PLAYER_X, y: 300, vy: 0, angle: 0 };
+  player   = { x: PLAYER_X, y: 600, vy: 0, angle: 0 };
   trail    = [];
   pipes    = [];
   particles= [];
   floatTexts=[];
   score    = 0;
   frame    = 0;
-  pipeSpeed    = 2.8;
+  pipeSpeed    = 5.6;
   spawnInterval= 90;
-  gapSize      = 160;
+  gapSize      = 320;
   lastDiffLevel= 0;
 }
 
 // ─── PIPE SPAWNING ────────────────────────────────────────────────────────────
 function spawnPipe(){
   if(pipes.length >= 3) return;
-  const minGapY = 100;
-  const maxGapY = H - gapSize - 100;
+  const minGapY = 200;
+  const maxGapY = H - gapSize - 200;
   const gapY    = Math.floor(Math.random()*(maxGapY - minGapY + 1)) + minGapY;
   const bonusCoinY = gapY + gapSize/2;
   pipes.push({
-    x: W + 30,
+    x: W + 60,
     gapY,
     passed: false,
     bonusCoin: { collected: false, y: bonusCoinY, pulse: 0 },
@@ -520,8 +510,8 @@ function spawnPipe(){
 }
 
 // ─── COLLISION ────────────────────────────────────────────────────────────────
-const PIPE_W = 64;
-const LENIENCY = 4;
+const PIPE_W = 128;
+const LENIENCY = 8;
 
 function circleRect(cx, cy, cr, rx, ry, rw, rh){
   const nearX = clamp(cx, rx, rx+rw);
@@ -549,66 +539,65 @@ function checkCollision(){
 
 function drawBgParticles() {
   // --- Scrolling city skyline (2 layers) ---
-  // Layer 1: distant buildings (slow, dark)
   const t = Date.now() * 0.00005;
   const buildingsBack = [
-    {w:30,h:80},{w:20,h:110},{w:40,h:70},{w:25,h:120},{w:35,h:90},
-    {w:15,h:100},{w:45,h:60},{w:28,h:130},{w:22,h:95},{w:38,h:75},
-    {w:32,h:85},{w:18,h:115},{w:42,h:65},{w:26,h:105},{w:36,h:80},
-    {w:20,h:90},{w:30,h:70},{w:40,h:100}
+    {w:60,h:160},{w:40,h:220},{w:80,h:140},{w:50,h:240},{w:70,h:180},
+    {w:30,h:200},{w:90,h:120},{w:56,h:260},{w:44,h:190},{w:76,h:150},
+    {w:64,h:170},{w:36,h:230},{w:84,h:130},{w:52,h:210},{w:72,h:160},
+    {w:40,h:180},{w:60,h:140},{w:80,h:200}
   ];
   const buildingsFront = [
-    {w:50,h:140},{w:35,h:180},{w:60,h:120},{w:40,h:200},{w:55,h:160},
-    {w:45,h:110},{w:65,h:150},{w:30,h:190},{w:50,h:130},{w:42,h:170},
-    {w:58,h:145},{w:38,h:165}
+    {w:100,h:280},{w:70,h:360},{w:120,h:240},{w:80,h:400},{w:110,h:320},
+    {w:90,h:220},{w:130,h:300},{w:60,h:380},{w:100,h:260},{w:84,h:340},
+    {w:116,h:290},{w:76,h:330}
   ];
 
   // Back layer scroll speed
-  const scrollBack = (t * 8000) % 600;
+  const scrollBack = (t * 16000) % 1200;
   let xB = -scrollBack;
   buildingsBack.forEach((b, i) => {
-    while(xB < 480 + b.w) {
+    while(xB < W + b.w) {
       ctx.fillStyle = 'rgba(8,12,40,0.85)';
-      ctx.fillRect(xB, 600 - b.h - 60, b.w - 2, b.h);
+      ctx.fillRect(xB, H - b.h - 120, b.w - 2, b.h);
       // Window lights
-      if(b.h > 60) {
-        for(let wy = 600 - b.h - 50; wy < 600 - 65; wy += 14) {
-          for(let wx = xB + 4; wx < xB + b.w - 8; wx += 10) {
+      if(b.h > 120) {
+        for(let wy = H - b.h - 100; wy < H - 130; wy += 28) {
+          for(let wx = xB + 8; wx < xB + b.w - 16; wx += 20) {
             if(Math.sin(wx*0.7 + wy*0.3 + i) > 0.3) {
               ctx.fillStyle = `rgba(255,220,120,${0.08 + Math.sin(wx+wy+t*200)*0.04})`;
-              ctx.fillRect(wx, wy, 5, 4);
+              ctx.fillRect(wx, wy, 10, 8);
             }
           }
         }
       }
-      xB += b.w + 4;
+      xB += b.w + 8;
     }
-    xB -= 600 + scrollBack; // keep looping
+    xB -= 1200 + scrollBack;
   });
 
-  // Reset and do front layer
-  const scrollFront = (t * 20000) % 800;
+  // Front layer
+  const scrollFront = (t * 40000) % 1600;
   let xF = -scrollFront;
   buildingsFront.forEach((b, i) => {
-    while(xF < 480 + b.w) {
+    while(xF < W + b.w) {
       ctx.fillStyle = 'rgba(4,6,20,0.95)';
-      ctx.fillRect(xF, 600 - b.h - 60, b.w - 2, b.h);
+      ctx.fillRect(xF, H - b.h - 120, b.w - 2, b.h);
       // Window lights (brighter)
-      for(let wy = 600 - b.h - 50; wy < 600 - 65; wy += 16) {
-        for(let wx = xF + 5; wx < xF + b.w - 8; wx += 12) {
+      for(let wy = H - b.h - 100; wy < H - 130; wy += 32) {
+        for(let wx = xF + 10; wx < xF + b.w - 16; wx += 24) {
           if(Math.sin(wx*0.5 + wy*0.4 + i*2) > 0.2) {
             const lit = Math.sin(wx*1.3 + wy + t*500 + i) > 0.6;
             ctx.fillStyle = lit ? `rgba(100,180,255,0.25)` : `rgba(255,180,80,0.15)`;
-            ctx.fillRect(wx, wy, 6, 5);
+            ctx.fillRect(wx, wy, 12, 10);
           }
         }
       }
-      xF += b.w + 6;
+      xF += b.w + 12;
     }
-    xF -= 800 + scrollFront;
+    xF -= 1600 + scrollFront;
   });
 
-  // --- Twinkling stars (keep original behavior) ---
+  // --- Twinkling stars ---
   bgParticles.forEach(p => {
     p.x += p.vx;
     p.y += p.vy;
@@ -616,13 +605,13 @@ function drawBgParticles() {
     if(p.x > W) p.x = 0;
     if(p.y < 0) p.y = H;
     if(p.y > H) p.y = 0;
-    // Only show stars in top 60% of screen (above buildings)
+    // Only show stars in top 55% of screen (above buildings)
     if(p.y < H * 0.55) {
       ctx.save();
       ctx.globalAlpha = p.alpha;
       ctx.fillStyle = p.col;
       ctx.shadowColor = p.col;
-      ctx.shadowBlur = 4;
+      ctx.shadowBlur = 8;
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
       ctx.fill();
@@ -659,19 +648,29 @@ function drawPipe(p){
 function drawPipeRect(x, y, w, h, isTop) {
   if(h <= 0) return;
 
-  // Main body gradient (darker base)
+  // Main body gradient (smoother, richer)
   const g = ctx.createLinearGradient(x, 0, x+w, 0);
   g.addColorStop(0, '#050c20');
   g.addColorStop(0.15, '#0d1830');
-  g.addColorStop(0.5, '#0a1428');
+  g.addColorStop(0.5, '#122040');
   g.addColorStop(0.85, '#0d1830');
   g.addColorStop(1, '#050c20');
   ctx.fillStyle = g;
   ctx.fillRect(x, y, w, h);
 
+  // Inner glow effect
+  const innerG = ctx.createLinearGradient(x, 0, x+w, 0);
+  innerG.addColorStop(0, 'rgba(98,126,234,0.0)');
+  innerG.addColorStop(0.3, 'rgba(98,126,234,0.04)');
+  innerG.addColorStop(0.5, 'rgba(98,126,234,0.08)');
+  innerG.addColorStop(0.7, 'rgba(98,126,234,0.04)');
+  innerG.addColorStop(1, 'rgba(98,126,234,0.0)');
+  ctx.fillStyle = innerG;
+  ctx.fillRect(x+4, y+4, w-8, h-8);
+
   // ETH glow border
   ctx.strokeStyle = 'rgba(98,126,234,0.35)';
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = 2;
   ctx.strokeRect(x, y, w, h);
 
   // Panel rivets / horizontal band lines every 40px
@@ -686,17 +685,20 @@ function drawPipeRect(x, y, w, h, isTop) {
   for(let py2 = y + 15; py2 < y + h - 10; py2 += lightSpacing) {
     const lit = Math.sin(Date.now()*0.002 + py2) > 0.5;
     ctx.fillStyle = lit ? 'rgba(98,126,234,0.6)' : 'rgba(98,126,234,0.2)';
-    ctx.fillStyle = 'rgba(98,126,234,0.35)';
-    ctx.beginPath(); ctx.arc(x + w/2, py2, 2, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x + w/2, py2, 2.5, 0, Math.PI*2); ctx.fill();
   }
 
   // Cap (wide mouth at the gap end)
   const capH = 16, capW = w + 10, capX = x - 5;
   const capY = isTop ? y + h - capH : y;
-  ctx.fillStyle = '#0a1a38';
+  const capG = ctx.createLinearGradient(capX, 0, capX+capW, 0);
+  capG.addColorStop(0, '#081428');
+  capG.addColorStop(0.5, '#122040');
+  capG.addColorStop(1, '#081428');
+  ctx.fillStyle = capG;
   ctx.fillRect(capX, capY, capW, capH);
   ctx.strokeStyle = 'rgba(98,126,234,0.5)';
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = 2;
   ctx.strokeRect(capX, capY, capW, capH);
 
   // Ξ tiled symbols (keep original)
@@ -714,14 +716,14 @@ function drawBonusCoin(p){
   if(bc.collected) return;
   bc.pulse += 0.08;
   const pulseFactor = 1 + 0.15*Math.sin(bc.pulse);
-  const cr = 8 * pulseFactor;
+  const cr = 16 * pulseFactor;
   const cx = p.x;
   const cy = bc.y;
 
   ctx.save();
   // Glow
   ctx.shadowColor = C.gold;
-  ctx.shadowBlur  = 10;
+  ctx.shadowBlur  = 20;
   // Circle
   const grad = ctx.createRadialGradient(cx-cr*0.25, cy-cr*0.25, 0, cx, cy, cr);
   grad.addColorStop(0, '#fff4aa');
@@ -743,14 +745,17 @@ function drawBonusCoin(p){
 function drawPlayer(){
   const { x, y, vy, angle } = player;
 
-  // Trail
+  // Trail (smoother fade)
   ctx.save();
   for(let i=0;i<trail.length;i++){
     const t = trail[i];
-    const alpha = (i+1) / trail.length * 0.25;
+    const alpha = (1 - i/trail.length) * 0.3;
+    const r = PLAYER_R * (1 - i/trail.length * 0.4);
     ctx.beginPath();
-    ctx.arc(t.x, t.y, PLAYER_R - 2, 0, Math.PI*2);
+    ctx.arc(t.x, t.y, r, 0, Math.PI*2);
     ctx.fillStyle = `rgba(247,147,26,${alpha})`;
+    ctx.shadowColor = C.btc;
+    ctx.shadowBlur = 8;
     ctx.fill();
   }
   ctx.restore();
@@ -760,30 +765,42 @@ function drawPlayer(){
   ctx.translate(x, y);
   ctx.rotate(angle);
 
-  // Glow
+  // Outer glow halo
   ctx.shadowColor = C.btc;
-  ctx.shadowBlur  = 20;
+  ctx.shadowBlur  = 30;
+  ctx.beginPath();
+  ctx.arc(0, 0, PLAYER_R + 4, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(247,147,26,0.15)';
+  ctx.fill();
 
-  // Coin body
-  const grad = ctx.createRadialGradient(-PLAYER_R*0.3, -PLAYER_R*0.3, 0, 0, 0, PLAYER_R);
-  grad.addColorStop(0, '#FFE566');
-  grad.addColorStop(0.4, C.gold);
-  grad.addColorStop(0.7, C.btc);
+  // Coin body (smoother gradient)
+  const grad = ctx.createRadialGradient(-PLAYER_R*0.25, -PLAYER_R*0.35, 0, 0, 0, PLAYER_R);
+  grad.addColorStop(0, '#FFF0A0');
+  grad.addColorStop(0.25, '#FFE566');
+  grad.addColorStop(0.55, C.gold);
+  grad.addColorStop(0.8, C.btc);
   grad.addColorStop(1, '#7a4000');
   ctx.beginPath();
   ctx.arc(0, 0, PLAYER_R, 0, Math.PI*2);
   ctx.fillStyle = grad;
   ctx.fill();
 
+  // Inner highlight ring
+  ctx.beginPath();
+  ctx.arc(0, 0, PLAYER_R - 4, 0, Math.PI*2);
+  ctx.strokeStyle = 'rgba(255,230,100,0.4)';
+  ctx.lineWidth   = 2;
+  ctx.stroke();
+
   // Outer ring
   ctx.strokeStyle = 'rgba(255,230,100,0.7)';
-  ctx.lineWidth   = 2;
+  ctx.lineWidth   = 2.5;
   ctx.stroke();
 
   // ₿ symbol
   ctx.shadowBlur = 0;
   ctx.fillStyle = 'rgba(80,35,0,0.9)';
-  ctx.font = 'bold 20px Orbitron, monospace';
+  ctx.font = 'bold 22px Orbitron, monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText('₿', 0, 1);
@@ -833,39 +850,40 @@ function drawHUD(){
   // Score
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'top';
-  ctx.font         = 'bold 36px Orbitron, monospace';
+  ctx.font         = 'bold 72px Orbitron, monospace';
   ctx.fillStyle    = '#ffffff';
   ctx.shadowColor  = C.btc;
-  ctx.shadowBlur   = 14;
-  ctx.fillText(score, W/2, 18);
+  ctx.shadowBlur   = 28;
+  ctx.fillText(score, W/2, 36);
   // Hi-score
-  ctx.font         = '700 13px Orbitron, monospace';
+  ctx.font         = '700 26px Orbitron, monospace';
   ctx.fillStyle    = 'rgba(255,215,0,0.8)';
-  ctx.shadowBlur   = 6;
-  ctx.fillText('BEST ' + hiScore, W/2, 60);
+  ctx.shadowBlur   = 12;
+  ctx.fillText('BEST ' + hiScore, W/2, 120);
   ctx.restore();
 }
 
 function drawGround() {
-  const gY = H - 60; // approximate ground top
-  const lineY = H - 1;
+  const gY = H - 60; // Ground top
 
-  // Ground base gradient
+  // Ground gradient (dark with subtle glow)
   const gg = ctx.createLinearGradient(0, gY, 0, H);
-  gg.addColorStop(0, 'rgba(4,6,20,0.0)');
-  gg.addColorStop(1, 'rgba(2,4,12,0.0)');
-  // Actually just draw the neon line - find the actual ground line in the file
+  gg.addColorStop(0, 'rgba(10,15,30,0.95)');
+  gg.addColorStop(0.3, 'rgba(6,8,18,0.98)');
+  gg.addColorStop(1, 'rgba(3,4,10,1)');
+  ctx.fillStyle = gg;
+  ctx.fillRect(0, gY, W, H - gY);
 
-  // Neon line
+  // Neon top line
   const pulse = 0.6 + 0.4 * Math.sin(Date.now() * 0.003);
   ctx.save();
   ctx.shadowColor = '#F7931A';
   ctx.shadowBlur = 12 * pulse;
   ctx.strokeStyle = `rgba(247,147,26,${0.5 + 0.3*pulse})`;
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.moveTo(0, lineY);
-  ctx.lineTo(W, lineY);
+  ctx.moveTo(0, gY);
+  ctx.lineTo(W, gY);
   ctx.stroke();
 
   // Scrolling grid lines on ground (perspective effect)
@@ -874,7 +892,12 @@ function drawGround() {
   ctx.lineWidth = 1;
   ctx.shadowBlur = 0;
   for(let gx = -scrollOffset; gx < W; gx += 40) {
-    ctx.beginPath(); ctx.moveTo(gx, lineY); ctx.lineTo(gx + 20, H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(gx, gY); ctx.lineTo(gx + 20, H); ctx.stroke();
+  }
+
+  // Horizontal ground lines
+  for(let gy = gY + 15; gy < H; gy += 15) {
+    ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
   }
   ctx.restore();
 }
@@ -889,9 +912,9 @@ function update(){
   const diffLevel = Math.floor(score / 5);
   if(diffLevel > lastDiffLevel){
     const steps = diffLevel - lastDiffLevel;
-    pipeSpeed     = Math.min(6.0, pipeSpeed + 0.15 * steps);
+    pipeSpeed     = Math.min(12.0, pipeSpeed + 0.3 * steps);
     spawnInterval = Math.max(55, spawnInterval - 3 * steps);
-    gapSize       = Math.max(120, gapSize - 5 * steps);
+    gapSize       = Math.max(240, gapSize - 10 * steps);
     lastDiffLevel = diffLevel;
   }
 
@@ -1023,11 +1046,6 @@ function handleFlap(){
     state = 'playing';
     return;
   }
-  if(state === 'dead'){
-    gameoverOverlay.classList.remove('hidden');
-    // Only accept restart if overlay is visible
-    return;
-  }
   if(state === 'playing'){
     player.vy = FLAP_VEL;
   }
@@ -1046,26 +1064,34 @@ introOverlay.addEventListener('click', ()=>{ if(state==='intro') handleFlap(); }
 introOverlay.addEventListener('touchstart', (e)=>{ e.preventDefault(); if(state==='intro') handleFlap(); }, { passive:false });
 
 // Click / touch on canvas
-canvas.addEventListener('click', ()=>{
+canvas.addEventListener('click', (e)=>{
+  e.preventDefault();
   if(state === 'dead'){
     handleRestart();
-  } else {
+  } else if(state === 'playing'){
     handleFlap();
   }
-});
+}, { passive: false });
 
 canvas.addEventListener('touchstart', (e)=>{
   e.preventDefault();
   if(state === 'dead'){
     handleRestart();
-  } else {
+  } else if(state === 'playing'){
     handleFlap();
   }
 }, { passive: false });
 
 // Also clicking on game over overlay
-gameoverOverlay.addEventListener('click', handleRestart);
-gameoverOverlay.addEventListener('touchstart', (e)=>{ e.preventDefault(); handleRestart(); }, { passive: false });
+gameoverOverlay.addEventListener('click', (e)=>{
+  e.preventDefault();
+  handleRestart();
+}, { passive: false });
+
+gameoverOverlay.addEventListener('touchstart', (e)=>{
+  e.preventDefault();
+  handleRestart();
+}, { passive: false });
 
 // Keyboard
 document.addEventListener('keydown', (e)=>{
@@ -1078,6 +1104,12 @@ document.addEventListener('keydown', (e)=>{
     }
   }
 });
+
+// Prevent scrolling on the game area (mobile)
+const canvasContainer = document.getElementById('canvasContainer');
+canvasContainer.addEventListener('touchmove', (e)=>{ e.preventDefault(); }, { passive: false });
+canvasContainer.addEventListener('gesturestart', (e)=>{ e.preventDefault(); }, { passive: false });
+canvasContainer.addEventListener('gesturechange', (e)=>{ e.preventDefault(); }, { passive: false });
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 introBest.textContent = 'BEST: ' + hiScore;
