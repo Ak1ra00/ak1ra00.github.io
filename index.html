@@ -318,6 +318,17 @@
         @keyframes bootFill{to{width:100%}}
         #boot-screen.skip{display:none;}
 
+        /* ─── REBOOT BUTTON ──────────────────────────────────────────────── */
+        .reboot-btn{font-family:'Orbitron',monospace;font-size:.55rem;letter-spacing:.16em;
+          padding:6px 14px;background:rgba(247,147,26,0.08);border:1px solid rgba(247,147,26,0.30);
+          border-radius:8px;color:var(--btc);cursor:pointer;transition:all .22s;
+          box-shadow:0 0 12px rgba(247,147,26,0.15);margin-top:10px;}
+        .reboot-btn:hover{background:rgba(247,147,26,0.18);box-shadow:0 0 20px rgba(247,147,26,0.35);
+          transform:scale(1.05);}
+        .reboot-btn:active{transform:scale(0.97);}
+        [data-theme="dark"] .reboot-btn{
+          background:rgba(247,147,26,0.06);border-color:rgba(247,147,26,0.25);}
+
         /* ─── LIVE MEMPOOL MINING STRIP ─────────────────────────────────── */
         .mempool{display:flex;align-items:center;gap:12px;
           width:min(1100px,calc(100% - 40px));margin:-12px auto 28px;padding:9px 16px;
@@ -691,6 +702,7 @@
             <a href="runner.html">Runner</a>
         </div>
         <p class="footer-copy">Atlas Bitcoin Arcade · Made with ❤ by <a href="https://twitter.com/justice__gate" target="_blank">@justice__gate</a></p>
+        <button class="reboot-btn" id="reboot-btn" aria-label="Replay boot sequence">⚡ REBOOT SEQUENCE</button>
     </footer>
 </div>
 
@@ -915,6 +927,41 @@
   if(sessionStorage.getItem('atlas_booted')){boot.classList.add('skip');return;}
   sessionStorage.setItem('atlas_booted','1');
   setTimeout(()=>{boot.style.display='none';},2200);
+})();
+
+/* ─── BOOT REPLAY ─── */
+(function(){
+  const btn=document.getElementById('reboot-btn');
+  if(!btn)return;
+  const bootLines=[
+    ['> INIT BTC LAYER','> SYNC BLOCKCHAIN','> START MINING RIG','> LOAD ARCADE GRID'],
+    ['> WAKE NODE','> VERIFY HASH','> CONNECT PEERS','> MOUNT BLOCKCHAIN'],
+    ['> FLUSH CACHE','> RE-INDEX SATS','> CHECK MEMPOOL','> ONLINE'],
+    ['> SYSTEM CHECK','> UTXO VALID','> DIFFICULTY OK','> HASHING...'],
+  ];
+  btn.addEventListener('click',()=>{
+    const old=document.getElementById('boot-screen');
+    if(!old)return;
+    // Pick random boot lines for variety
+    const lines=bootLines[Math.floor(Math.random()*bootLines.length)];
+    // Clone to reset ALL CSS animations
+    const clone=old.cloneNode(true);
+    old.parentNode.replaceChild(clone,old);
+    clone.style.display='flex';
+    clone.style.animation='none';
+    // Swap boot lines with random set
+    const lineEls=clone.querySelectorAll('.boot-line');
+    lineEls.forEach((el,i)=>{
+      if(lines[i]){
+        el.innerHTML=lines[i]+'<span class="ok">[OK]</span>';
+      }
+    });
+    // Force reflow to restart animations
+    void clone.offsetWidth;
+    clone.style.animation='bootOut .45s 1.7s forwards';
+    // Dismiss after sequence
+    setTimeout(()=>{clone.style.display='none';},2400);
+  });
 })();
 
 /* ─── CARD CLICK PARTICLE BURST ─── */
