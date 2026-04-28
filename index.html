@@ -9,7 +9,7 @@
     <meta name="theme-color" content="#0d0d1a">
     <link rel="canonical" href="https://soufianekh.space/">
     <meta property="og:title" content="Atlas Bitcoin Arcade">
-    <meta property="og:description" content="13 Bitcoin-themed arcade games. Free to play.">
+    <meta property="og:description" content="14 Bitcoin-themed arcade games. Free to play.">
     <meta property="og:image" content="https://soufianekh.space/logo.svg">
     <meta property="og:type" content="website">
     <link rel="icon" href="logo.svg" type="image/svg+xml">
@@ -939,28 +939,32 @@
     ['> FLUSH CACHE','> RE-INDEX SATS','> CHECK MEMPOOL','> ONLINE'],
     ['> SYSTEM CHECK','> UTXO VALID','> DIFFICULTY OK','> HASHING...'],
   ];
-  btn.addEventListener('click',()=>{
+  function replayBoot(){
     const old=document.getElementById('boot-screen');
     if(!old)return;
-    // Pick random boot lines for variety
     const lines=bootLines[Math.floor(Math.random()*bootLines.length)];
-    // Clone to reset ALL CSS animations
     const clone=old.cloneNode(true);
     old.parentNode.replaceChild(clone,old);
     clone.style.display='flex';
     clone.style.animation='none';
-    // Swap boot lines with random set
     const lineEls=clone.querySelectorAll('.boot-line');
     lineEls.forEach((el,i)=>{
       if(lines[i]){
         el.innerHTML=lines[i]+'<span class="ok">[OK]</span>';
       }
     });
-    // Force reflow to restart animations
     void clone.offsetWidth;
     clone.style.animation='bootOut .45s 1.7s forwards';
-    // Dismiss after sequence
     setTimeout(()=>{clone.style.display='none';},2400);
+  }
+  btn.addEventListener('click',replayBoot);
+  // Keyboard shortcut: press B to replay boot
+  document.addEventListener('keydown',e=>{
+    if(e.key==='b'||e.key==='B'){
+      // Don't trigger if user is typing in an input
+      if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
+      replayBoot();
+    }
   });
 })();
 
@@ -990,7 +994,11 @@ document.querySelectorAll('a.card').forEach(c=>{
     c.addEventListener('click',e=>{
         const h=c.getAttribute('href');
         if(!h||h.startsWith('http')||h.startsWith('#'))return;
-        e.preventDefault();veil.classList.add('out');
+        e.preventDefault();
+        // Show loading state on the card
+        const playBtn=c.querySelector('.play-btn');
+        if(playBtn){playBtn.textContent='⏳ LOADING...';playBtn.style.pointerEvents='none';}
+        veil.classList.add('out');
         setTimeout(()=>{location.href=h;},230);
     });
 });
