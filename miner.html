@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Bitcoin Miner – Atlas Bitcoin Arcade</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Press+Start+2P&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --btc:#F7931A;--btc-glow:rgba(247,147,26,0.55);
+  --bg:#060610;--panel:rgba(8,8,24,0.88);--border:rgba(247,147,26,0.2);
+  --green:#00ff88;--gold:#FFD700;--red:#ff3355;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Rajdhani',sans-serif;background:var(--bg);min-height:100vh;color:#f0f0f0;
+  display:flex;flex-direction:column;align-items:center;overflow-x:hidden;touch-action:manipulation;}
+.scanlines{position:fixed;inset:0;z-index:300;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.025) 2px,rgba(0,0,0,0.025) 4px);}
+.nav{width:100%;max-width:900px;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;
+  border-bottom:1px solid var(--border);position:relative;z-index:10002;}
+.nav-logo{font-family:'Orbitron',monospace;font-size:1rem;color:var(--btc);text-decoration:none;letter-spacing:.06em;text-shadow:0 0 12px var(--btc-glow);}
+.nav-links{display:flex;gap:12px;flex-wrap:wrap;}
+.nav-links a{color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;transition:color .2s;}
+.nav-links a:hover,.nav-links a.active{color:var(--btc);}
+.hdr{text-align:center;padding:6px 0 4px;position:relative;z-index:1;}
+.hdr h1{font-family:'Orbitron',monospace;font-size:1.4rem;font-weight:900;
+  background:linear-gradient(90deg,#F7931A,#FFD700,#F7931A);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;filter:drop-shadow(0 0 12px var(--btc-glow));}
+.hdr p{color:#4b5563;font-size:.75rem;margin-top:2px;}
+
+/* Game area */
+#game-wrap{
+  width:min(500px,100vw);position:relative;z-index:1;
+  margin-top:8px;}
+.cwrap{
+  border:2px solid var(--border);border-radius:12px;
+  box-shadow:0 0 40px var(--btc-glow);
+  overflow:hidden;background:#0a0a1a;position:relative;}
+#miner{display:block;width:100%;height:auto;cursor:pointer;image-rendering:pixelated;}
+
+/* Stats bar */
+.stats{
+  display:flex;justify-content:space-around;
+  width:min(500px,100vw);margin-top:6px;padding:8px;
+  background:var(--panel);border:1px solid var(--border);border-radius:10px;
+  position:relative;z-index:1;}
+.stat{text-align:center;}
+.stat-lbl{font-family:'Press Start 2P',monospace;font-size:.5rem;color:#6b7280;display:block;margin-bottom:2px;}
+.stat-val{font-family:'Orbitron',monospace;font-size:1rem;font-weight:700;color:var(--btc);}
+.stat-val.gold{color:var(--gold);}
+.stat-val.green{color:var(--green);}
+
+/* Upgrades */
+.upgrades{
+  width:min(500px,100vw);margin-top:8px;padding:0 0 20px;
+  position:relative;z-index:1;}
+.upg-title{font-family:'Orbitron',monospace;font-size:.8rem;color:var(--btc);
+  text-align:center;margin-bottom:6px;letter-spacing:.06em;}
+.upg-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.upg-btn{
+  background:var(--panel);border:1px solid var(--border);border-radius:8px;
+  padding:8px;text-align:center;cursor:pointer;transition:all .15s;
+  -webkit-tap-highlight-color:transparent;user-select:none;}
+.upg-btn:hover{border-color:var(--btc);box-shadow:0 0 12px var(--btc-glow);}
+.upg-btn:active{transform:scale(.96);}
+.upg-btn.locked{opacity:.4;pointer-events:none;}
+.upg-name{font-family:'Orbitron',monospace;font-size:.6rem;color:#f0f0f0;display:block;margin-bottom:2px;}
+.upg-desc{font-size:.65rem;color:#6b7280;display:block;margin-bottom:4px;}
+.upg-cost{font-family:'Press Start 2P',monospace;font-size:.5rem;color:var(--gold);display:block;}
+.upg-level{font-family:'Press Start 2P',monospace;font-size:.45rem;color:var(--green);display:block;margin-top:2px;}
+
+@media(max-width:500px){
+  .upg-grid{grid-template-columns:1fr;}
+  .hdr h1{font-size:1.1rem;}
+}
+</style>
+</head>
+<body>
+<div class="scanlines"></div>
+
+<nav class="nav">
+  <a class="nav-logo" href="index.html">₿ ATLAS ARCADE</a>
+  <div class="nav-links">
+    <a href="pacman.html">Pac-Man</a><a href="snake.html">Snake</a>
+    <a href="pong.html">Pong</a><a href="tetris.html">Tetris</a>
+    <a href="invaders.html">Invaders</a><a href="moon.html">Moon</a>
+    <a href="sato.html">Sato</a><a href="flappy.html">Flappy</a>
+    <a href="bubbles.html">Bubbles</a><a href="chess.html">Chess</a>
+    <a href="hashbreaker.html">Breakout</a><a href="stacksats.html">Stack</a>
+    <a href="runner.html">Runner</a>
+    <a href="miner.html" class="active">Miner</a>
+  </div>
+</nav>
+
+<div class="hdr">
+  <h1>⛏ BITCOIN MINER</h1>
+  <p>Click to mine · Upgrade your rig · Stack those sats</p>
+</div>
+
+<div id="game-wrap">
+  <div class="cwrap">
+    <canvas id="miner" width="500" height="350"></canvas>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat"><span class="stat-lbl">₿ BALANCE</span><span class="stat-val gold" id="sBal">0.00000000</span></div>
+  <div class="stat"><span class="stat-lbl">⛏ PER CLICK</span><span class="stat-val" id="sClick">0.00000001</span></div>
+  <div class="stat"><span class="stat-lbl">⚡ PER SEC</span><span class="stat-val green" id="sAuto">0.00000000</span></div>
+</div>
+
+<div class="upgrades">
+  <div class="upg-title">⚙ UPGRADES</div>
+  <div class="upg-grid" id="upgGrid"></div>
+</div>
+
+<script>
+// ─── Audio ───
+let audioCtx;
+function initAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();}
+function playMine(){
+  if(!audioCtx)return;
+  const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  o.connect(g);g.connect(audioCtx.destination);
+  o.type='square';o.frequency.setValueAtTime(800,audioCtx.currentTime);
+  o.frequency.exponentialRampToValueAtTime(200,audioCtx.currentTime+.08);
+  g.gain.setValueAtTime(.12,audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.1);
+  o.start();o.stop(audioCtx.currentTime+.1);
+}
+function playUpgrade(){
+  if(!audioCtx)return;
+  [600,800,1000].forEach((f,i)=>{
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.connect(g);g.connect(audioCtx.destination);
+    o.type='sine';o.frequency.value=f;
+    g.gain.setValueAtTime(.08,audioCtx.currentTime+i*.06);
+    g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.06+.12);
+    o.start(audioCtx.currentTime+i*.06);o.stop(audioCtx.currentTime+i*.06+.12);
+  });
+}
+
+// ─── Game State ───
+const state={
+  balance:0,
+  clickPower:1e-8,
+  autoRate:0,
+  totalMined:0,
+  totalClicks:0,
+  blocksMined:0,
+  particles:[],
+  floatingTexts:[],
+  upgrades:[
+    {id:'mouse',name:'Better Mouse',desc:'Click power +0.00000001',baseCost:1e-7,costMult:1.5,effect:()=>{state.clickPower+=1e-8;},level:0,max:50},
+    {id:'gpu',name:'GPU Rig',desc:'Auto-mine +0.00000010/sec',baseCost:5e-7,costMult:1.4,effect:()=>{state.autoRate+=1e-7;},level:0,max:30},
+    {id:'asic',name:'ASIC Miner',desc:'Auto-mine +0.00000100/sec',baseCost:5e-6,costMult:1.4,effect:()=>{state.autoRate+=1e-6;},level:0,max:25},
+    {id:'farm',name:'Mining Farm',desc:'Auto-mine +0.00001000/sec',baseCost:5e-5,costMult:1.4,effect:()=>{state.autoRate+=1e-5;},level:0,max:20},
+    {id:'pool',name:'Mining Pool',desc:'Auto-mine +0.00010000/sec',baseCost:5e-4,costMult:1.4,effect:()=>{state.autoRate+=1e-4;},level:0,max:15},
+    {id:'quantum',name:'Quantum Miner',desc:'Auto-mine +0.00100000/sec',baseCost:5e-3,costMult:1.5,effect:()=>{state.autoRate+=1e-3;},level:0,max:10},
+  ]
+};
+
+// ─── Canvas ───
+const canvas=document.getElementById('miner');
+const ctx=canvas.getContext('2d');
+const W=500,H=350;
+
+// Bitcoin icon (drawn)
+function drawBitcoin(cx,cy,r){
+  // Outer glow
+  const grad=ctx.createRadialGradient(cx,cy,r*.5,cx,cy,r*1.5);
+  grad.addColorStop(0,'rgba(247,147,26,0.3)');
+  grad.addColorStop(1,'rgba(247,147,26,0)');
+  ctx.fillStyle=grad;
+  ctx.beginPath();ctx.arc(cx,cy,r*1.5,0,Math.PI*2);ctx.fill();
+  // Coin
+  ctx.fillStyle='#F7931A';
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#e8850f';
+  ctx.beginPath();ctx.arc(cx,cy,r*.88,0,Math.PI*2);ctx.fill();
+  // B symbol
+  ctx.fillStyle='#fff';
+  ctx.font=`bold ${r*1.1}px Orbitron,monospace`;
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('₿',cx,cy+1);
+}
+
+// Mining animation state
+let mining=false;
+let mineAnim=0;
+let blockProgress=0;
+let blockTarget=100;
+let hashText='';
+let hashTimer=0;
+let bgParticles=[];
+
+for(let i=0;i<20;i++){
+  bgParticles.push({x:Math.random()*W,y:Math.random()*H,s:Math.random()*2+1,
+    speed:Math.random()*.3+.1,alpha:Math.random()*.3+.05});
+}
+
+function generateHash(){
+  const chars='0123456789abcdef';
+  let h='0x';
+  for(let i=0;i<8;i++)h+=chars[Math.floor(Math.random()*16)];
+  return h;
+}
+
+// ─── Particles ───
+function spawnParticles(x,y,count){
+  for(let i=0;i<count;i++){
+    state.particles.push({
+      x,y,vx:(Math.random()-.5)*4,vy:-Math.random()*3-1,
+      life:1,size:Math.random()*3+1,
+      color:Math.random()>.3?'#F7931A':'#FFD700'
+    });
+  }
+}
+
+function spawnFloatingText(x,y,text){
+  state.floatingTexts.push({x,y,text,life:1,vy:-1.5});
+}
+
+// ─── Mining Logic ───
+function doMine(x,y){
+  initAudio();
+  playMine();
+  state.balance+=state.clickPower;
+  state.totalMined+=state.clickPower;
+  state.totalClicks++;
+  blockProgress+=blockTarget/10;
+  hashText=generateHash();
+  hashTimer=30;
+  mineAnim=10;
+  spawnParticles(x||W/2,y||H/2,8);
+  spawnFloatingText(x||W/2,y||H/2-20,'+'+formatBtc(state.clickPower));
+  if(blockProgress>=blockTarget){
+    state.blocksMined++;
+    blockProgress=0;
+    blockTarget=Math.min(blockTarget*1.1,500);
+    spawnParticles(W/2,H/2,25);
+    spawnFloatingText(W/2,H/2-50,'⛏ BLOCK #'+state.blocksMined+' MINED!');
+  }
+}
+
+function formatBtc(n){return n.toFixed(8);}
+function formatCost(n){
+  if(n>=1)return n.toFixed(4)+' BTC';
+  if(n>=1e-4)return n.toFixed(6)+' BTC';
+  return n.toFixed(8)+' BTC';
+}
+
+// ─── Click Handler ───
+canvas.addEventListener('click',e=>{
+  const rect=canvas.getBoundingClientRect();
+  const scaleX=W/rect.width,scaleY=H/rect.height;
+  doMine((e.clientX-rect.left)*scaleX,(e.clientY-rect.top)*scaleY);
+});
+
+// ─── Upgrades ───
+function renderUpgrades(){
+  const grid=document.getElementById('upgGrid');
+  grid.innerHTML='';
+  state.upgrades.forEach((u,i)=>{
+    const cost=u.baseCost*Math.pow(u.costMult,u.level);
+    const locked=state.balance<cost||u.level>=u.max;
+    const div=document.createElement('div');
+    div.className='upg-btn'+(locked?' locked':'');
+    div.innerHTML=`<span class="upg-name">${u.name}</span><span class="upg-desc">${u.desc}</span><span class="upg-cost">💰 ${formatCost(cost)}</span><span class="upg-level">Lv.${u.level}/${u.max}</span>`;
+    if(!locked){
+      div.addEventListener('click',()=>{
+        if(state.balance>=cost&&u.level<u.max){
+          state.balance-=cost;
+          u.level++;
+          u.effect();
+          playUpgrade();
+          updateUI();
+          renderUpgrades();
+        }
+      });
+    }
+    grid.appendChild(div);
+  });
+}
+
+function updateUI(){
+  document.getElementById('sBal').textContent=formatBtc(state.balance);
+  document.getElementById('sClick').textContent=formatBtc(state.clickPower);
+  document.getElementById('sAuto').textContent=formatBtc(state.autoRate);
+}
+
+// ─── Auto Mining ───
+setInterval(()=>{
+  if(state.autoRate>0){
+    state.balance+=state.autoRate/10;
+    state.totalMined+=state.autoRate/10;
+    updateUI();
+  }
+},100);
+
+// ─── Save/Load ───
+function save(){
+  const data={balance:state.balance,clickPower:state.clickPower,autoRate:state.autoRate,
+    totalMined:state.totalMined,totalClicks:state.totalClicks,blocksMined:state.blocksMined,
+    upLevels:state.upgrades.map(u=>u.level)};
+  localStorage.setItem('btcMiner',JSON.stringify(data));
+}
+function load(){
+  try{
+    const d=JSON.parse(localStorage.getItem('btcMiner'));
+    if(d){
+      state.balance=d.balance||0;state.clickPower=d.clickPower||1e-8;
+      state.autoRate=d.autoRate||0;state.totalMined=d.totalMined||0;
+      state.totalClicks=d.totalClicks||0;state.blocksMined=d.blocksMined||0;
+      if(d.upLevels)d.upLevels.forEach((l,i)=>{if(state.upgrades[i])state.upgrades[i].level=l;});
+    }
+  }catch(e){}
+}
+load();
+updateUI();
+renderUpgrades();
+setInterval(save,5000);
+
+// ─── Main Loop ───
+let lastTime=0;
+function gameLoop(time){
+  const dt=Math.min((time-lastTime)/16.67,3);lastTime=time;
+
+  // Clear
+  ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,W,H);
+
+  // Background particles
+  bgParticles.forEach(p=>{
+    p.y-=p.speed*dt;
+    if(p.y<-5){p.y=H+5;p.x=Math.random()*W;}
+    ctx.fillStyle=`rgba(247,147,26,${p.alpha})`;
+    ctx.fillRect(p.x,p.y,p.s,p.s);
+  });
+
+  // Grid lines (blockchain feel)
+  ctx.strokeStyle='rgba(247,147,26,0.04)';
+  ctx.lineWidth=1;
+  for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+  // Bitcoin
+  const btcPulse=1+Math.sin(time/500)*.03;
+  const btcY=H/2-20+(mineAnim>0?Math.sin(mineAnim)*3:0);
+  drawBitcoin(W/2,btcY,50*btcPulse);
+  if(mineAnim>0)mineAnim-=dt;
+
+  // Block progress bar
+  const barW=200,barH=12,barX=(W-barW)/2,barY=H-40;
+  ctx.fillStyle='rgba(247,147,26,0.1)';
+  ctx.fillRect(barX,barY,barW,barH);
+  ctx.fillStyle='rgba(247,147,26,0.6)';
+  ctx.fillRect(barX,barY,barW*(blockProgress/blockTarget),barH);
+  ctx.strokeStyle='rgba(247,147,26,0.3)';ctx.lineWidth=1;
+  ctx.strokeRect(barX,barY,barW,barH);
+  ctx.fillStyle='#6b7280';ctx.font='9px "Press Start 2P",monospace';ctx.textAlign='center';
+  ctx.fillText('BLOCK PROGRESS',W/2,barY-6);
+
+  // Hash display
+  if(hashTimer>0){
+    hashTimer-=dt;
+    ctx.fillStyle=`rgba(0,255,136,${Math.min(hashTimer/15,1)})`;
+    ctx.font='10px "Press Start 2P",monospace';ctx.textAlign='center';
+    ctx.fillText(hashText,W/2,btcY+70);
+  }
+
+  // Stats on canvas
+  ctx.fillStyle='#6b7280';ctx.font='10px "Press Start 2P",monospace';ctx.textAlign='center';
+  ctx.fillText(`Total: ${formatBtc(state.totalMined)} | Clicks: ${state.totalClicks} | Blocks: ${state.blocksMined}`,W/2,25);
+
+  // Particles
+  state.particles.forEach(p=>{
+    p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt*.03;
+    if(p.life>0){
+      ctx.globalAlpha=p.life;
+      ctx.fillStyle=p.color;
+      ctx.fillRect(p.x-p.size/2,p.y-p.size/2,p.size,p.size);
+      ctx.globalAlpha=1;
+    }
+  });
+  state.particles=state.particles.filter(p=>p.life>0);
+
+  // Floating texts
+  state.floatingTexts.forEach(t=>{
+    t.y+=t.vy*dt;t.life-=dt*.02;
+    if(t.life>0){
+      ctx.globalAlpha=t.life;
+      ctx.fillStyle='#FFD700';
+      ctx.font='bold 12px "Orbitron",monospace';ctx.textAlign='center';
+      ctx.fillText(t.text,t.x,t.y);
+      ctx.globalAlpha=1;
+    }
+  });
+  state.floatingTexts=state.floatingTexts.filter(t=>t.life>0);
+
+  // Upgrade buttons periodically
+  if(Math.floor(time/1000)%3===0)renderUpgrades();
+
+  requestAnimationFrame(gameLoop);
+}
+requestAnimationFrame(gameLoop);
+</script>
+<script src="auth.js"></script>
+</body>
+</html>

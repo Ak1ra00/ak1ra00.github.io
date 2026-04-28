@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Bitcoin Runner – Atlas Bitcoin Arcade</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Press+Start+2P&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--btc:#F7931A;--btc-glow:rgba(247,147,26,0.55);--bg:#010112;--panel:rgba(6,6,20,0.92);--border:rgba(247,147,26,0.2);--gold:#FFD700;--green:#00ff88;--red:#ff3355;--blue:#4da6ff;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Rajdhani',sans-serif;background:var(--bg);min-height:100vh;color:#f0f0f0;display:flex;flex-direction:column;align-items:center;overflow-x:hidden;touch-action:manipulation;}
+.scanlines{position:fixed;inset:0;z-index:300;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.025) 2px,rgba(0,0,0,0.025) 4px);}
+.nav{width:100%;max-width:900px;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);position:relative;z-index:10002;}
+.nav-logo{font-family:'Orbitron',monospace;font-size:1rem;color:var(--btc);text-decoration:none;letter-spacing:.06em;text-shadow:0 0 12px var(--btc-glow);}
+.nav-links{display:flex;gap:12px;flex-wrap:wrap;}
+.nav-links a{color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;transition:color .2s;}
+.nav-links a:hover,.nav-links a.active{color:var(--btc);}
+.hdr{text-align:center;padding:6px 0 4px;}
+.hdr h1{font-family:'Orbitron',monospace;font-size:1.4rem;font-weight:900;background:linear-gradient(90deg,#F7931A,#FFD700,#F7931A);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 12px var(--btc-glow));}
+.hdr p{color:#4b5563;font-size:.75rem;margin-top:2px;}
+.hud{display:flex;justify-content:space-between;align-items:center;width:100%;max-width:440px;padding:4px 8px;font-family:'Press Start 2P',monospace;font-size:7px;color:var(--btc);background:rgba(0,0,0,0.5);border:1px solid var(--border);border-radius:6px;margin-bottom:4px;}
+.hud b{color:var(--gold);}
+.cwrap{width:min(440px,100vw);position:relative;z-index:1;border:2px solid var(--border);border-radius:4px;box-shadow:0 0 40px var(--btc-glow);overflow:hidden;background:#010112;}
+#g{display:block;width:100%;height:auto;image-rendering:pixelated;}
+.ctrl{width:100%;max-width:440px;display:flex;justify-content:center;align-items:center;padding:8px 14px 10px;margin-top:4px;background:var(--panel);border:1px solid var(--border);border-radius:12px;}
+@media(max-width:460px){.ctrl{position:fixed;bottom:0;left:0;right:0;border-radius:16px 16px 0 0;border-bottom:none;z-index:10003;padding:8px 12px 14px;max-width:100%;box-shadow:0 -6px 30px rgba(0,0,0,.85);}body{padding-bottom:80px;}}
+.cbtn{background:rgba(247,147,26,.1);border:2px solid rgba(247,147,26,.4);border-radius:10px;width:80px;height:52px;font-size:.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--btc);touch-action:manipulation;user-select:none;-webkit-tap-highlight-color:transparent;transition:background .1s;font-family:'Orbitron',monospace;letter-spacing:.06em;}
+.cbtn:active,.cbtn.pressed{background:rgba(247,147,26,.4);}
+.overlay{position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at center,#0a0520 0%,#010112 70%);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;padding:20px;}
+.overlay.h{opacity:0;pointer-events:none;}
+.ov-title{font-family:'Orbitron',monospace;font-size:clamp(1.4rem,5vw,2.2rem);font-weight:900;background:linear-gradient(90deg,#F7931A,#FFD700,#F7931A);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 18px rgba(247,147,26,.7));text-align:center;}
+.ov-sub{color:#6b7280;font-size:.83rem;text-align:center;max-width:300px;line-height:1.6;}
+.ov-btn{font-family:'Orbitron',monospace;background:linear-gradient(135deg,#F7931A,#FFD700);border:none;padding:12px 32px;border-radius:10px;color:#000;font-weight:700;font-size:.85rem;cursor:pointer;letter-spacing:.06em;box-shadow:0 4px 20px rgba(247,147,26,.35);transition:all .2s;margin-top:4px;}
+.ov-btn:hover{transform:translateY(-2px);}
+.ov-btn.sec{background:rgba(247,147,26,.1);border:1px solid rgba(247,147,26,.3);color:var(--btc);box-shadow:none;}
+.ov-stat{font-family:'Press Start 2P',monospace;font-size:.65rem;color:var(--gold);text-align:center;line-height:2.2;}
+.legend{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:300px;}
+.leg{font-family:'Press Start 2P',monospace;font-size:.45rem;padding:4px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.15);}
+</style>
+</head>
+<body>
+<div class="scanlines"></div>
+
+<div class="overlay" id="menuOv">
+  <div style="font-size:3.2rem;filter:drop-shadow(0 0 20px #F7931A)">₿</div>
+  <div class="ov-title">BITCOIN RUNNER</div>
+  <div class="ov-sub">Run · Jump · Collect ₿<br>Dodge shitcoins · HODL your distance</div>
+  <div class="ov-stat" id="menuBest">BEST: 0m</div>
+  <div class="legend">
+    <span class="leg" style="background:rgba(247,147,26,0.15);color:#F7931A">₿ SATS</span>
+    <span class="leg" style="background:rgba(255,215,0,0.15);color:#FFD700">BLOCK +50</span>
+    <span class="leg" style="background:rgba(255,68,102,0.15);color:#ff4466">REKT STOP</span>
+    <span class="leg" style="background:rgba(0,255,136,0.15);color:#00ff88">DCA BOOST</span>
+  </div>
+  <button class="ov-btn" onclick="startGame()">🏃 RUN</button>
+</div>
+
+<div class="overlay h" id="goOv">
+  <div style="font-size:3rem" id="goIcon">💀</div>
+  <div class="ov-title" id="goTitle">REKT</div>
+  <div class="ov-stat" id="goStat"></div>
+  <button class="ov-btn" onclick="startGame()">↩ RETRY</button>
+  <button class="ov-btn sec" onclick="showMenu()">🏠 MENU</button>
+</div>
+
+<nav class="nav">
+  <a class="nav-logo" href="index.html">₿ ATLAS ARCADE</a>
+  <div class="nav-links">
+    <a href="pacman.html">Pac-Man</a>
+    <a href="snake.html">Snake</a>
+    <a href="pong.html">Pong</a>
+    <a href="invaders.html">Invaders</a>
+    <a href="flappy.html">Flappy</a>
+    <a href="tetris.html">Tetris</a>
+    <a href="chess.html">Chess</a>
+    <a href="sato.html">Sato</a>
+    <a href="moon.html">Moon</a>
+    <a href="bubbles.html">Bubbles</a>
+    <a href="hashbreaker.html">Breakout</a>
+    <a href="stacksats.html">Stack</a>
+    <a href="miner.html">Miner</a>
+    <a href="runner.html" class="active">Runner</a>
+  </div>
+</nav>
+<div class="hdr"><h1>₿ BITCOIN RUNNER</h1><p>Run · Jump · Collect ₿ · Dodge shitcoins · HODL distance</p></div>
+<div class="hud">
+  <span>🏃 <b id="hD">0m</b></span>
+  <span>₿ <b id="hS">0</b></span>
+  <span>🔥 <b id="hSp">1x</b></span>
+  <span>BEST <b id="hB">0m</b></span>
+</div>
+<div class="cwrap"><canvas id="g" width="360" height="620"></canvas></div>
+<div class="ctrl">
+  <button class="cbtn" id="btnJump">JUMP</button>
+</div>
+
+<script>
+// ─── CANVAS SETUP ─────────────────────────────────────
+const canvas = document.getElementById('g');
+const ctx = canvas.getContext('2d');
+const W = canvas.width;  // 360
+const H = canvas.height; // 620
+
+// ─── GAME STATE ───────────────────────────────────────
+let state = 'menu'; // menu | playing | gameover
+let score = 0;      // distance in meters
+let sats = 0;       // collected sats
+let speed = 3;
+let baseSpeed = 3;
+let maxSpeed = 10;
+let speedMultiplier = 1;
+let best = parseInt(localStorage.getItem('runner_best') || '0');
+let bestSats = parseInt(localStorage.getItem('runner_best_sats') || '0');
+let frameCount = 0;
+let shakeX = 0, shakeY = 0;
+
+// ─── PLAYER ───────────────────────────────────────────
+const player = {
+  x: 60, y: 0, w: 32, h: 32,
+  vy: 0, grounded: true,
+  groundY: H - 80,
+  jumpPower: -12, gravity: 0.6,
+  doubleJump: false, canDoubleJump: true,
+  invincible: 0,
+  trail: []
+};
+
+// ─── GROUND / TERRAIN ────────────────────────────────
+const groundH = 80;
+let groundOffset = 0;
+let groundSegments = [];
+
+function initGround() {
+  groundSegments = [];
+  for (let x = 0; x < W + 100; x += 20) {
+    groundSegments.push({ x, h: 5 + Math.random() * 10 });
+  }
+}
+
+// ─── OBSTACLES ───────────────────────────────────────
+let obstacles = [];
+const obstacleTypes = [
+  { name: 'flag',   w: 28, h: 40, color: '#ff3355', emoji: '🚩' },
+  { name: 'coin',   w: 28, h: 28, color: '#ff4466', emoji: '🪙' },
+  { name: 'wall',   w: 24, h: 50, color: '#ff3355', emoji: '🧱' },
+  { name: 'rocket', w: 30, h: 36, color: '#ff6644', emoji: '🚀' },
+];
+
+// ─── COLLECTIBLES ────────────────────────────────────
+let collectibles = [];
+const collectTypes = [
+  { name: 'sat',     w: 18, h: 18, color: '#F7931A', points: 1, emoji: '₿' },
+  { name: 'block',   w: 24, h: 24, color: '#FFD700', points: 50, emoji: '⛏' },
+  { name: 'dca',     w: 20, h: 20, color: '#00ff88', points: 0, boost: true, emoji: '⚡' },
+];
+
+// ─── PARTICLES ───────────────────────────────────────
+let particles = [];
+
+// ─── STARS (background) ─────────────────────────────
+let stars = [];
+function initStars() {
+  stars = [];
+  for (let i = 0; i < 80; i++) {
+    stars.push({
+      x: Math.random() * W,
+      y: Math.random() * (H - groundH - 60),
+      s: Math.random() * 2 + 0.5,
+      sp: Math.random() * 0.5 + 0.2,
+      a: Math.random() * 0.6 + 0.4
+    });
+  }
+}
+
+// ─── INIT ────────────────────────────────────────────
+function init() {
+  player.y = player.groundY - player.h;
+  player.vy = 0;
+  player.grounded = true;
+  player.doubleJump = false;
+  player.canDoubleJump = true;
+  player.invincible = 0;
+  player.trail = [];
+  score = 0;
+  sats = 0;
+  speed = baseSpeed;
+  speedMultiplier = 1;
+  frameCount = 0;
+  obstacles = [];
+  collectibles = [];
+  particles = [];
+  shakeX = 0;
+  shakeY = 0;
+  initGround();
+  initStars();
+  updateHUD();
+  document.getElementById('menuBest').textContent = `BEST: ${best}m`;
+}
+
+// ─── SPAWNING ────────────────────────────────────────
+let spawnTimer = 0;
+let collectTimer = 0;
+
+function spawnObstacle() {
+  const type = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
+  const isFlying = Math.random() < 0.3;
+  const y = isFlying ? player.groundY - 70 - Math.random() * 40 : player.groundY - type.h;
+  obstacles.push({
+    x: W + 20, y, ...type,
+    flying: isFlying, flyPhase: Math.random() * Math.PI * 2
+  });
+}
+
+function spawnCollectible() {
+  const type = collectTypes[Math.floor(Math.random() * collectTypes.length)];
+  const y = player.groundY - 40 - Math.random() * 120;
+  collectibles.push({
+    x: W + 20, y, ...type,
+    phase: Math.random() * Math.PI * 2
+  });
+}
+
+// ─── PARTICLES ───────────────────────────────────────
+function emitParticles(x, y, color, count, spread) {
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x, y,
+      vx: (Math.random() - 0.5) * spread,
+      vy: (Math.random() - 0.5) * spread - 2,
+      life: 1,
+      decay: 0.02 + Math.random() * 0.03,
+      color,
+      size: Math.random() * 4 + 2
+    });
+  }
+}
+
+// ─── UPDATE ──────────────────────────────────────────
+function update() {
+  if (state !== 'playing') return;
+  frameCount++;
+
+  // Speed increases over time
+  speed = baseSpeed + frameCount * 0.002;
+  if (speed > maxSpeed) speed = maxSpeed;
+  if (speedMultiplier > 1) {
+    speedMultiplier -= 0.005;
+    if (speedMultiplier < 1) speedMultiplier = 1;
+  }
+
+  // Score
+  score += speed * 0.05 * speedMultiplier;
+
+  // Ground scroll
+  groundOffset += speed * speedMultiplier;
+
+  // Player physics
+  player.vy += player.gravity;
+  player.y += player.vy;
+  if (player.y >= player.groundY - player.h) {
+    player.y = player.groundY - player.h;
+    player.vy = 0;
+    player.grounded = true;
+    player.doubleJump = false;
+    player.canDoubleJump = true;
+  }
+
+  // Player trail
+  if (frameCount % 2 === 0) {
+    player.trail.push({ x: player.x, y: player.y + player.h / 2, a: 1 });
+  }
+  player.trail = player.trail.filter(t => {
+    t.x -= speed * speedMultiplier * 0.5;
+    t.a -= 0.05;
+    return t.a > 0;
+  });
+
+  // Invincibility timer
+  if (player.invincible > 0) player.invincible--;
+
+  // Spawn obstacles
+  spawnTimer++;
+  let spawnInterval = Math.max(40, 90 - frameCount * 0.03);
+  if (spawnTimer >= spawnInterval) {
+    spawnObstacle();
+    spawnTimer = 0;
+  }
+
+  // Spawn collectibles
+  collectTimer++;
+  if (collectTimer >= 60) {
+    spawnCollectible();
+    collectTimer = 0;
+  }
+
+  // Update obstacles
+  obstacles.forEach(o => {
+    o.x -= speed * speedMultiplier;
+    if (o.flying) {
+      o.flyPhase += 0.05;
+      o.y += Math.sin(o.flyPhase) * 0.5;
+    }
+  });
+  obstacles = obstacles.filter(o => o.x > -50);
+
+  // Update collectibles
+  collectibles.forEach(c => {
+    c.x -= speed * speedMultiplier;
+    c.phase += 0.08;
+    c.y += Math.sin(c.phase) * 0.3;
+  });
+  collectibles = collectibles.filter(c => c.x > -50);
+
+  // Collision: obstacles
+  obstacles.forEach(o => {
+    if (player.invincible > 0) return;
+    if (rectsOverlap(player.x + 4, player.y + 4, player.w - 8, player.h - 8, o.x, o.y, o.w, o.h)) {
+      gameOver();
+    }
+  });
+
+  // Collision: collectibles
+  collectibles = collectibles.filter(c => {
+    if (rectsOverlap(player.x, player.y, player.w, player.h, c.x, c.y, c.w, c.h)) {
+      if (c.points) sats += c.points;
+      if (c.boost) {
+        speedMultiplier = 2;
+        emitParticles(player.x, player.y, '#00ff88', 15, 6);
+      } else {
+        emitParticles(c.x, c.y, c.color, 8, 4);
+      }
+      return false;
+    }
+    return true;
+  });
+
+  // Update particles
+  particles.forEach(p => {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.1;
+    p.life -= p.decay;
+  });
+  particles = particles.filter(p => p.life > 0);
+
+  // Screen shake decay
+  shakeX *= 0.9;
+  shakeY *= 0.9;
+
+  // Running particles
+  if (player.grounded && frameCount % 4 === 0) {
+    emitParticles(player.x, player.y + player.h, '#F7931A', 1, 2);
+  }
+
+  updateHUD();
+}
+
+// ─── COLLISION HELPERS ───────────────────────────────
+function rectsOverlap(x1, y1, w1, h1, x2, y2, w2, h2) {
+  return x1 < x2 + w2 && x1 + w1 > x2 && y1 < y2 + h2 && y1 + h1 > y2;
+}
+
+// ─── DRAW ────────────────────────────────────────────
+function draw() {
+  ctx.save();
+  ctx.translate(shakeX, shakeY);
+
+  // Background gradient
+  let grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#010112');
+  grad.addColorStop(0.7, '#0a0520');
+  grad.addColorStop(1, '#1a0a30');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Stars
+  stars.forEach(s => {
+    s.x -= s.sp * speedMultiplier;
+    if (s.x < 0) { s.x = W; s.y = Math.random() * (H - groundH - 60); }
+    ctx.globalAlpha = s.a * (0.5 + 0.5 * Math.sin(frameCount * 0.02 + s.x));
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(s.x, s.y, s.s, s.s);
+  });
+  ctx.globalAlpha = 1;
+
+  // Ground
+  drawGround();
+
+  // Player trail
+  player.trail.forEach(t => {
+    ctx.globalAlpha = t.a * 0.4;
+    ctx.fillStyle = '#F7931A';
+    ctx.beginPath();
+    ctx.arc(t.x, t.y, 4 * t.a, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+
+  // Collectibles
+  collectibles.forEach(c => drawCollectible(c));
+
+  // Obstacles
+  obstacles.forEach(o => drawObstacle(o));
+
+  // Player
+  drawPlayer();
+
+  // Particles
+  particles.forEach(p => {
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+  });
+  ctx.globalAlpha = 1;
+
+  ctx.restore();
+}
+
+// ─── DRAW GROUND ─────────────────────────────────────
+function drawGround() {
+  // Main ground
+  ctx.fillStyle = '#1a1040';
+  ctx.fillRect(0, player.groundY, W, groundH);
+
+  // Ground top line (glowing)
+  ctx.strokeStyle = '#F7931A';
+  ctx.lineWidth = 2;
+  ctx.shadowColor = '#F7931A';
+  ctx.shadowBlur = 8;
+  ctx.beginPath();
+  ctx.moveTo(0, player.groundY);
+  ctx.lineTo(W, player.groundY);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Ground details (scrolling blocks)
+  ctx.fillStyle = 'rgba(247,147,26,0.1)';
+  for (let x = -(groundOffset % 40); x < W; x += 40) {
+    ctx.fillRect(x, player.groundY + 5, 30, 3);
+    ctx.fillRect(x + 10, player.groundY + 15, 20, 2);
+  }
+
+  // Grid lines on ground
+  ctx.strokeStyle = 'rgba(247,147,26,0.05)';
+  ctx.lineWidth = 1;
+  for (let x = -(groundOffset % 60); x < W; x += 60) {
+    ctx.beginPath();
+    ctx.moveTo(x, player.groundY);
+    ctx.lineTo(x, H);
+    ctx.stroke();
+  }
+}
+
+// ─── DRAW PLAYER ─────────────────────────────────────
+function drawPlayer() {
+  const px = player.x;
+  const py = player.y;
+
+  // Glow
+  ctx.shadowColor = '#F7931A';
+  ctx.shadowBlur = player.invincible > 0 ? 20 : 12;
+
+  // Body (Bitcoin circle)
+  ctx.fillStyle = player.invincible > 0 && frameCount % 4 < 2 ? '#fff' : '#F7931A';
+  ctx.beginPath();
+  ctx.arc(px + player.w / 2, py + player.h / 2, player.w / 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Inner circle
+  ctx.fillStyle = '#010112';
+  ctx.beginPath();
+  ctx.arc(px + player.w / 2, py + player.h / 2, player.w / 2 - 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  // BTC symbol
+  ctx.fillStyle = '#F7931A';
+  ctx.font = 'bold 16px Orbitron, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('₿', px + player.w / 2, py + player.h / 2);
+
+  // Legs animation
+  if (player.grounded) {
+    const legPhase = Math.sin(frameCount * 0.3);
+    ctx.strokeStyle = '#F7931A';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(px + 8, py + player.h);
+    ctx.lineTo(px + 8 - legPhase * 6, py + player.h + 8);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(px + player.w - 8, py + player.h);
+    ctx.lineTo(px + player.w - 8 + legPhase * 6, py + player.h + 8);
+    ctx.stroke();
+  }
+
+  ctx.shadowBlur = 0;
+}
+
+// ─── DRAW OBSTACLE ───────────────────────────────────
+function drawObstacle(o) {
+  ctx.shadowColor = o.color;
+  ctx.shadowBlur = 8;
+
+  // Background
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  ctx.fillRect(o.x - 2, o.y - 2, o.w + 4, o.h + 4);
+
+  // Border
+  ctx.strokeStyle = o.color;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(o.x, o.y, o.w, o.h);
+
+  // Fill
+  ctx.fillStyle = o.color + '33';
+  ctx.fillRect(o.x, o.y, o.w, o.h);
+
+  // Emoji
+  ctx.font = `${Math.min(o.w, o.h) - 4}px serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(o.emoji, o.x + o.w / 2, o.y + o.h / 2);
+
+  ctx.shadowBlur = 0;
+}
+
+// ─── DRAW COLLECTIBLE ────────────────────────────────
+function drawCollectible(c) {
+  const pulse = 1 + Math.sin(c.phase) * 0.15;
+
+  ctx.shadowColor = c.color;
+  ctx.shadowBlur = 10;
+
+  ctx.save();
+  ctx.translate(c.x + c.w / 2, c.y + c.h / 2);
+  ctx.scale(pulse, pulse);
+
+  // Circle bg
+  ctx.fillStyle = c.color + '44';
+  ctx.beginPath();
+  ctx.arc(0, 0, c.w / 2 + 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Border
+  ctx.strokeStyle = c.color;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(0, 0, c.w / 2 + 2, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Emoji
+  ctx.font = `${Math.min(c.w, c.h) - 2}px serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(c.emoji, 0, 0);
+
+  ctx.restore();
+  ctx.shadowBlur = 0;
+}
+
+// ─── HUD UPDATE ──────────────────────────────────────
+function updateHUD() {
+  document.getElementById('hD').textContent = `${Math.floor(score)}m`;
+  document.getElementById('hS').textContent = sats;
+  document.getElementById('hSp').textContent = `${speedMultiplier.toFixed(1)}x`;
+  document.getElementById('hB').textContent = `${best}m`;
+}
+
+// ─── GAME OVER ───────────────────────────────────────
+function gameOver() {
+  state = 'gameover';
+  shakeX = (Math.random() - 0.5) * 20;
+  shakeY = (Math.random() - 0.5) * 20;
+  emitParticles(player.x + player.w / 2, player.y + player.h / 2, '#ff3355', 30, 8);
+
+  if (score > best) {
+    best = Math.floor(score);
+    bestSats = sats;
+    localStorage.setItem('runner_best', best);
+    localStorage.setItem('runner_best_sats', bestSats);
+  }
+
+  const isNewBest = score > best - 1;
+  document.getElementById('goIcon').textContent = isNewBest ? '🏆' : '💀';
+  document.getElementById('goTitle').textContent = isNewBest ? 'NEW BEST!' : 'REKT';
+  document.getElementById('goStat').innerHTML =
+    `DISTANCE: ${Math.floor(score)}m<br>SATS: ${sats}<br>BEST: ${best}m`;
+
+  setTimeout(() => {
+    document.getElementById('goOv').classList.remove('h');
+  }, 300);
+}
+
+// ─── GAME START ──────────────────────────────────────
+function startGame() {
+  state = 'playing';
+  document.getElementById('menuOv').classList.add('h');
+  document.getElementById('goOv').classList.add('h');
+  init();
+}
+
+// ─── SHOW MENU ───────────────────────────────────────
+function showMenu() {
+  state = 'menu';
+  document.getElementById('goOv').classList.add('h');
+  document.getElementById('menuOv').classList.remove('h');
+  document.getElementById('menuBest').textContent = `BEST: ${best}m`;
+}
+
+// ─── JUMP ────────────────────────────────────────────
+function jump() {
+  if (state !== 'playing') return;
+  if (player.grounded) {
+    player.vy = player.jumpPower;
+    player.grounded = false;
+    player.canDoubleJump = true;
+    emitParticles(player.x + player.w / 2, player.y + player.h, '#F7931A', 5, 3);
+  } else if (player.canDoubleJump) {
+    player.vy = player.jumpPower * 0.85;
+    player.canDoubleJump = false;
+    player.doubleJump = true;
+    emitParticles(player.x + player.w / 2, player.y + player.h, '#FFD700', 8, 4);
+  }
+}
+
+// ─── INPUT ───────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' || e.code === 'ArrowUp') {
+    e.preventDefault();
+    if (state === 'playing') jump();
+  }
+});
+
+document.getElementById('btnJump').addEventListener('click', () => {
+  if (state === 'playing') jump();
+});
+
+canvas.addEventListener('click', () => {
+  if (state === 'playing') jump();
+});
+
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  if (state === 'playing') jump();
+}, { passive: false });
+
+// ─── GAME LOOP ───────────────────────────────────────
+function gameLoop() {
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+// ─── START ───────────────────────────────────────────
+init();
+gameLoop();
+</script>
+</body>
+</html>
