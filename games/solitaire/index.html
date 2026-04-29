@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Arcade Solitaire</title>
+<style>
+  body {margin:0;height:100vh;background:#111;color:#fff;font-family:Arial, sans-serif;}
+  h1{text-align:center;margin-top:20px;font-size:2.5rem;text-shadow:2px 2px 4px rgba(0,0,0,.7);}
+  #game{width:90%;margin:30px auto;display:flex;flex-wrap:wrap;gap:15px;justify-content:center;}
+  .pile{width:140px;height:200px;background:#222;border:2px solid #555;border-radius:8px;margin:5px;display:flex;flex-direction:column-reverse;align-items:center;}
+  .card{width:120px;height:130px;background:#444;border:1px solid #777;border-radius:6px;text-align:center;line-height:130px;font-size:1.5rem;user-select:none;cursor:pointer;}
+  .foundation{width:140px;height:100px;background:#444;border:2px solid #777;margin-top:20px;display:flex;align-items:center;}
+</style>
+</head>
+<body>
+<h1>Arcade Solitaire</h1>
+<div id="game"></div>
+
+<script>
+  // Simple solitaire logic (minimal)
+  const suits = ['♥','♦','♣','♠'];
+  const ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+
+  let deck = [];
+  for (let s of suits) {
+    for (let r of ranks) {
+      deck.push(`${r}${s}`);
+  }
+
+  function shuffle(arr){
+    for(let i=arr.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  shufle(deck);
