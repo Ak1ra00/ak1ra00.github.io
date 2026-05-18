@@ -68,6 +68,8 @@ canvas {
 .ov-score{font-family:'Orbitron',monospace;font-size:2rem;font-weight:900;color:#fff;text-shadow:0 0 18px var(--btc-glow);}
 .rbtn{font-family:'Orbitron',monospace;background:linear-gradient(135deg,#00ff88,#00cc6a);border:none;padding:11px 34px;border-radius:10px;color:#000;font-weight:700;font-size:.85rem;cursor:pointer;letter-spacing:.06em;box-shadow:0 4px 20px rgba(0,255,136,.3);transition:all .2s;}
 .rbtn:hover{transform:translateY(-2px);}
+.hval.flash{animation:snakeFlash .35s ease-out;}
+@keyframes snakeFlash{0%{transform:scale(1.18);}100%{transform:scale(1);}}
 </style>
 </head>
 <script src="auth.js"></script>
@@ -109,6 +111,8 @@ canvas {
     <a href="invaders.html">Invaders</a>
     <a href="flappy.html">Flappy</a>
     <a href="tetris.html">Tetris</a>
+    <a href="hashbreaker.html">Hashbreaker</a>
+    <a href="bubbles.html">Bubbles</a>
   </div>
 </nav>
 
@@ -165,6 +169,32 @@ let gameActive = false, paused = false;
 let floats = [], particles = [];
 let shakeX = 0, shakeY = 0, shakeM = 0;
 let coinSpin = 0;
+let lastHudScore = 0;
+
+// ── BACKGROUND HEX GRID (offscreen, drawn once) ──
+const hexCanvas = document.createElement('canvas');
+hexCanvas.width = W; hexCanvas.height = H;
+(function buildHexGrid() {
+  const hx = hexCanvas.getContext('2d');
+  const side = 22;
+  const hw = Math.sqrt(3) * side;       // horizontal width of a hex
+  const vstep = side * 1.5;             // vertical step between rows
+  hx.strokeStyle = 'rgba(247,147,26,0.5)';
+  hx.lineWidth = 1;
+  for (let row = 0, y = 0; y < H + side; row++, y = row * vstep) {
+    const xOff = (row % 2) ? hw / 2 : 0;
+    for (let x = -hw; x < W + hw; x += hw) {
+      hx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = Math.PI / 180 * (60 * i - 30);
+        const px = x + xOff + side * Math.cos(a);
+        const py = y + side * Math.sin(a);
+        i === 0 ? hx.moveTo(px, py) : hx.lineTo(px, py);
+      }
+      hx.closePath(); hx.stroke();
+    }
+  }
+})();
 
 hiScore = Auth.getScore('btc_snake_hs');
 document.getElementById('introBest').textContent = 'BEST: ' + hiScore.toLocaleString();
@@ -175,6 +205,7 @@ function startGame() {
   snake = [{x:14,y:14},{x:13,y:14},{x:12,y:14}];
   dir = {dx:1,dy:0}; nextDir = {dx:1,dy:0};
   score = 0; coins = 0; lives = 3; streak = 0; mult = 1;
+  lastHudScore = 0;
   moveInterval = 130; lastMoveTime = 0;
   frozenTimer = 0; pelletTimer = 12000;
   floats = []; particles = [];
@@ -245,6 +276,7 @@ function moveSnake() {
     const pts = 100 * mult;
     score += pts; coins++;
     spawnParticles(nx, ny, '#FFD700', 14);
+    spawnRing(nx, ny, '#FFD700');
     spawnFloat(nx, ny, '+' + pts, pts >= 300 ? '#ff3355' : pts >= 200 ? '#00ff88' : '#FFD700');
     moveInterval = Math.max(65, moveInterval - 3);
     if (coins > 0 && coins % 5 === 0 && obstacles.length < 8) spawnObstacle();
@@ -288,6 +320,7 @@ function loseLife() {
 
 function endGame() {
   gameActive = false;
+  shakeM = 18;
   if (score > hiScore) { hiScore = score; Auth.saveScore('btc_snake_hs', hiScore); }
   document.getElementById('goScore').textContent = score.toLocaleString();
   document.getElementById('goBest').textContent = 'BEST: ' + hiScore.toLocaleString();
@@ -305,10 +338,19 @@ function spawnParticles(gx, gy, col, n) {
 function spawnFloat(gx, gy, txt, col) {
   floats.push({x:gx*CELL+CELL/2, y:gy*CELL, txt, col, vy:-1.2, life:1});
 }
+function spawnRing(gx, gy, color) {
+  particles.push({type:'ring', x:gx*CELL+CELL/2, y:gy*CELL+CELL/2, r:CELL, maxR:CELL*3, life:0, maxLife:300, color});
+}
 
 // ── HUD ──
 function updateHUD() {
-  document.getElementById('hScore').textContent = score.toLocaleString();
+  const scoreEl = document.getElementById('hScore');
+  if (score > lastHudScore) {
+    scoreEl.classList.add('flash');
+    setTimeout(() => scoreEl.classList.remove('flash'), 350);
+  }
+  lastHudScore = score;
+  scoreEl.textContent = score.toLocaleString();
   document.getElementById('hMult').textContent = '×' + mult;
   document.getElementById('hCoins').textContent = coins;
   document.getElementById('hHi').textContent = hiScore.toLocaleString();
@@ -333,21 +375,36 @@ function loop(ts) {
     if (pelletTimer <= 0 && !pellet) { pelletTimer = 15000 + Math.random() * 5000; spawnPellet(); }
     coinSpin += 0.06;
     // Particles
-    particles = particles.filter(p => p.life > 0);
-    particles.forEach(p => { p.x+=p.vx; p.y+=p.vy; p.vx*=.9; p.vy*=.9; p.life-=.04; });
+    particles.forEach(p => {
+      if (p.type === 'ring') {
+        p.life += dt;
+        const t = p.life / p.maxLife;
+        p.r = CELL + (p.maxR - CELL) * t;
+      } else {
+        p.x+=p.vx; p.y+=p.vy; p.vx*=.9; p.vy*=.9; p.life-=.04;
+      }
+    });
+    particles = particles.filter(p => p.type === 'ring' ? p.life < p.maxLife : p.life > 0);
     // Floats
     floats = floats.filter(f => f.life > 0);
     floats.forEach(f => { f.y += f.vy; f.life -= .022; });
-    // Shake
-    if (shakeM > .5) { shakeX=(Math.random()-.5)*shakeM; shakeY=(Math.random()-.5)*shakeM; shakeM*=.75; }
-    else { shakeX=0; shakeY=0; shakeM=0; }
   }
+
+  // Shake (runs even after game over so death shake plays out)
+  if (shakeM > .5) { shakeX=(Math.random()-.5)*shakeM; shakeY=(Math.random()-.5)*shakeM; shakeM*=.85; }
+  else { shakeX=0; shakeY=0; shakeM=0; }
 
   // DRAW
   ctx.save();
   ctx.translate(shakeX, shakeY);
   ctx.fillStyle = '#060610';
   ctx.fillRect(-10, -10, W+20, H+20);
+
+  // Background hex grid
+  ctx.save();
+  ctx.globalAlpha = 0.04;
+  ctx.drawImage(hexCanvas, 0, 0);
+  ctx.restore();
 
   // Grid dots
   ctx.fillStyle = 'rgba(255,255,255,0.03)';
@@ -513,6 +570,16 @@ function loop(ts) {
 
     // Particles
     particles.forEach(p => {
+      if (p.type === 'ring') {
+        const t = p.life / p.maxLife;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, (1 - t) * 0.8);
+        ctx.strokeStyle = p.color; ctx.shadowColor = p.color; ctx.shadowBlur = 12;
+        ctx.lineWidth = 3 * (1 - t) + 1;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.stroke();
+        ctx.restore();
+        return;
+      }
       ctx.save(); ctx.globalAlpha = Math.max(0,p.life);
       ctx.fillStyle = p.col; ctx.shadowColor = p.col; ctx.shadowBlur = 6;
       const r = Math.max(0, p.sz * p.life);
