@@ -235,7 +235,7 @@ function buildHexGrid(){
 // ── INIT ─────────────────────────────────────────────────────────────────────
 function initGame(){
   score=0;lives=3;level=1;combo=0;multiplier=1;
-  activePowers=[];powerUps=[];particles=[];floats=[];
+  activePowers=[];powerUps=[];particles=[];floats=[];shockwaves=[];
   paddle={x:W/2-45,y:638,w:90,h:14};
   paddleTarget=W/2;
   document.getElementById('intro').classList.add('hidden');
@@ -410,7 +410,18 @@ function drawPowerUps(){
 
 // ── DRAW PADDLE ──────────────────────────────────────────────────────────────
 function drawPaddle(){
-  ctx.save();ctx.shadowColor='rgba(247,147,26,.7)';ctx.shadowBlur=18;
+  ctx.save();
+  // Mining-rig exhaust glow — 3 pulsing thrusters below the paddle
+  const ey=paddle.y+paddle.h+3;
+  const eb=18+Math.sin(Date.now()*.01)*6;
+  const exhaust=[paddle.x+paddle.w*.18,paddle.x+paddle.w*.5,paddle.x+paddle.w*.82];
+  ctx.fillStyle='#F7931A';
+  exhaust.forEach(function(ex){
+    ctx.shadowColor='#F7931A';ctx.shadowBlur=eb;
+    ctx.beginPath();ctx.arc(ex,ey,3,0,Math.PI*2);ctx.fill();
+  });
+  ctx.shadowBlur=0;
+  ctx.shadowColor='rgba(247,147,26,.7)';ctx.shadowBlur=18;
   const g=ctx.createLinearGradient(paddle.x,paddle.y,paddle.x,paddle.y+paddle.h);
   g.addColorStop(0,'#FFB347');g.addColorStop(.5,'#F7931A');g.addColorStop(1,'#C0651A');
   ctx.fillStyle=g;rr(ctx,paddle.x,paddle.y,paddle.w,paddle.h,5);ctx.fill();
@@ -426,11 +437,32 @@ function drawPaddle(){
 // ── DRAW BALLS ───────────────────────────────────────────────────────────────
 function drawBalls(){
   balls.forEach(function(ball){
+    // Trail color shifts with speed: slow=orange, fast=gold, very fast=white
+    let trailCol;
+    if(ball.ghost){
+      trailCol='#00FFFF';
+    }else{
+      const sp=Math.sqrt(ball.vx*ball.vx+ball.vy*ball.vy);
+      const f=Math.max(0,Math.min(1,sp/8));
+      let r,g,bch;
+      if(f<.5){
+        const u=f/.5; // orange -> gold
+        r=Math.round(247+(255-247)*u);
+        g=Math.round(147+(215-147)*u);
+        bch=Math.round(26+(0-26)*u);
+      }else{
+        const u=(f-.5)/.5; // gold -> white
+        r=255;
+        g=Math.round(215+(255-215)*u);
+        bch=Math.round(0+(255-0)*u);
+      }
+      trailCol='rgb('+r+','+g+','+bch+')';
+    }
     ball.trail.forEach(function(pt,i){
       const t=i/ball.trail.length,r=8*t*.6;if(r<=0)return;
       ctx.save();ctx.globalAlpha=t*.4;
-      ctx.fillStyle=ball.ghost?'#00FFFF':'#F7931A';
-      ctx.shadowColor=ball.ghost?'#00FFFF':'#F7931A';ctx.shadowBlur=8;
+      ctx.fillStyle=trailCol;
+      ctx.shadowColor=trailCol;ctx.shadowBlur=8;
       ctx.beginPath();ctx.arc(pt.x,pt.y,r,0,Math.PI*2);ctx.fill();ctx.restore();
     });
     ctx.save();
