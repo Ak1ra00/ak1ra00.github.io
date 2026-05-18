@@ -384,6 +384,18 @@ function drawParticles(){
   });
 }
 
+// ── DRAW SHOCKWAVES ──────────────────────────────────────────────────────────
+function drawShockwaves(){
+  shockwaves.forEach(function(sw){
+    const f=sw.t/300,r=f*50;
+    ctx.save();ctx.globalAlpha=(1-f)*.8;
+    ctx.strokeStyle='#FFD700';ctx.lineWidth=3-f*2.5;
+    ctx.shadowColor='#FFD700';ctx.shadowBlur=12;
+    ctx.beginPath();ctx.arc(sw.x,sw.y,r,0,Math.PI*2);ctx.stroke();
+    ctx.restore();
+  });
+}
+
 // ── DRAW POWER-UPS ───────────────────────────────────────────────────────────
 function drawPowerUps(){
   powerUps.forEach(function(pu){
@@ -490,7 +502,7 @@ function drawActivePowerBar(){
 // ── MASTER DRAW ──────────────────────────────────────────────────────────────
 function draw(){
   ctx.fillStyle='#060610';ctx.fillRect(0,0,W,H);
-  drawBackground();drawBlocks();drawParticles();drawPowerUps();
+  drawBackground();drawBlocks();drawParticles();drawShockwaves();drawPowerUps();
   drawPaddle();drawBalls();drawFloats();drawHUD();drawActivePowerBar();
   if(gameState==='LAUNCH'){
     const pulse=.6+.4*Math.sin(Date.now()*.005);
@@ -529,6 +541,10 @@ function update(dt){
   for(let i=particles.length-1;i>=0;i--){
     const p=particles[i];p.x+=p.vx*dtn;p.y+=p.vy*dtn;p.vy+=.15*dtn;p.life-=dtn;
     if(p.life<=0)particles.splice(i,1);
+  }
+  for(let i=shockwaves.length-1;i>=0;i--){
+    shockwaves[i].t+=dt;
+    if(shockwaves[i].t>=300)shockwaves.splice(i,1);
   }
   for(let i=powerUps.length-1;i>=0;i--){
     const pu=powerUps[i];pu.y+=pu.vy*dtn;pu.bob=(pu.bob||0)+dtn*.1;
