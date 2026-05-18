@@ -133,14 +133,24 @@
         @keyframes pageIn{from{opacity:0;transform:translateY(10px) scale(0.99)}to{opacity:1;transform:translateY(0) scale(1)}}
 
         /* ─── HERO ──────────────────────────────────────────────────────── */
-        .hero{text-align:center;padding:64px 20px 36px;width:100%;max-width:1100px;position:relative;}
+        .hero{text-align:center;padding:64px 20px 36px;width:100%;max-width:1100px;position:relative;overflow:visible;}
+        /* Galaxy canvas — live nebula + stars behind Atlas, bleeds beyond hero bounds */
+        #galaxyCanvas{position:absolute;top:-60px;left:50%;transform:translateX(-50%);
+          width:min(900px,140vw);height:calc(100% + 120px);
+          pointer-events:none;z-index:0;mix-blend-mode:screen;opacity:0.7;}
+        [data-theme="dark"] #galaxyCanvas{opacity:1;}
+        /* Dark space vignette behind Atlas in dark mode */
+        [data-theme="dark"] .hero::before{content:'';position:absolute;
+          inset:-40px -80px;z-index:0;pointer-events:none;
+          background:radial-gradient(ellipse 70% 60% at 50% 38%,rgba(4,0,14,0.82) 0%,transparent 70%);}
+        .hero>*:not(#galaxyCanvas){position:relative;z-index:1;}
         .hero-logo-wrap{position:relative;width:200px;height:230px;margin:0 auto 14px;display:flex;align-items:flex-start;justify-content:center;}
-        .hero-logo{width:180px;height:auto;filter:drop-shadow(0 6px 22px rgba(247,147,26,0.40)) drop-shadow(0 0 50px rgba(247,147,26,0.20));animation:float 4.5s cubic-bezier(0.45,0.05,0.55,0.95) infinite;position:relative;z-index:2;}
+        .hero-logo{width:180px;height:auto;filter:drop-shadow(0 0 32px rgba(247,147,26,0.70)) drop-shadow(0 0 70px rgba(123,47,255,0.45));animation:float 4.5s cubic-bezier(0.45,0.05,0.55,0.95) infinite;position:relative;z-index:2;}
         @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
         .orbit{position:absolute;top:2px;left:50%;transform:translateX(-50%);border-radius:50%;pointer-events:none;}
-        .orbit-1{width:128px;height:128px;border:1.5px solid rgba(0,255,255,0.30);border-top-color:var(--cyan);box-shadow:0 0 16px rgba(0,255,255,0.18);animation:spin 9s linear infinite;}
-        .orbit-2{width:160px;height:160px;top:-14px;border:1.5px dashed rgba(247,147,26,0.32);border-bottom-color:var(--btc);animation:spin 14s linear reverse infinite;}
-        .orbit-3{width:104px;height:104px;top:14px;border:1px solid rgba(123,47,255,0.40);border-left-color:var(--violet);animation:spin 6s linear infinite;}
+        .orbit-1{width:128px;height:128px;border:1.5px solid rgba(0,255,255,0.35);border-top-color:var(--cyan);box-shadow:0 0 20px rgba(0,255,255,0.22),inset 0 0 20px rgba(0,255,255,0.06);animation:spin 9s linear infinite;}
+        .orbit-2{width:165px;height:165px;top:-16px;border:1.5px dashed rgba(247,147,26,0.40);border-bottom-color:var(--btc);box-shadow:0 0 18px rgba(247,147,26,0.18);animation:spin 14s linear reverse infinite;}
+        .orbit-3{width:108px;height:108px;top:12px;border:1px solid rgba(155,31,255,0.50);border-left-color:#9B1FFF;box-shadow:0 0 14px rgba(155,31,255,0.22);animation:spin 6s linear infinite;}
         @keyframes spin{to{transform:translateX(-50%) rotate(360deg)}}
         .hero h1{font-family:'Orbitron',monospace;font-size:clamp(2rem,5.4vw,3.9rem);font-weight:900;line-height:1.06;margin-bottom:16px;letter-spacing:.04em;}
         .hero h1 .word{display:block;background:linear-gradient(135deg,#B35F00 0%,#F7931A 32%,#FFE08A 52%,#00FFFF 78%,#7B2FFF 100%);background-size:240% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shimmer 6s linear infinite,wordReveal .7s cubic-bezier(0.34,1.56,0.64,1) both;}
@@ -435,153 +445,194 @@
 <script src="auth.js"></script>
 <body>
 
-<!-- ═══════════ ATLAS SVG — Rand/Rockefeller: standing proud, arms wide, carrying Bitcoin globe ═══════════ -->
+<!-- ═══════════ ATLAS SVG — dark silhouette + orange rim light + cosmic Bitcoin orb ═══════════ -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
-    <radialGradient id="atlasGlobe" cx="34%" cy="28%" r="76%">
-      <stop offset="0%" stop-color="#FFF4CC"/>
-      <stop offset="28%" stop-color="#FFD24A"/>
-      <stop offset="62%" stop-color="#F7931A"/>
-      <stop offset="100%" stop-color="#8A4200"/>
+    <!-- Cosmic Bitcoin orb: white-hot core → gold → orange → purple void -->
+    <radialGradient id="atlasGlobe" cx="42%" cy="36%" r="64%">
+      <stop offset="0%"   stop-color="#FFFFFF"/>
+      <stop offset="15%"  stop-color="#FFFACC"/>
+      <stop offset="32%"  stop-color="#FFD700"/>
+      <stop offset="52%"  stop-color="#F7931A"/>
+      <stop offset="72%"  stop-color="#8B10CC"/>
+      <stop offset="100%" stop-color="#1A003A" stop-opacity="0.9"/>
     </radialGradient>
-    <radialGradient id="atlasGlobeShade" cx="70%" cy="72%" r="60%">
-      <stop offset="0%" stop-color="#000000" stop-opacity="0.52"/>
-      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    <!-- Outer orb corona glow -->
+    <radialGradient id="atlasOrbCorona" cx="50%" cy="50%" r="50%">
+      <stop offset="40%" stop-color="#F7931A" stop-opacity="0"/>
+      <stop offset="72%" stop-color="#F7931A" stop-opacity="0.40"/>
+      <stop offset="88%" stop-color="#7B2FFF" stop-opacity="0.50"/>
+      <stop offset="100%" stop-color="#00FFFF" stop-opacity="0.15"/>
     </radialGradient>
-    <linearGradient id="atlasFlesh" x1="15%" y1="0%" x2="85%" y2="100%">
-      <stop offset="0%" stop-color="#FFD080"/>
-      <stop offset="38%" stop-color="#F7931A"/>
-      <stop offset="100%" stop-color="#7A3A00"/>
+    <!-- Dark metallic body (near-black bronze) -->
+    <linearGradient id="atlasBody" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%"   stop-color="#1C0900"/>
+      <stop offset="50%"  stop-color="#2E1200"/>
+      <stop offset="100%" stop-color="#0A0300"/>
     </linearGradient>
+    <!-- Shadow areas even darker -->
     <linearGradient id="atlasFleshDk" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#C06010"/>
-      <stop offset="100%" stop-color="#4A2000"/>
+      <stop offset="0%"   stop-color="#3A1200"/>
+      <stop offset="100%" stop-color="#080200"/>
+    </linearGradient>
+    <!-- Legacy aliases keep existing figure paths working -->
+    <linearGradient id="atlasFlesh"   x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%"   stop-color="#1C0900"/>
+      <stop offset="100%" stop-color="#0A0300"/>
     </linearGradient>
     <linearGradient id="atlasFleshHi" x1="0%" y1="0%" x2="60%" y2="100%">
-      <stop offset="0%" stop-color="#FFE9B0"/>
-      <stop offset="100%" stop-color="#F7B040" stop-opacity="0"/>
+      <stop offset="0%"   stop-color="#F7931A" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#F7931A" stop-opacity="0"/>
     </linearGradient>
     <linearGradient id="atlasHi" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FFE9B0" stop-opacity="0.95"/>
-      <stop offset="100%" stop-color="#FFE9B0" stop-opacity="0"/>
+      <stop offset="0%"   stop-color="#FFD700" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#FFD700" stop-opacity="0"/>
     </linearGradient>
-    <radialGradient id="atlasHalo" cx="50%" cy="45%" r="52%">
-      <stop offset="0%" stop-color="#F7931A" stop-opacity="0.38"/>
-      <stop offset="55%" stop-color="#7B2FFF" stop-opacity="0.12"/>
+    <!-- Wide cosmic halo behind figure -->
+    <radialGradient id="atlasHalo" cx="50%" cy="42%" r="52%">
+      <stop offset="0%"   stop-color="#F7931A" stop-opacity="0.55"/>
+      <stop offset="38%"  stop-color="#7B2FFF" stop-opacity="0.30"/>
+      <stop offset="68%"  stop-color="#00FFFF" stop-opacity="0.10"/>
       <stop offset="100%" stop-color="#F7931A" stop-opacity="0"/>
     </radialGradient>
-    <filter id="atlasGlow" x="-55%" y="-55%" width="210%" height="210%">
-      <feGaussianBlur stdDeviation="2.2" result="b"/>
+    <!-- Orb mega-glow -->
+    <filter id="atlasOrbGlow" x="-120%" y="-120%" width="340%" height="340%">
+      <feGaussianBlur stdDeviation="7" result="b1"/>
+      <feGaussianBlur stdDeviation="2.5" result="b2"/>
+      <feMerge><feMergeNode in="b1"/><feMergeNode in="b2"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <!-- General glow -->
+    <filter id="atlasGlow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="2.8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <!-- Subtle body glow -->
+    <filter id="atlasBodyGlow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="1.4" result="b"/>
       <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
 
-  <!-- Reusable Atlas figure: viewBox 0 0 120 155 — standing, arms wide, Rand/Rockefeller pose -->
+  <!-- Atlas: dark silhouette body, orange rim light from cosmic orb above — Atlas Shrugged aesthetic -->
   <g id="atlas-figure">
-    <!-- ambient halo -->
-    <circle cx="60" cy="42" r="52" fill="url(#atlasHalo)"/>
+    <!-- Wide cosmic halo backdrop -->
+    <circle cx="60" cy="42" r="62" fill="url(#atlasHalo)"/>
 
-    <!-- ═══ BITCOIN GLOBE (the world Atlas carries overhead) ═══ -->
-    <g filter="url(#atlasGlow)">
+    <!-- ═══ COSMIC BITCOIN ORB ═══ -->
+    <!-- Outer corona bleed (very large, very soft) -->
+    <circle cx="60" cy="26" r="46" fill="url(#atlasOrbCorona)" filter="url(#atlasOrbGlow)" opacity="0.85"/>
+    <!-- Main orb body with mega-glow -->
+    <g filter="url(#atlasOrbGlow)">
       <circle cx="60" cy="26" r="22" fill="url(#atlasGlobe)"/>
-      <circle cx="60" cy="26" r="22" fill="url(#atlasGlobeShade)"/>
-      <!-- meridian lines — reads as a globe -->
-      <ellipse cx="60" cy="26" rx="22" ry="8.5" fill="none" stroke="#FFE9B0" stroke-width="0.8" opacity="0.50"/>
-      <ellipse cx="60" cy="26" rx="8.5" ry="22" fill="none" stroke="#FFE9B0" stroke-width="0.8" opacity="0.38"/>
-      <ellipse cx="60" cy="26" rx="22" ry="17" fill="none" stroke="#FFE9B0" stroke-width="0.6" opacity="0.26"/>
-      <circle cx="60" cy="26" r="20.5" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.1"/>
-      <!-- specular gleam top-left -->
-      <ellipse cx="51" cy="17" rx="7" ry="4" fill="#FFFFFF" opacity="0.55"/>
-      <!-- ₿ emblem -->
-      <text x="60" y="36" text-anchor="middle" font-family="'Arial Black',Arial,sans-serif"
-            font-weight="900" font-size="23" fill="#3A1A00" opacity="0.92">&#8383;</text>
+      <!-- Subtle meridian lines in white -->
+      <ellipse cx="60" cy="26" rx="22" ry="8"   fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="0.7"/>
+      <ellipse cx="60" cy="26" rx="8"   ry="22" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="0.7"/>
+      <ellipse cx="60" cy="26" rx="22" ry="16"  fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="0.5"/>
+      <!-- Outer ring (galactic edge) -->
+      <circle  cx="60" cy="26" r="21" fill="none" stroke="rgba(255,215,0,0.45)" stroke-width="1.2"/>
+      <!-- Hot specular spot -->
+      <ellipse cx="50" cy="17" rx="7" ry="4" fill="#FFFFFF" opacity="0.72"/>
+      <ellipse cx="54" cy="19" rx="3" ry="1.8" fill="#FFFFFF" opacity="0.55"/>
+      <!-- ₿ emblem in bright white -->
+      <text x="60" y="35" text-anchor="middle" font-family="'Arial Black',Arial,sans-serif"
+            font-weight="900" font-size="22" fill="#FFFFFF" opacity="0.92">&#8383;</text>
+    </g>
+    <!-- Corona rays — 8 thin spokes of light from the orb -->
+    <g opacity="0.32" filter="url(#atlasGlow)">
+      <line x1="60" y1="3"  x2="60" y2="-4"  stroke="#FFD700" stroke-width="1.6" stroke-linecap="round"/>
+      <line x1="75" y1="9"  x2="80" y2="4"   stroke="#F7931A" stroke-width="1.1" stroke-linecap="round"/>
+      <line x1="84" y1="26" x2="92" y2="26"  stroke="#F7931A" stroke-width="1.1" stroke-linecap="round"/>
+      <line x1="75" y1="43" x2="80" y2="48"  stroke="#9B1FFF" stroke-width="1.0" stroke-linecap="round"/>
+      <line x1="45" y1="9"  x2="40" y2="4"   stroke="#F7931A" stroke-width="1.1" stroke-linecap="round"/>
+      <line x1="36" y1="26" x2="28" y2="26"  stroke="#F7931A" stroke-width="1.1" stroke-linecap="round"/>
+      <line x1="45" y1="43" x2="40" y2="48"  stroke="#9B1FFF" stroke-width="1.0" stroke-linecap="round"/>
+      <line x1="60" y1="49" x2="60" y2="56"  stroke="#9B1FFF" stroke-width="0.8" stroke-linecap="round"/>
     </g>
 
-    <!-- ═══ LEFT ARM — wide sweep from shoulder, elbow swings outward, forearm rises to globe ═══ -->
-    <!-- upper arm / deltoid mass -->
+    <!-- ═══ LEFT ARM — dark body, orange rim light on the globe-facing edge ═══ -->
     <path d="M29 72 Q16 70 10 56 Q8 46 15 40 Q23 35 30 42 Q35 48 33 58 Q31 66 29 72 Z"
-          fill="url(#atlasFlesh)"/>
-    <!-- bicep highlight -->
-    <ellipse cx="20" cy="52" rx="2.8" ry="5.2" fill="#FFE9B0" opacity="0.40" transform="rotate(-28 20 52)"/>
-    <!-- forearm rising from elbow to globe -->
+          fill="url(#atlasBody)"/>
+    <!-- rim light: orange glow on the inner/upper edge (lit by orb above) -->
+    <path d="M29 72 Q16 70 10 56 Q8 46 15 40 Q23 35 30 42"
+          fill="none" stroke="#F7931A" stroke-width="1.8" stroke-linecap="round" opacity="0.80"/>
+    <!-- forearm -->
     <path d="M15 40 Q11 28 20 22 Q30 16 40 21 Q46 25 44 32 Q38 36 29 43 Q21 48 15 40 Z"
-          fill="url(#atlasFlesh)"/>
-    <!-- left hand cupping globe from below-left -->
+          fill="url(#atlasBody)"/>
+    <path d="M15 40 Q11 28 20 22 Q30 16 40 21"
+          fill="none" stroke="#FFD700" stroke-width="1.4" stroke-linecap="round" opacity="0.75"/>
+    <!-- hand -->
     <path d="M40 21 Q44 14 52 13 Q60 13 59 21 Q54 25 45 23 Q41 22 40 21 Z"
           fill="url(#atlasFleshDk)"/>
-    <!-- highlight ridge along outer arm -->
-    <path d="M10 56 Q12 44 18 36" fill="none" stroke="url(#atlasHi)" stroke-width="2.0" stroke-linecap="round"/>
+    <path d="M40 21 Q44 14 52 13"
+          fill="none" stroke="#FFD700" stroke-width="1.2" opacity="0.65" stroke-linecap="round"/>
 
-    <!-- ═══ RIGHT ARM — mirror sweep ═══ -->
+    <!-- ═══ RIGHT ARM — mirror ═══ -->
     <path d="M91 72 Q104 70 110 56 Q112 46 105 40 Q97 35 90 42 Q85 48 87 58 Q89 66 91 72 Z"
-          fill="url(#atlasFlesh)"/>
-    <ellipse cx="100" cy="52" rx="2.8" ry="5.2" fill="#FFE9B0" opacity="0.40" transform="rotate(28 100 52)"/>
+          fill="url(#atlasBody)"/>
+    <path d="M91 72 Q104 70 110 56 Q112 46 105 40 Q97 35 90 42"
+          fill="none" stroke="#F7931A" stroke-width="1.8" stroke-linecap="round" opacity="0.80"/>
     <path d="M105 40 Q109 28 100 22 Q90 16 80 21 Q74 25 76 32 Q82 36 91 43 Q99 48 105 40 Z"
-          fill="url(#atlasFlesh)"/>
-    <!-- right hand cupping globe from below-right -->
+          fill="url(#atlasBody)"/>
+    <path d="M105 40 Q109 28 100 22 Q90 16 80 21"
+          fill="none" stroke="#FFD700" stroke-width="1.4" stroke-linecap="round" opacity="0.75"/>
     <path d="M80 21 Q76 14 68 13 Q60 13 61 21 Q66 25 75 23 Q79 22 80 21 Z"
           fill="url(#atlasFleshDk)"/>
-    <path d="M110 56 Q108 44 102 36" fill="none" stroke="url(#atlasHi)" stroke-width="2.0" stroke-linecap="round"/>
+    <path d="M80 21 Q76 14 68 13"
+          fill="none" stroke="#FFD700" stroke-width="1.2" opacity="0.65" stroke-linecap="round"/>
 
-    <!-- ═══ TORSO — proud wide chest, V-taper to hips, clearly upright ═══ -->
-    <!-- shoulder caps / deltoids -->
-    <ellipse cx="29" cy="72" rx="9.5" ry="7.5" fill="url(#atlasFlesh)" transform="rotate(-12 29 72)"/>
-    <ellipse cx="91" cy="72" rx="9.5" ry="7.5" fill="url(#atlasFlesh)" transform="rotate(12 91 72)"/>
-    <!-- main torso body -->
-    <path d="M29 74 Q38 68 60 67 Q82 68 91 74
-             Q90 84 86 94 Q80 102 60 104 Q40 102 34 94 Q30 84 29 74 Z"
-          fill="url(#atlasFlesh)"/>
-    <!-- pectoral definition (left) -->
-    <path d="M32 76 Q44 71 56 73 Q51 82 43 84 Q35 82 32 76 Z"
-          fill="url(#atlasFleshDk)" opacity="0.38"/>
-    <!-- pectoral definition (right) -->
-    <path d="M88 76 Q76 71 64 73 Q69 82 77 84 Q85 82 88 76 Z"
-          fill="url(#atlasFleshDk)" opacity="0.38"/>
-    <!-- sternum centre line -->
-    <path d="M60 68 Q60 84 60 102" fill="none" stroke="url(#atlasFleshDk)"
-          stroke-width="1.7" stroke-linecap="round" opacity="0.50"/>
-    <!-- ab lines -->
-    <path d="M50 84 Q55 87 60 86 Q65 87 70 84" fill="none" stroke="url(#atlasFleshDk)"
-          stroke-width="1.3" stroke-linecap="round" opacity="0.44"/>
-    <path d="M50 93 Q55 96 60 95 Q65 96 70 93" fill="none" stroke="url(#atlasFleshDk)"
-          stroke-width="1.3" stroke-linecap="round" opacity="0.44"/>
-    <!-- chest highlight -->
-    <path d="M36 72 Q50 68 60 68" fill="none" stroke="url(#atlasFleshHi)"
-          stroke-width="1.8" stroke-linecap="round" opacity="0.55"/>
+    <!-- ═══ TORSO — dark body, orange rim light across chest (lit from above) ═══ -->
+    <ellipse cx="29" cy="72" rx="9.5" ry="7.5" fill="url(#atlasBody)" transform="rotate(-12 29 72)"/>
+    <ellipse cx="91" cy="72" rx="9.5" ry="7.5" fill="url(#atlasBody)" transform="rotate(12 91 72)"/>
+    <!-- shoulder rim lights -->
+    <ellipse cx="29" cy="72" rx="9.5" ry="7.5" fill="none" stroke="#F7931A" stroke-width="1.2"
+             transform="rotate(-12 29 72)" opacity="0.65"/>
+    <ellipse cx="91" cy="72" rx="9.5" ry="7.5" fill="none" stroke="#F7931A" stroke-width="1.2"
+             transform="rotate(12 91 72)" opacity="0.65"/>
+    <path d="M29 74 Q38 68 60 67 Q82 68 91 74 Q90 84 86 94 Q80 102 60 104 Q40 102 34 94 Q30 84 29 74 Z"
+          fill="url(#atlasBody)"/>
+    <!-- chest rim: hot orange band across top where orb light falls -->
+    <path d="M33 76 Q46 69 60 68 Q74 69 87 76"
+          fill="none" stroke="#F7931A" stroke-width="2.0" stroke-linecap="round" opacity="0.60"/>
+    <!-- sternum groove -->
+    <path d="M60 69 Q60 85 60 102" fill="none" stroke="#F7931A"
+          stroke-width="0.9" stroke-linecap="round" opacity="0.28"/>
+    <!-- ab lines (subtle orange) -->
+    <path d="M50 84 Q55 87 60 86 Q65 87 70 84" fill="none" stroke="#F7931A"
+          stroke-width="0.8" stroke-linecap="round" opacity="0.22"/>
+    <path d="M50 93 Q55 96 60 95 Q65 96 70 93" fill="none" stroke="#F7931A"
+          stroke-width="0.8" stroke-linecap="round" opacity="0.22"/>
 
-    <!-- ═══ HEAD — upright, chin forward, eyes level — this Atlas does not bow ═══ -->
-    <path d="M56 68 L57 74 L63 74 L64 68 Q60 66 56 68 Z" fill="url(#atlasFlesh)"/>
-    <g filter="url(#atlasGlow)">
-      <circle cx="60" cy="60" r="10" fill="url(#atlasFlesh)"/>
+    <!-- ═══ HEAD — upright, chin level, lit from above by the orb ═══ -->
+    <path d="M56 68 L57 74 L63 74 L64 68 Q60 66 56 68 Z" fill="url(#atlasBody)"/>
+    <g filter="url(#atlasBodyGlow)">
+      <circle cx="60" cy="60" r="10" fill="url(#atlasBody)"/>
+      <!-- top-of-head rim light (directly under the orb) -->
+      <path d="M51 55 Q55 46 60 45 Q65 46 69 55"
+            fill="none" stroke="#FFD700" stroke-width="2.0" stroke-linecap="round" opacity="0.80"/>
+      <!-- hair mass -->
+      <path d="M51 56 Q53 47 60 46 Q67 47 69 56 Q65 52 60 52 Q55 52 51 56 Z"
+            fill="url(#atlasFleshDk)"/>
+      <!-- brow -->
+      <path d="M53 57 Q57 54 60 54 Q63 54 67 57"
+            fill="none" stroke="#F7931A" stroke-width="1.2" stroke-linecap="round" opacity="0.50"/>
     </g>
-    <!-- hair — short, heroic -->
-    <path d="M51 56 Q53 47 60 46 Q67 47 69 56 Q65 52 60 52 Q55 52 51 56 Z"
-          fill="url(#atlasFleshDk)"/>
-    <!-- brow ridge — determined, not strained -->
-    <path d="M53 56 Q57 54 60 54 Q63 54 67 56" fill="none" stroke="url(#atlasFleshDk)"
-          stroke-width="1.6" stroke-linecap="round" opacity="0.6"/>
-    <!-- jaw line -->
-    <path d="M52 62 Q56 66 60 67 Q64 66 68 62" fill="none" stroke="url(#atlasFleshDk)"
-          stroke-width="1.3" stroke-linecap="round" opacity="0.45"/>
 
-    <!-- ═══ LEGS — planted, wide stance, this man stands ═══ -->
-    <!-- left leg -->
+    <!-- ═══ LEGS — dark, slight edge lighting from ambient glow ═══ -->
     <path d="M37 104 Q34 118 32 132 Q30 143 35 150 L46 150 Q47 138 47 124 Q47 112 42 104 Z"
-          fill="url(#atlasFlesh)"/>
-    <ellipse cx="37" cy="128" rx="4" ry="5.5" fill="#FFE9B0" opacity="0.33"/>
-    <!-- left foot -->
+          fill="url(#atlasBody)"/>
+    <path d="M37 104 Q34 118 32 132 Q30 143 35 150"
+          fill="none" stroke="#F7931A" stroke-width="0.9" stroke-linecap="round" opacity="0.38"/>
     <path d="M31 149 Q27 147 22 148 Q18 150 23 153 L46 153 Q47 149 42 149 Z"
           fill="url(#atlasFleshDk)"/>
-    <!-- right leg -->
     <path d="M83 104 Q86 118 88 132 Q90 143 85 150 L74 150 Q73 138 73 124 Q73 112 78 104 Z"
-          fill="url(#atlasFlesh)"/>
-    <ellipse cx="83" cy="128" rx="4" ry="5.5" fill="#FFE9B0" opacity="0.33"/>
-    <!-- right foot -->
+          fill="url(#atlasBody)"/>
+    <path d="M83 104 Q86 118 88 132 Q90 143 85 150"
+          fill="none" stroke="#F7931A" stroke-width="0.9" stroke-linecap="round" opacity="0.38"/>
     <path d="M89 149 Q93 147 98 148 Q102 150 97 153 L74 153 Q73 149 78 149 Z"
           fill="url(#atlasFleshDk)"/>
 
     <!-- ground shadow -->
-    <ellipse cx="60" cy="153" rx="42" ry="4" fill="#000000" opacity="0.25"/>
+    <ellipse cx="60" cy="153" rx="44" ry="5" fill="#000000" opacity="0.40"/>
   </g>
 </svg>
 
@@ -657,6 +708,7 @@
 
 <div class="page-wrap">
     <section class="hero">
+        <canvas id="galaxyCanvas" aria-hidden="true"></canvas>
         <div class="hero-logo-wrap">
             <div class="orbit orbit-2"></div>
             <div class="orbit orbit-1"></div>
@@ -1369,6 +1421,117 @@ stb.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
       btn.textContent = '☀️';
     }
   });
+})();
+
+/* ─── GALAXY CANVAS — nebula clouds, twinkling stars, cosmic rays behind Atlas ─── */
+(function(){
+  const gc = document.getElementById('galaxyCanvas');
+  if(!gc) return;
+  const ctx = gc.getContext('2d');
+  let W=0, H=0, stars=[], nebulae=[], dust=[], t=0;
+
+  function init(){
+    const hero = gc.closest('.hero');
+    W = gc.width  = hero ? hero.offsetWidth + 200 : 900;
+    H = gc.height = hero ? hero.offsetHeight + 160 : 600;
+
+    stars = [];
+    for(let i=0;i<220;i++){
+      const gold=Math.random()>.72, cyan=!gold&&Math.random()>.55;
+      stars.push({
+        x:Math.random()*W, y:Math.random()*H,
+        r:Math.random()*1.5+0.2,
+        a:Math.random(), va:(Math.random()-.5)*0.006,
+        c: gold?'#FFD700': cyan?'#00FFFF': '#FFFFFF'
+      });
+    }
+
+    nebulae = [
+      {x:W*.28, y:H*.38, r:130, c0:'rgba(123,47,255,0.38)',  c1:'rgba(123,47,255,0)',  ph:0,    sp:0.00042},
+      {x:W*.72, y:H*.32, r:110, c0:'rgba(247,147,26,0.30)',  c1:'rgba(247,147,26,0)',  ph:1.2,  sp:0.00055},
+      {x:W*.18, y:H*.62, r:95,  c0:'rgba(0,200,255,0.24)',   c1:'rgba(0,200,255,0)',   ph:2.3,  sp:0.00038},
+      {x:W*.82, y:H*.55, r:105, c0:'rgba(200,20,255,0.28)',  c1:'rgba(200,20,255,0)',  ph:3.5,  sp:0.00048},
+      {x:W*.5,  y:H*.22, r:140, c0:'rgba(247,147,26,0.18)',  c1:'rgba(247,147,26,0)',  ph:0.8,  sp:0.00030},
+    ];
+
+    dust = [];
+    for(let i=0;i<40;i++){
+      const hot=Math.random()>.5;
+      dust.push({
+        x:Math.random()*W, y:Math.random()*H,
+        vx:(Math.random()-.5)*0.18, vy:-Math.random()*0.14-0.04,
+        r:Math.random()*2.4+0.6,
+        a:Math.random()*0.38+0.05,
+        hot
+      });
+    }
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    t++;
+
+    // Nebula clouds
+    nebulae.forEach(n=>{
+      const pulse = 1 + Math.sin(t*n.sp*60+n.ph)*0.11;
+      const g=ctx.createRadialGradient(n.x,n.y,0, n.x,n.y, n.r*pulse);
+      g.addColorStop(0, n.c0);
+      g.addColorStop(1, n.c1);
+      ctx.save(); ctx.fillStyle=g;
+      ctx.beginPath(); ctx.arc(n.x,n.y,n.r*pulse,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    });
+
+    // Stars twinkle
+    stars.forEach(s=>{
+      s.a += s.va;
+      if(s.a>1||s.a<0.08) s.va*=-1;
+      ctx.save();
+      ctx.globalAlpha=s.a;
+      ctx.fillStyle=s.c;
+      ctx.shadowColor=s.c; ctx.shadowBlur=s.r*4;
+      ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    });
+
+    // Cosmic dust drifts upward
+    dust.forEach(d=>{
+      d.x+=d.vx; d.y+=d.vy;
+      if(d.y<-10){d.y=H+10; d.x=Math.random()*W;}
+      if(d.x<0)d.x=W; if(d.x>W)d.x=0;
+      ctx.save();
+      ctx.globalAlpha=d.a;
+      ctx.fillStyle=d.hot?'rgba(247,147,26,0.7)':'rgba(123,47,255,0.7)';
+      ctx.beginPath(); ctx.arc(d.x,d.y,d.r,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    });
+
+    // Light rays from orb (centered at ~50%, 28% of canvas)
+    const ox=W*.5, oy=H*.28;
+    ctx.save();
+    for(let i=0;i<10;i++){
+      const angle=(i/10)*Math.PI*2 + t*0.0018;
+      const len=100+Math.sin(t*0.009+i*0.8)*36;
+      const g2=ctx.createLinearGradient(ox,oy, ox+Math.cos(angle)*len, oy+Math.sin(angle)*len);
+      const warm=i%2===0;
+      g2.addColorStop(0, warm?'rgba(255,215,0,0.22)':'rgba(155,31,255,0.18)');
+      g2.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.strokeStyle=g2; ctx.lineWidth=1.8+Math.sin(t*0.012+i)*0.6;
+      ctx.beginPath(); ctx.moveTo(ox,oy);
+      ctx.lineTo(ox+Math.cos(angle)*len, oy+Math.sin(angle)*len);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    requestAnimationFrame(draw);
+  }
+
+  function resize(){
+    init();
+  }
+  window.addEventListener('resize', resize);
+  // Wait for layout, then start
+  requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ init(); draw(); }); });
 })();
 </script>
 </body>
