@@ -435,159 +435,159 @@
 <script src="auth.js"></script>
 <body>
 
-<!-- ═══════════ ATLAS SVG TEMPLATE (Greek Titan straining under a Bitcoin globe) ═══════════ -->
+<!-- ═══════════ ATLAS SVG — Rand/Rockefeller: standing proud, arms wide, carrying Bitcoin globe ═══════════ -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
-    <radialGradient id="atlasGlobe" cx="36%" cy="30%" r="78%">
-      <stop offset="0%" stop-color="#FFF1A8"/>
-      <stop offset="34%" stop-color="#FFD24A"/>
-      <stop offset="66%" stop-color="#F7931A"/>
-      <stop offset="100%" stop-color="#9A4E00"/>
+    <radialGradient id="atlasGlobe" cx="34%" cy="28%" r="76%">
+      <stop offset="0%" stop-color="#FFF4CC"/>
+      <stop offset="28%" stop-color="#FFD24A"/>
+      <stop offset="62%" stop-color="#F7931A"/>
+      <stop offset="100%" stop-color="#8A4200"/>
     </radialGradient>
-    <radialGradient id="atlasGlobeShade" cx="68%" cy="74%" r="62%">
-      <stop offset="0%" stop-color="#000000" stop-opacity="0.55"/>
+    <radialGradient id="atlasGlobeShade" cx="70%" cy="72%" r="60%">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0.52"/>
       <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="atlasFlesh" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FFC76B"/>
-      <stop offset="42%" stop-color="#F7931A"/>
+    <linearGradient id="atlasFlesh" x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" stop-color="#FFD080"/>
+      <stop offset="38%" stop-color="#F7931A"/>
       <stop offset="100%" stop-color="#7A3A00"/>
     </linearGradient>
     <linearGradient id="atlasFleshDk" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#C96E08"/>
-      <stop offset="100%" stop-color="#4A2200"/>
+      <stop offset="0%" stop-color="#C06010"/>
+      <stop offset="100%" stop-color="#4A2000"/>
+    </linearGradient>
+    <linearGradient id="atlasFleshHi" x1="0%" y1="0%" x2="60%" y2="100%">
+      <stop offset="0%" stop-color="#FFE9B0"/>
+      <stop offset="100%" stop-color="#F7B040" stop-opacity="0"/>
     </linearGradient>
     <linearGradient id="atlasHi" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FFE9B0" stop-opacity="0.9"/>
+      <stop offset="0%" stop-color="#FFE9B0" stop-opacity="0.95"/>
       <stop offset="100%" stop-color="#FFE9B0" stop-opacity="0"/>
     </linearGradient>
-    <radialGradient id="atlasHalo" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#F7931A" stop-opacity="0.34"/>
-      <stop offset="60%" stop-color="#7B2FFF" stop-opacity="0.10"/>
+    <radialGradient id="atlasHalo" cx="50%" cy="45%" r="52%">
+      <stop offset="0%" stop-color="#F7931A" stop-opacity="0.38"/>
+      <stop offset="55%" stop-color="#7B2FFF" stop-opacity="0.12"/>
       <stop offset="100%" stop-color="#F7931A" stop-opacity="0"/>
     </radialGradient>
-    <filter id="atlasGlow" x="-60%" y="-60%" width="220%" height="220%">
-      <feGaussianBlur stdDeviation="2.4" result="b"/>
+    <filter id="atlasGlow" x="-55%" y="-55%" width="210%" height="210%">
+      <feGaussianBlur stdDeviation="2.2" result="b"/>
       <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
 
-  <!-- The reusable Atlas figure: viewBox 0 0 120 140 -->
+  <!-- Reusable Atlas figure: viewBox 0 0 120 155 — standing, arms wide, Rand/Rockefeller pose -->
   <g id="atlas-figure">
     <!-- ambient halo -->
-    <circle cx="60" cy="34" r="48" fill="url(#atlasHalo)"/>
+    <circle cx="60" cy="42" r="52" fill="url(#atlasHalo)"/>
 
-    <!-- ═══ BITCOIN GLOBE (the world Atlas carries) ═══ -->
+    <!-- ═══ BITCOIN GLOBE (the world Atlas carries overhead) ═══ -->
     <g filter="url(#atlasGlow)">
-      <circle cx="60" cy="30" r="25" fill="url(#atlasGlobe)"/>
-      <circle cx="60" cy="30" r="25" fill="url(#atlasGlobeShade)"/>
-      <!-- meridian / latitude lines so it reads as a globe -->
-      <ellipse cx="60" cy="30" rx="25" ry="9" fill="none" stroke="#FFE9B0" stroke-width="0.9" opacity="0.45"/>
-      <ellipse cx="60" cy="30" rx="9" ry="25" fill="none" stroke="#FFE9B0" stroke-width="0.9" opacity="0.35"/>
-      <ellipse cx="60" cy="30" rx="25" ry="20" fill="none" stroke="#FFE9B0" stroke-width="0.7" opacity="0.25"/>
-      <circle cx="60" cy="30" r="22.5" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.2"/>
-      <!-- specular gleam -->
-      <ellipse cx="50" cy="19" rx="8.5" ry="5" fill="#FFFFFF" opacity="0.55"/>
+      <circle cx="60" cy="26" r="22" fill="url(#atlasGlobe)"/>
+      <circle cx="60" cy="26" r="22" fill="url(#atlasGlobeShade)"/>
+      <!-- meridian lines — reads as a globe -->
+      <ellipse cx="60" cy="26" rx="22" ry="8.5" fill="none" stroke="#FFE9B0" stroke-width="0.8" opacity="0.50"/>
+      <ellipse cx="60" cy="26" rx="8.5" ry="22" fill="none" stroke="#FFE9B0" stroke-width="0.8" opacity="0.38"/>
+      <ellipse cx="60" cy="26" rx="22" ry="17" fill="none" stroke="#FFE9B0" stroke-width="0.6" opacity="0.26"/>
+      <circle cx="60" cy="26" r="20.5" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.1"/>
+      <!-- specular gleam top-left -->
+      <ellipse cx="51" cy="17" rx="7" ry="4" fill="#FFFFFF" opacity="0.55"/>
       <!-- ₿ emblem -->
-      <text x="60" y="40" text-anchor="middle" font-family="'Arial Black',Arial,sans-serif"
-            font-weight="900" font-size="27" fill="#3A1A00" opacity="0.92">&#8383;</text>
+      <text x="60" y="36" text-anchor="middle" font-family="'Arial Black',Arial,sans-serif"
+            font-weight="900" font-size="23" fill="#3A1A00" opacity="0.92">&#8383;</text>
     </g>
 
-    <!-- ═══ ATLAS FIGURE — kneeling, straining, arms raised overhead ═══ -->
-    <!-- back / shadowed leg (right, viewer-left), bent under the load -->
-    <path d="M48 92 Q40 104 38 116 Q37 124 44 126 L52 126 Q50 116 53 106 Q55 99 55 95 Z"
+    <!-- ═══ LEFT ARM — wide sweep from shoulder, elbow swings outward, forearm rises to globe ═══ -->
+    <!-- upper arm / deltoid mass -->
+    <path d="M29 72 Q16 70 10 56 Q8 46 15 40 Q23 35 30 42 Q35 48 33 58 Q31 66 29 72 Z"
+          fill="url(#atlasFlesh)"/>
+    <!-- bicep highlight -->
+    <ellipse cx="20" cy="52" rx="2.8" ry="5.2" fill="#FFE9B0" opacity="0.40" transform="rotate(-28 20 52)"/>
+    <!-- forearm rising from elbow to globe -->
+    <path d="M15 40 Q11 28 20 22 Q30 16 40 21 Q46 25 44 32 Q38 36 29 43 Q21 48 15 40 Z"
+          fill="url(#atlasFlesh)"/>
+    <!-- left hand cupping globe from below-left -->
+    <path d="M40 21 Q44 14 52 13 Q60 13 59 21 Q54 25 45 23 Q41 22 40 21 Z"
           fill="url(#atlasFleshDk)"/>
-    <!-- back foot -->
-    <path d="M37 124 Q33 122 28 124 Q24 126 28 129 L48 129 Q49 125 44 124 Z" fill="url(#atlasFleshDk)"/>
+    <!-- highlight ridge along outer arm -->
+    <path d="M10 56 Q12 44 18 36" fill="none" stroke="url(#atlasHi)" stroke-width="2.0" stroke-linecap="round"/>
 
-    <!-- forward kneeling leg (thigh + shin driving into the ground) -->
-    <path d="M70 90 Q80 100 84 112 Q86 122 78 127 L70 127 Q72 116 68 104 Q65 96 63 92 Z"
+    <!-- ═══ RIGHT ARM — mirror sweep ═══ -->
+    <path d="M91 72 Q104 70 110 56 Q112 46 105 40 Q97 35 90 42 Q85 48 87 58 Q89 66 91 72 Z"
           fill="url(#atlasFlesh)"/>
-    <!-- knee mass highlight -->
-    <ellipse cx="80" cy="106" rx="6" ry="7.5" fill="url(#atlasFlesh)"/>
-    <ellipse cx="78" cy="103" rx="2.6" ry="3.4" fill="#FFE9B0" opacity="0.5"/>
-    <!-- forward foot planted -->
-    <path d="M77 125 Q83 122 92 124 Q98 126 93 130 L72 130 Q72 126 77 125 Z" fill="url(#atlasFlesh)"/>
-
-    <!-- ═══ TORSO — broad muscular back, twisting under the weight ═══ -->
-    <path d="M44 70
-             Q40 82 47 94
-             Q54 100 66 99
-             Q77 97 79 86
-             Q81 76 76 68
-             Q68 62 56 63
-             Q48 65 44 70 Z"
+    <ellipse cx="100" cy="52" rx="2.8" ry="5.2" fill="#FFE9B0" opacity="0.40" transform="rotate(28 100 52)"/>
+    <path d="M105 40 Q109 28 100 22 Q90 16 80 21 Q74 25 76 32 Q82 36 91 43 Q99 48 105 40 Z"
           fill="url(#atlasFlesh)"/>
-    <!-- spine / lat shadow groove -->
-    <path d="M61 66 Q58 80 60 96" fill="none" stroke="url(#atlasFleshDk)" stroke-width="2.4"
-          stroke-linecap="round" opacity="0.65"/>
-    <!-- oblique / ab definition -->
-    <path d="M50 78 Q56 82 62 80" fill="none" stroke="url(#atlasFleshDk)" stroke-width="1.7"
-          stroke-linecap="round" opacity="0.5"/>
-    <path d="M51 86 Q57 90 64 87" fill="none" stroke="url(#atlasFleshDk)" stroke-width="1.7"
-          stroke-linecap="round" opacity="0.5"/>
-    <!-- chest / pectoral mass -->
-    <path d="M47 67 Q54 63 62 64 Q70 65 73 70 Q66 73 57 72 Q50 71 47 67 Z"
-          fill="url(#atlasFlesh)"/>
-    <path d="M47 67 Q56 70 73 70" fill="none" stroke="#FFE9B0" stroke-width="1.4" opacity="0.4"/>
-
-    <!-- ═══ LEFT ARM (viewer-left) — deltoid, biceps, forearm reaching to globe ═══ -->
-    <!-- shoulder / deltoid cap -->
-    <ellipse cx="45" cy="65" rx="9.5" ry="8.5" fill="url(#atlasFlesh)"
-             transform="rotate(-26 45 65)"/>
-    <!-- upper arm (biceps bulge) -->
-    <path d="M44 70 Q34 60 36 49 Q38 44 44 45 Q50 48 50 58 Q49 66 44 70 Z"
-          fill="url(#atlasFlesh)"/>
-    <ellipse cx="40" cy="55" rx="3.2" ry="5" fill="#FFE9B0" opacity="0.45"
-             transform="rotate(-30 40 55)"/>
-    <!-- forearm to the globe underside -->
-    <path d="M36 49 Q34 38 41 30 Q46 26 49 31 Q50 39 44 47 Q40 50 36 49 Z"
-          fill="url(#atlasFlesh)"/>
-    <!-- gripping hand under globe -->
-    <path d="M41 31 Q43 24 50 23 Q56 23 56 28 Q53 32 47 33 Q43 33 41 31 Z"
+    <!-- right hand cupping globe from below-right -->
+    <path d="M80 21 Q76 14 68 13 Q60 13 61 21 Q66 25 75 23 Q79 22 80 21 Z"
           fill="url(#atlasFleshDk)"/>
+    <path d="M110 56 Q108 44 102 36" fill="none" stroke="url(#atlasHi)" stroke-width="2.0" stroke-linecap="round"/>
 
-    <!-- ═══ RIGHT ARM (viewer-right) — deltoid, biceps, forearm reaching to globe ═══ -->
-    <ellipse cx="76" cy="66" rx="9.5" ry="8.5" fill="url(#atlasFlesh)"
-             transform="rotate(26 76 66)"/>
-    <path d="M77 70 Q87 60 85 49 Q83 44 77 45 Q71 48 71 58 Q72 66 77 70 Z"
+    <!-- ═══ TORSO — proud wide chest, V-taper to hips, clearly upright ═══ -->
+    <!-- shoulder caps / deltoids -->
+    <ellipse cx="29" cy="72" rx="9.5" ry="7.5" fill="url(#atlasFlesh)" transform="rotate(-12 29 72)"/>
+    <ellipse cx="91" cy="72" rx="9.5" ry="7.5" fill="url(#atlasFlesh)" transform="rotate(12 91 72)"/>
+    <!-- main torso body -->
+    <path d="M29 74 Q38 68 60 67 Q82 68 91 74
+             Q90 84 86 94 Q80 102 60 104 Q40 102 34 94 Q30 84 29 74 Z"
           fill="url(#atlasFlesh)"/>
-    <ellipse cx="81" cy="55" rx="3.2" ry="5" fill="#FFE9B0" opacity="0.45"
-             transform="rotate(30 81 55)"/>
-    <path d="M85 49 Q87 38 80 30 Q75 26 72 31 Q71 39 77 47 Q81 50 85 49 Z"
-          fill="url(#atlasFlesh)"/>
-    <path d="M80 31 Q78 24 71 23 Q65 23 65 28 Q68 32 74 33 Q78 33 80 31 Z"
-          fill="url(#atlasFleshDk)"/>
+    <!-- pectoral definition (left) -->
+    <path d="M32 76 Q44 71 56 73 Q51 82 43 84 Q35 82 32 76 Z"
+          fill="url(#atlasFleshDk)" opacity="0.38"/>
+    <!-- pectoral definition (right) -->
+    <path d="M88 76 Q76 71 64 73 Q69 82 77 84 Q85 82 88 76 Z"
+          fill="url(#atlasFleshDk)" opacity="0.38"/>
+    <!-- sternum centre line -->
+    <path d="M60 68 Q60 84 60 102" fill="none" stroke="url(#atlasFleshDk)"
+          stroke-width="1.7" stroke-linecap="round" opacity="0.50"/>
+    <!-- ab lines -->
+    <path d="M50 84 Q55 87 60 86 Q65 87 70 84" fill="none" stroke="url(#atlasFleshDk)"
+          stroke-width="1.3" stroke-linecap="round" opacity="0.44"/>
+    <path d="M50 93 Q55 96 60 95 Q65 96 70 93" fill="none" stroke="url(#atlasFleshDk)"
+          stroke-width="1.3" stroke-linecap="round" opacity="0.44"/>
+    <!-- chest highlight -->
+    <path d="M36 72 Q50 68 60 68" fill="none" stroke="url(#atlasFleshHi)"
+          stroke-width="1.8" stroke-linecap="round" opacity="0.55"/>
 
-    <!-- ═══ NECK + HEAD — bowed forward, straining ═══ -->
-    <path d="M54 60 Q53 67 58 70 Q63 71 66 67 Q67 62 65 58 Q59 56 54 60 Z"
-          fill="url(#atlasFleshDk)"/>
-    <!-- skull, tilted under the load -->
+    <!-- ═══ HEAD — upright, chin forward, eyes level — this Atlas does not bow ═══ -->
+    <path d="M56 68 L57 74 L63 74 L64 68 Q60 66 56 68 Z" fill="url(#atlasFlesh)"/>
     <g filter="url(#atlasGlow)">
-      <path d="M52 56 Q49 46 56 41 Q64 37 70 43 Q74 49 70 56 Q66 61 59 60 Q54 59 52 56 Z"
-            fill="url(#atlasFlesh)"/>
+      <circle cx="60" cy="60" r="10" fill="url(#atlasFlesh)"/>
     </g>
-    <!-- jaw / cheek shade -->
-    <path d="M55 56 Q60 60 67 56" fill="none" stroke="url(#atlasFleshDk)" stroke-width="1.6"
-          stroke-linecap="round" opacity="0.55"/>
-    <!-- brow strain shadow -->
-    <path d="M54 48 Q60 45 68 49" fill="none" stroke="url(#atlasFleshDk)" stroke-width="1.8"
-          stroke-linecap="round" opacity="0.6"/>
-    <!-- hair / fillet sweep -->
-    <path d="M51 47 Q53 38 62 37 Q71 37 72 45 Q66 42 59 43 Q54 44 51 47 Z"
+    <!-- hair — short, heroic -->
+    <path d="M51 56 Q53 47 60 46 Q67 47 69 56 Q65 52 60 52 Q55 52 51 56 Z"
           fill="url(#atlasFleshDk)"/>
-    <!-- highlight along the back/shoulder ridge -->
-    <path d="M46 64 Q42 56 44 47" fill="none" stroke="url(#atlasHi)" stroke-width="2"
-          stroke-linecap="round"/>
+    <!-- brow ridge — determined, not strained -->
+    <path d="M53 56 Q57 54 60 54 Q63 54 67 56" fill="none" stroke="url(#atlasFleshDk)"
+          stroke-width="1.6" stroke-linecap="round" opacity="0.6"/>
+    <!-- jaw line -->
+    <path d="M52 62 Q56 66 60 67 Q64 66 68 62" fill="none" stroke="url(#atlasFleshDk)"
+          stroke-width="1.3" stroke-linecap="round" opacity="0.45"/>
+
+    <!-- ═══ LEGS — planted, wide stance, this man stands ═══ -->
+    <!-- left leg -->
+    <path d="M37 104 Q34 118 32 132 Q30 143 35 150 L46 150 Q47 138 47 124 Q47 112 42 104 Z"
+          fill="url(#atlasFlesh)"/>
+    <ellipse cx="37" cy="128" rx="4" ry="5.5" fill="#FFE9B0" opacity="0.33"/>
+    <!-- left foot -->
+    <path d="M31 149 Q27 147 22 148 Q18 150 23 153 L46 153 Q47 149 42 149 Z"
+          fill="url(#atlasFleshDk)"/>
+    <!-- right leg -->
+    <path d="M83 104 Q86 118 88 132 Q90 143 85 150 L74 150 Q73 138 73 124 Q73 112 78 104 Z"
+          fill="url(#atlasFlesh)"/>
+    <ellipse cx="83" cy="128" rx="4" ry="5.5" fill="#FFE9B0" opacity="0.33"/>
+    <!-- right foot -->
+    <path d="M89 149 Q93 147 98 148 Q102 150 97 153 L74 153 Q73 149 78 149 Z"
+          fill="url(#atlasFleshDk)"/>
 
     <!-- ground shadow -->
-    <ellipse cx="60" cy="131" rx="40" ry="4" fill="#000000" opacity="0.28"/>
+    <ellipse cx="60" cy="153" rx="42" ry="4" fill="#000000" opacity="0.25"/>
   </g>
 </svg>
 
 <div id="boot-screen" aria-hidden="true">
     <div class="boot-inner">
-        <svg class="boot-logo" viewBox="0 0 120 140" role="img" aria-label="Atlas">
+        <svg class="boot-logo" viewBox="0 0 120 155" role="img" aria-label="Atlas">
             <use href="#atlas-figure"></use>
         </svg>
         <div class="boot-title">ATLAS://NETWORK</div>
@@ -628,7 +628,7 @@
 <header class="nav">
     <div class="nav-inner">
         <a class="nav-logo" href="/" aria-label="Atlas Arcade home">
-            <svg viewBox="0 0 120 140" aria-hidden="true"><use href="#atlas-figure"></use></svg>
+            <svg viewBox="0 0 120 155" aria-hidden="true"><use href="#atlas-figure"></use></svg>
             <span>ATLAS ARCADE</span>
         </a>
         <div class="nav-links">
@@ -661,7 +661,7 @@
             <div class="orbit orbit-2"></div>
             <div class="orbit orbit-1"></div>
             <div class="orbit orbit-3"></div>
-            <svg class="hero-logo" viewBox="0 0 120 140" role="img" aria-label="Atlas straining to hold up a Bitcoin world">
+            <svg class="hero-logo" viewBox="0 0 120 155" role="img" aria-label="Atlas standing tall, holding the Bitcoin world overhead">
                 <use href="#atlas-figure"></use>
             </svg>
         </div>
@@ -869,7 +869,7 @@
             <a class="card" href="miner.html" data-category="idle" data-score="">
                 <div class="card-edge"></div>
                 <div class="card-played"></div>
-                <div class="card-icon">⛏️</div>
+                <div class="card-icon">🖥️</div>
                 <div class="card-title">BITCOIN MINER</div>
                 <div class="card-desc">Click to mine BTC, upgrade your rig from a basic mouse to a full mining farm. Stack sats, mine blocks, and build your crypto empire.</div>
                 <div class="card-meta"><span class="tag">Idle</span><span class="tag">Clicker</span><span class="badge badge-new">NEW</span></div>
