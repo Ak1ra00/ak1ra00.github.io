@@ -114,6 +114,8 @@ body{font-family:'Rajdhani',sans-serif;background:var(--bg);min-height:100vh;col
     <a href="invaders.html">Invaders</a>
     <a href="flappy.html">Flappy</a>
     <a href="tetris.html" class="active">Tetris</a>
+    <a href="hashbreaker.html">Hashbreaker</a>
+    <a href="bubbles.html">Bubbles</a>
   </div>
 </nav>
 
@@ -184,6 +186,32 @@ let board=newBoard(), cur, nxt, held, canHold;
 let score,level,lines,hiScore,dropT,dropI;
 let floats=[], clearFlash=[], lineParticles=[], gameActive=false, paused=false;
 let lastTs=0;
+let screenShake=0, lockFlash=0, lockCells=[], rings=[];
+
+// ── BACKGROUND HEX GRID (offscreen, drawn once) ──
+const hexCanvas=document.createElement('canvas');
+hexCanvas.width=W; hexCanvas.height=H;
+(function buildHexGrid(){
+  const hx=hexCanvas.getContext('2d');
+  const side=16;
+  const hw=Math.sqrt(3)*side;
+  const vstep=side*1.5;
+  hx.strokeStyle='rgba(247,147,26,0.5)';
+  hx.lineWidth=1;
+  for(let row=0,y=0;y<H+side;row++,y=row*vstep){
+    const xOff=(row%2)?hw/2:0;
+    for(let x=-hw;x<W+hw;x+=hw){
+      hx.beginPath();
+      for(let i=0;i<6;i++){
+        const a=Math.PI/180*(60*i-30);
+        const px=x+xOff+side*Math.cos(a);
+        const py=y+side*Math.sin(a);
+        i===0?hx.moveTo(px,py):hx.lineTo(px,py);
+      }
+      hx.closePath(); hx.stroke();
+    }
+  }
+})();
 
 hiScore=Auth.getScore('btc_tetris_hs');
 document.getElementById('introBest').textContent='BEST: '+hiScore.toLocaleString();
@@ -224,6 +252,7 @@ function lighten(h,a){
 function startGame(){
   board=newBoard(); score=0; lines=0; level=1; held=null; canHold=true;
   floats=[]; clearFlash=[]; lineParticles=[]; dropT=0; dropI=SPEEDS[0]; paused=false;
+  screenShake=0; lockFlash=0; lockCells=[]; rings=[];
   hiScore=Auth.getScore('btc_tetris_hs');
   nxt=randPiece(); spawnPiece();
   gameActive=true;
@@ -240,12 +269,15 @@ function spawnPiece(resetHold){
 }
 
 function lockPiece(){
+  lockCells=[];
   cur.mat.forEach((row,r)=>row.forEach((v,c)=>{
     if(!v) return;
     const ny=cur.y+r,nx=cur.x+c;
     if(ny<0){endGame();return;}
     board[ny][nx]={col:cur.col,shit:cur.shit};
+    if(ny>=0) lockCells.push({x:nx,y:ny});
   }));
+  lockFlash=8;
   clearLines();
   spawnPiece();
 }
@@ -270,6 +302,12 @@ function clearLines(){
   floats.push({x:W/2,y:H/2,txt:(hasShit?'⚠️ ':'')+msgs[Math.min(cleared,4)],col,vy:-1.1,life:1.4});
   if(pts>0) floats.push({x:W/2,y:H/2+28,txt:'+'+pts.toLocaleString(),col:'#00ff88',vy:-0.9,life:1.1});
   clearFlash=flashRows; setTimeout(()=>clearFlash=[],180);
+  // Screen shake scaled by lines cleared
+  screenShake=Math.min(16,cleared*5);
+  // Ring shockwave per cleared line, from board center-x at the cleared row's y
+  flashRows.forEach(r=>{
+    rings.push({x:W/2,y:r*SZ+SZ/2,r:0,maxR:W,life:0,maxLife:350,color:'#F7931A'});
+  });
   flashRows.forEach(r=>{
     for(let i=0;i<8;i++){
       const px=(i/7)*W+(Math.random()-0.5)*30;
@@ -339,10 +377,11 @@ function drawCell(x,y,col,alpha,ghost){
   const px=x*SZ,py=y*SZ;
   ctx.save(); ctx.globalAlpha=alpha||1;
   if(ghost){
-    ctx.strokeStyle=col; ctx.lineWidth=2;
-    ctx.setLineDash([4,3]);
-    ctx.strokeRect(px+2,py+2,SZ-4,SZ-4);
-    ctx.setLineDash([]);
+    // Premium soft-glow ghost (replaces dashed outline)
+    ctx.globalAlpha=0.15;
+    ctx.shadowColor=col; ctx.shadowBlur=8;
+    ctx.fillStyle=col;
+    ctx.fillRect(px+2,py+2,SZ-4,SZ-4);
   } else {
     const bev=4;
     const isBTC=col===BTC_COLS.I||col===BTC_COLS.O||col===BTC_COLS.T||col===BTC_COLS.S||col===BTC_COLS.Z||col===BTC_COLS.J||col===BTC_COLS.L;
@@ -393,7 +432,14 @@ function drawCell(x,y,col,alpha,ghost){
 }
 
 function drawBoard(){
-  ctx.fillStyle='#060610'; ctx.fillRect(0,0,W,H);
+  ctx.save();
+  ctx.translate((Math.random()-0.5)*screenShake,(Math.random()-0.5)*screenShake);
+  ctx.fillStyle='#060610'; ctx.fillRect(-20,-20,W+40,H+40);
+  // Background hex grid
+  ctx.save();
+  ctx.globalAlpha=0.04;
+  ctx.drawImage(hexCanvas,0,0);
+  ctx.restore();
   // Deep-space vignette (subtle)
   const vig=ctx.createRadialGradient(W/2,H/2,H*0.2,W/2,H/2,H*0.85);
   vig.addColorStop(0,'rgba(0,0,0,0)');
@@ -418,6 +464,24 @@ function drawBoard(){
   cur.mat.forEach((row,r)=>row.forEach((v,c)=>{if(v&&gy+r>=0)drawCell(cur.x+c,gy+r,cur.col,.22,true);}));
   // Current piece
   cur.mat.forEach((row,r)=>row.forEach((v,c)=>{if(v&&cur.y+r>=0)drawCell(cur.x+c,cur.y+r,cur.col);}));
+  // Piece lock flash — white overlay on freshly-locked cells
+  if(lockFlash>0){
+    ctx.save();
+    ctx.globalAlpha=lockFlash/8*0.6;
+    ctx.fillStyle='#ffffff';
+    lockCells.forEach(cell=>{ctx.fillRect(cell.x*SZ+1,cell.y*SZ+1,SZ-2,SZ-2);});
+    ctx.restore();
+  }
+  // Ring shockwaves from cleared lines
+  rings.forEach(rg=>{
+    const t=rg.life/rg.maxLife;
+    ctx.save();
+    ctx.globalAlpha=Math.max(0,(1-t)*0.8);
+    ctx.strokeStyle=rg.color; ctx.shadowColor=rg.color; ctx.shadowBlur=14;
+    ctx.lineWidth=3*(1-t)+1;
+    ctx.beginPath(); ctx.arc(rg.x,rg.y,rg.r,0,Math.PI*2); ctx.stroke();
+    ctx.restore();
+  });
   // Floats
   floats.forEach(f=>{
     ctx.save(); ctx.globalAlpha=Math.min(1,f.life);
@@ -474,6 +538,13 @@ function loop(ts){
     lineParticles=lineParticles.filter(p=>p.life>0);
     lineParticles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.15;p.vx*=0.96;p.life-=0.025;});
   }
+  // Ring shockwaves
+  rings.forEach(rg=>{rg.life+=dt;rg.r=rg.maxR*(rg.life/rg.maxLife);});
+  rings=rings.filter(rg=>rg.life<rg.maxLife);
+  // Piece lock flash decay
+  if(lockFlash>0) lockFlash-=2;
+  // Screen shake decay
+  if(screenShake>0.5) screenShake*=0.85; else screenShake=0;
   drawBoard();
   requestAnimationFrame(loop);
 }

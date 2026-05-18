@@ -109,6 +109,8 @@ canvas{display:block;background:#060610;width:100%;height:auto;}
     <a href="invaders.html" class="active">Invaders</a>
     <a href="flappy.html">Flappy</a>
     <a href="tetris.html">Tetris</a>
+    <a href="hashbreaker.html">Hashbreaker</a>
+    <a href="bubbles.html">Bubbles</a>
   </div>
 </nav>
 
@@ -167,6 +169,32 @@ const STARS = [
   Array.from({length:15}, ()=>({x:Math.random()*800, y:Math.random()*520, s:Math.random()*2.0+1.0, spd:0.7})),
 ];
 
+// ── BACKGROUND HEX GRID (built once to offscreen canvas) ──
+const hexCanvas = document.createElement('canvas');
+hexCanvas.width = W; hexCanvas.height = H;
+(function buildHexGrid(){
+  const hx = hexCanvas.getContext('2d');
+  const side = 28;
+  const hw = Math.sqrt(3) * side;       // hex width (flat-top columns)
+  const vSpace = side * 1.5;            // vertical row spacing
+  hx.strokeStyle = 'rgba(247,147,26,0.045)';
+  hx.lineWidth = 1;
+  for(let row=0, y=0; y < H + side; row++, y += vSpace){
+    const xOff = (row % 2) ? hw/2 : 0;
+    for(let x = -hw; x < W + hw; x += hw){
+      const cx = x + xOff, cy = y;
+      hx.beginPath();
+      for(let i=0;i<6;i++){
+        const a = Math.PI/180 * (60*i - 30);
+        const px = cx + side*Math.cos(a), py = cy + side*Math.sin(a);
+        i===0 ? hx.moveTo(px,py) : hx.lineTo(px,py);
+      }
+      hx.closePath();
+      hx.stroke();
+    }
+  }
+})();
+
 // ── HI-SCORE ──
 hiScore = Auth.getScore('btc_inv_hs');
 document.getElementById('introBest').textContent = 'BEST: '+hiScore.toLocaleString();
@@ -194,7 +222,7 @@ function buildWave() {
   for(let r=0;r<rows;r++){
     for(let c=0;c<cols;c++){
       invaders.push({
-        type:r, x:startX+c*cellW, y:startY+r*cellH,
+        type:r, row:r, x:startX+c*cellW, y:startY+r*cellH,
         alive:true, bob:0, t:0
       });
     }
@@ -297,9 +325,11 @@ function update(dt){
       if(Math.abs(b.x-inv.x)<18&&Math.abs(b.y-inv.y)<14){
         inv.alive=false; b.y=-99;
         const spec=ETYPES[inv.type];
-        score+=spec.pts*(1+(wave-1)*0.5|0);
-        spawnFloat(inv.x, inv.y, '+'+score, spec.color);
+        const points=spec.pts*(1+(wave-1)*0.5|0);
+        score+=points;
+        spawnFloat(inv.x, inv.y, '+'+points, '#FFD700');
         spawnPts(inv.x, inv.y, spec.color);
+        spawnRing(inv.x, inv.y, spec.color);
         updateHUD();
       }
     });
@@ -403,11 +433,16 @@ function spawnPts(x,y,col){
 function spawnFloat(x,y,txt,col){
   floats.push({x,y,txt,col,vy:-1.1,life:1});
 }
+function spawnRing(x,y,col){
+  pts.push({type:'ring', x, y, r:8, maxR:40, life:0, maxLife:280, col});
+}
 
 function drawInvader(inv, spec, cx, cy) {
   const frame = Math.floor(inv.t * 3) % 2;
   ctx.save();
-  ctx.shadowColor = spec.color; ctx.shadowBlur = 10;
+  // Glow intensifies as invaders descend (lower rows glow brighter)
+  const totalRows = 5;
+  ctx.shadowColor = spec.color; ctx.shadowBlur = 4 + (inv.row / totalRows) * 14;
   switch(inv.type) {
     case 0: { // ETH - crab
       ctx.fillStyle = spec.color;
@@ -494,6 +529,11 @@ function draw(){
     ctx.restore();return;
   }
 
+  // Background hex grid
+  ctx.globalAlpha=0.6;
+  ctx.drawImage(hexCanvas, 0, 0);
+  ctx.globalAlpha=1;
+
   // Parallax stars
   STARS[0].forEach(s=>{
     ctx.fillStyle=`rgba(180,190,220,${0.2+s.s*0.3})`;
@@ -556,6 +596,13 @@ function draw(){
   {
     const px=player.x, py=H-38;
     ctx.save();
+    // Pulsing engine glow behind the ship
+    ctx.save();
+    ctx.shadowColor='rgba(247,147,26,0.7)';
+    ctx.shadowBlur=Math.sin(Date.now()*0.008)*3+5;
+    ctx.fillStyle='rgba(247,147,26,0.7)';
+    ctx.beginPath();ctx.arc(px,py+12,5,0,Math.PI*2);ctx.fill();
+    ctx.restore();
     ctx.shadowColor='#FFD700';ctx.shadowBlur=18;
     // Body
     ctx.fillStyle='#F7931A';
@@ -592,8 +639,19 @@ function draw(){
   });
 
   // Particles
-  pts=pts.filter(p=>p.life>0);
+  pts=pts.filter(p=>p.type==='ring' ? p.life<p.maxLife : p.life>0);
   pts.forEach(p=>{
+    if(p.type==='ring'){
+      p.life+=16;
+      const prog=Math.min(1,p.life/p.maxLife);
+      const r=p.r+(p.maxR-p.r)*prog;
+      ctx.save();ctx.globalAlpha=1-prog;
+      ctx.strokeStyle=p.col;ctx.shadowColor=p.col;ctx.shadowBlur=8;
+      ctx.lineWidth=2;
+      ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.stroke();
+      ctx.restore();
+      return;
+    }
     p.x+=p.vx;p.y+=p.vy;p.vx*=.9;p.vy*=.9;p.life-=.04;
     ctx.save();ctx.globalAlpha=p.life;
     ctx.fillStyle=p.col;ctx.shadowColor=p.col;ctx.shadowBlur=5;

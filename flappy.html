@@ -153,6 +153,8 @@ canvas { display: block; width: 100%; height: 100%; image-rendering: auto; -webk
     <a href="invaders.html">Invaders</a>
     <a href="flappy.html" class="active">Flappy</a>
     <a href="tetris.html">Tetris</a>
+    <a href="hashbreaker.html">Hashbreaker</a>
+    <a href="bubbles.html">Bubbles</a>
   </div>
 </nav>
 
@@ -220,6 +222,33 @@ let hiScore   = ScoreManager.get('btc_flappy_hs');
 let frameCount= 0;
 let lastTime  = 0;
 let deltaTime = 0;
+let screenShake = 0;
+
+// ─── BACKGROUND HEX GRID (built once to offscreen canvas) ──
+const hexCanvas = document.createElement('canvas');
+hexCanvas.width = W; hexCanvas.height = H;
+(function buildHexGrid(){
+  const hx = hexCanvas.getContext('2d');
+  const side = 24;
+  const hw = Math.sqrt(3) * side;
+  const vSpace = side * 1.5;
+  hx.strokeStyle = 'rgba(247,147,26,0.04)';
+  hx.lineWidth = 1;
+  for(let row=0, y=0; y < H + side; row++, y += vSpace){
+    const xOff = (row % 2) ? hw/2 : 0;
+    for(let x = -hw; x < W + hw; x += hw){
+      const cx = x + xOff, cy = y;
+      hx.beginPath();
+      for(let i=0;i<6;i++){
+        const a = Math.PI/180 * (60*i - 30);
+        const px = cx + side*Math.cos(a), py = cy + side*Math.sin(a);
+        i===0 ? hx.moveTo(px,py) : hx.lineTo(px,py);
+      }
+      hx.closePath();
+      hx.stroke();
+    }
+  }
+})();
 
 // ─── DIFFICULTY ──────────────────────────────────────────────────────────────
 let pipeSpeed    = 4.8;
@@ -266,6 +295,12 @@ function spawnParticles(x, y, count, color){
 function spawnFloatText(x, y, text, color){
   floatTexts.push({ x, y, vy: -1.2, life:1, maxLife:1, text, color });
 }
+
+function spawnRing(x, y, color){
+  particles.push({ type:'ring', x, y, r:8, maxR:45, life:0, maxLife:320, color });
+}
+
+
 function triggerFlash(){
   flashEl.classList.add('active');
   setTimeout(()=> flashEl.classList.remove('active'), 160);
@@ -372,9 +407,19 @@ function drawBgParticles(){
 
 function drawPipe(p){
   const pipeX = p.x - PIPE_W/2;
+
+  // Enhanced ETH glow on pipes
+  ctx.save();
+  ctx.shadowColor = '#627EEA';
+  ctx.shadowBlur  = 12;
+
+
   drawPipeRect(pipeX, 0, PIPE_W, p.gapY, true);
   const bpY = p.gapY + gapSize;
   drawPipeRect(pipeX, bpY, PIPE_W, H - bpY, false);
+  ctx.restore();
+
+
   ctx.save();
   const glowGrad = ctx.createLinearGradient(pipeX, p.gapY-3, pipeX, p.gapY+3);
   glowGrad.addColorStop(0, 'rgba(98,126,234,0.5)'); glowGrad.addColorStop(1, 'transparent');
@@ -456,7 +501,25 @@ function drawPlayer(){
 
 function drawParticles(){
   for(let i=particles.length-1;i>=0;i--){
-    const p = particles[i]; p.x += p.vx; p.y += p.vy; p.vy += 0.12; p.life -= 0.035;
+    const p = particles[i];
+    if(p.type === 'ring'){
+      p.life += 16;
+      if(p.life >= p.maxLife){ particles.splice(i,1); continue; }
+      const prog = p.life / p.maxLife;
+      const rr = p.r + (p.maxR - p.r) * prog;
+      ctx.save();
+      ctx.globalAlpha = 1 - prog;
+      ctx.strokeStyle = p.color;
+      ctx.shadowColor = p.color;
+      ctx.shadowBlur  = 10;
+      ctx.lineWidth   = 2.5;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, rr, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.restore();
+      continue;
+    }
+    p.x += p.vx; p.y += p.vy; p.vy += 0.12; p.life -= 0.035;
     if(p.life <= 0){ particles.splice(i,1); continue; }
     ctx.save(); ctx.globalAlpha = p.life; ctx.beginPath();
     ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI*2); ctx.fillStyle = p.color; ctx.fill(); ctx.restore();
@@ -525,6 +588,7 @@ function update(){
       if(dx*dx + dy*dy < (PLAYER_R + 20)*(PLAYER_R + 20)){
         p.bonusCoin.collected = true; score += 5;
         spawnParticles(p.x, p.bonusCoin.y, 16, C.gold);
+        spawnRing(p.x, p.bonusCoin.y, '#FFD700');
         spawnFloatText(p.x, p.bonusCoin.y - 20, '+5', C.gold);
       }
     }
@@ -534,14 +598,49 @@ function update(){
   if(score > hiScore){ hiScore = score; ScoreManager.set('btc_flappy_hs', hiScore); }
 }
 
+// ─── SPEED LINES ──────────────────────────────────────────────────────────────
+function drawSpeedLines(){
+  if(pipeSpeed <= 3.5) return;
+  const alpha = (pipeSpeed - 3.5) / 2.5 * 0.25;
+  const count = 8 + Math.floor(((pipeSpeed - 3.5) / 2.5) * 4); // 8-12
+  ctx.save();
+  ctx.lineWidth = 1.5;
+  for(let i=0;i<count;i++){
+    // Pseudo-random but animated streaks moving left
+    const seed = i * 137.5;
+    const len = 30 + ((Math.sin(seed) + 1) * 0.5) * 80;
+    const y = ((Math.sin(seed*1.7) + 1) * 0.5) * H;
+    const baseX = (Math.sin(seed*0.9) + 1) * 0.5 * W;
+    const x = (baseX - (frame * pipeSpeed * 1.5) % (W + 120)) ;
+    const a = alpha * (0.4 + ((Math.sin(seed*2.3) + 1) * 0.5) * 0.6);
+    ctx.strokeStyle = `rgba(247,147,26,${a})`;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + len, y);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 function render(){
-  ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  if(screenShake > 0.5){
+    ctx.translate((Math.random()-0.5)*screenShake, (Math.random()-0.5)*screenShake);
+    screenShake *= 0.85;
+  } else {
+    screenShake = 0;
+  }
+  ctx.fillStyle = C.bg;
+  ctx.fillRect(-20, -20, W+40, H+40);
+  ctx.drawImage(hexCanvas, 0, 0);
   drawBgParticles();
+  drawSpeedLines();
   for(const p of pipes){ drawPipe(p); drawBonusCoin(p); }
   drawGround();
   if(state === 'playing' || state === 'dead') drawPlayer();
   drawParticles(); drawFloatTexts();
   if(state === 'playing') drawHUD();
+  ctx.restore();
 }
 
 function gameLoop(timestamp){
@@ -556,7 +655,9 @@ function gameLoop(timestamp){
 function killPlayer(){
   state = 'dead';
   if(score > hiScore){ hiScore = score; ScoreManager.set('btc_flappy_hs', hiScore); }
-  triggerFlash(); spawnParticles(player.x, player.y, 24, C.btc);
+  triggerFlash();
+  screenShake = 14;
+  spawnParticles(player.x, player.y, 24, C.btc);
   setTimeout(()=>{
     goScore.textContent = score; goBest.textContent = hiScore;
     medalEl.textContent = getMedal(score);

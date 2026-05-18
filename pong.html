@@ -325,6 +325,8 @@ body::after {
     <a href="invaders.html">Invaders</a>
     <a href="flappy.html">Flappy</a>
     <a href="tetris.html">Tetris</a>
+    <a href="hashbreaker.html">Hashbreaker</a>
+    <a href="bubbles.html">Bubbles</a>
   </div>
 </nav>
 
@@ -412,6 +414,12 @@ body::after {
   let pauseDir = 1; // 1 = toward player, -1 = toward AI
   let animId = null;
 
+  // Visual feel
+  let screenShake = 0;
+  const paddleFlash = { player: 0, ai: 0 };
+  let goalFlash = 0;
+  let hexCanvas = null;
+
   // Particles
   let particles = [];
 
@@ -436,6 +444,43 @@ body::after {
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
   function randBetween(a, b) { return a + Math.random() * (b - a); }
+
+  function lerp(a, b, t) { return a + (b - a) * clamp(t, 0, 1); }
+
+  function lerpColor(c1, c2, t) {
+    const r = Math.round(lerp(c1[0], c2[0], t));
+    const g = Math.round(lerp(c1[1], c2[1], t));
+    const b = Math.round(lerp(c1[2], c2[2], t));
+    return `rgb(${r},${g},${b})`;
+  }
+
+  function buildHexGrid() {
+    hexCanvas = document.createElement('canvas');
+    hexCanvas.width = W;
+    hexCanvas.height = H;
+    const hx = hexCanvas.getContext('2d');
+    const side = 32;
+    const hw = Math.sqrt(3) * side; // hex width (flat-top horizontal span)
+    const vSpace = side * 1.5;
+    hx.strokeStyle = 'rgba(247,147,26,0.05)';
+    hx.lineWidth = 1;
+    for (let row = -1, ry = 0; ry < H + side; row++, ry += vSpace) {
+      const offset = (row % 2 === 0) ? 0 : hw / 2;
+      for (let cx = -hw; cx < W + hw; cx += hw) {
+        const ccx = cx + offset;
+        hx.beginPath();
+        for (let i = 0; i < 6; i++) {
+          const ang = Math.PI / 180 * (60 * i - 30);
+          const px = ccx + side * Math.cos(ang);
+          const py = ry + side * Math.sin(ang);
+          if (i === 0) hx.moveTo(px, py);
+          else hx.lineTo(px, py);
+        }
+        hx.closePath();
+        hx.stroke();
+      }
+    }
+  }
 
   function loadBest() {
     bestStreak = Auth.getScore('btc_pong_hs');
@@ -516,6 +561,14 @@ body::after {
     ctx.fillStyle = C_BG;
     ctx.fillRect(0, 0, W, H);
 
+    // Hex grid backdrop
+    if (hexCanvas) {
+      ctx.save();
+      ctx.globalAlpha = 0.7;
+      ctx.drawImage(hexCanvas, 0, 0);
+      ctx.restore();
+    }
+
     // Flash effect
     if (flashTimer > 0) {
       const alpha = flashTimer / 12 * 0.35;
@@ -523,21 +576,41 @@ body::after {
       ctx.fillRect(0, 0, W, H);
     }
 
-    // Center energy field
+    // Center energy field — color intensifies with rally count
     const fieldX = W/2;
     ctx.save();
+    // Rally-based color: 0-5 orange, 6-10 fades to cyan, 11+ pulses red
+    let centerRGB;
+    if (rally <= 5) {
+      centerRGB = [247, 147, 26];
+    } else if (rally <= 10) {
+      const t = (rally - 5) / 5;
+      centerRGB = [
+        Math.round(lerp(247, 0, t)),
+        Math.round(lerp(147, 255, t)),
+        Math.round(lerp(26, 255, t))
+      ];
+    } else {
+      const rp = 0.5 + 0.5 * Math.sin(Date.now() * 0.012);
+      centerRGB = [
+        Math.round(lerp(0, 255, rp)),
+        Math.round(lerp(255, 51, rp)),
+        Math.round(lerp(255, 85, rp))
+      ];
+    }
+    const cR = centerRGB[0], cG = centerRGB[1], cB = centerRGB[2];
     // Pulsing center line segments
     const pulse = 0.5 + 0.5*Math.sin(Date.now()*0.003);
     for(let y=0; y<H; y+=20) {
       const segAlpha = 0.08 + pulse*0.12;
       const segW = 2 + pulse*2;
-      ctx.fillStyle = `rgba(247,147,26,${segAlpha})`;
+      ctx.fillStyle = `rgba(${cR},${cG},${cB},${segAlpha})`;
       ctx.fillRect(fieldX - segW/2, y+2, segW, 14);
     }
     // Glow line
     const glow = ctx.createLinearGradient(fieldX-20, 0, fieldX+20, 0);
     glow.addColorStop(0, 'transparent');
-    glow.addColorStop(0.5, `rgba(247,147,26,${0.06+pulse*0.06})`);
+    glow.addColorStop(0.5, `rgba(${cR},${cG},${cB},${0.06+pulse*0.06})`);
     glow.addColorStop(1, 'transparent');
     ctx.fillStyle = glow;
     ctx.fillRect(fieldX-20, 0, 40, H);
@@ -575,17 +648,19 @@ body::after {
     ctx.fillText(':', W/2, 60);
   }
 
-  function drawPaddle(p, color, glowColor, symbol) {
+  function drawPaddle(p, color, glowColor, symbol, flash) {
     ctx.save();
-    // Glow
-    ctx.shadowBlur = 20;
+    // Glow — boosted briefly on hit flash
+    ctx.shadowBlur = 20 + ((flash || 0) > 0 ? flash * 3 : 0);
     ctx.shadowColor = glowColor;
 
-    // Gradient
+    // Gradient — brightens during hit flash
+    const fl = (flash || 0);
+    const baseLift = fl > 0 ? Math.round(fl * 12) : 0;
     const grad = ctx.createLinearGradient(p.x, p.y, p.x + p.w, p.y + p.h);
-    grad.addColorStop(0, color);
-    grad.addColorStop(0.5, lightenHex(color, 40));
-    grad.addColorStop(1, color);
+    grad.addColorStop(0, lightenHex(color, baseLift));
+    grad.addColorStop(0.5, lightenHex(color, 40 + baseLift));
+    grad.addColorStop(1, lightenHex(color, baseLift));
     ctx.fillStyle = grad;
     ctx.beginPath();
     ctx.roundRect(p.x, p.y, p.w, p.h, 4);
@@ -721,10 +796,12 @@ body::after {
     if (ball.y - BALL_R <= 0) {
       ball.y = BALL_R;
       ball.vy = Math.abs(ball.vy);
+      screenShake = 2;
     }
     if (ball.y + BALL_R >= H) {
       ball.y = H - BALL_R;
       ball.vy = -Math.abs(ball.vy);
+      screenShake = 2;
     }
 
     // Player paddle collision
@@ -743,6 +820,8 @@ body::after {
       // Clamp vertical
       const maxVY = ball.speed * 0.85;
       ball.vy = clamp(ball.vy, -maxVY, maxVY);
+      screenShake = 5;
+      paddleFlash.player = 8;
       rally++;
       updateHUD();
     }
@@ -762,6 +841,8 @@ body::after {
       ball.vy =  Math.sin(bounceAngle) * ball.speed;
       const maxVY = ball.speed * 0.85;
       ball.vy = clamp(ball.vy, -maxVY, maxVY);
+      screenShake = 5;
+      paddleFlash.ai = 8;
       rally++;
       updateHUD();
     }
@@ -773,6 +854,7 @@ body::after {
       rally = 0;
       spawnParticles(W/2, H/2, C_ETH, 40);
       flashTimer = 12;
+      goalFlash = 3;
       updateHUD();
       checkWin();
       if (state === 'playing') {
@@ -789,6 +871,7 @@ body::after {
       rally = 0;
       spawnParticles(W/2, H/2, C_GOLD, 60);
       flashTimer = 12;
+      goalFlash = 3;
       updateHUD();
       saveBest(playerScore);
       checkWin();
@@ -865,6 +948,10 @@ body::after {
     player.y = H/2 - PADDLE_H/2;
     ai.y = H/2 - PADDLE_H/2;
     flashTimer = 0;
+    screenShake = 0;
+    paddleFlash.player = 0;
+    paddleFlash.ai = 0;
+    goalFlash = 0;
     hideIntro();
     document.getElementById('gameoverOverlay').style.display = 'none';
     state = 'paused';
@@ -878,6 +965,18 @@ body::after {
 
   function loop() {
     animId = requestAnimationFrame(loop);
+
+    ctx.save();
+    // Screen shake
+    if (screenShake > 0.1) {
+      ctx.translate(
+        (Math.random() - 0.5) * screenShake,
+        (Math.random() - 0.5) * screenShake
+      );
+      screenShake *= 0.88;
+    } else {
+      screenShake = 0;
+    }
 
     drawBackground();
     drawScore();
@@ -909,10 +1008,23 @@ body::after {
       }
     }
 
-    drawPaddle(player, C_GOLD,  'rgba(247,147,26,0.7)', '₿');
-    drawPaddle(ai,    C_ETH,   'rgba(98,126,234,0.7)',  'Ξ');
+    drawPaddle(player, C_GOLD,  'rgba(247,147,26,0.7)', '₿', paddleFlash.player);
+    drawPaddle(ai,    C_ETH,   'rgba(98,126,234,0.7)',  'Ξ', paddleFlash.ai);
     drawBall();
     drawRallyBadge();
+
+    // Decay paddle flash
+    if (paddleFlash.player > 0) paddleFlash.player = Math.max(0, paddleFlash.player - 1.5);
+    if (paddleFlash.ai > 0)     paddleFlash.ai     = Math.max(0, paddleFlash.ai - 1.5);
+
+    // Goal screen-wide flash punch
+    if (goalFlash > 0) {
+      ctx.fillStyle = 'rgba(255,215,0,0.12)';
+      ctx.fillRect(0, 0, W, H);
+      goalFlash--;
+    }
+
+    ctx.restore();
 
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
@@ -992,6 +1104,7 @@ body::after {
     };
   }
 
+  buildHexGrid();
   showIntro();
   resetBall(true);
   updateHUD();

@@ -74,10 +74,18 @@ canvas{display:block;width:100%;height:auto;background:var(--bg);}
 </head>
 <script src="auth.js"></script>
 <body>
-<nav class="top-nav">
-  <a href="index.html">← ARCADE</a>
-  <span class="sep">·</span>
-  <span class="gtitle">⛏️ HASHBREAKER</span>
+<nav style="position:relative;z-index:10;width:100%;max-width:900px;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(247,147,26,0.2);margin:0 auto 4px;" aria-label="Primary navigation">
+  <a href="index.html" style="font-family:'Orbitron',monospace;font-size:1rem;color:#F7931A;text-decoration:none;letter-spacing:.06em;text-shadow:0 0 12px rgba(247,147,26,.55);">₿ ATLAS ARCADE</a>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;">
+    <a href="pacman.html" style="color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Pac-Man</a>
+    <a href="snake.html" style="color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Snake</a>
+    <a href="pong.html" style="color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Pong</a>
+    <a href="invaders.html" style="color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Invaders</a>
+    <a href="flappy.html" style="color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Flappy</a>
+    <a href="tetris.html" style="color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Tetris</a>
+    <a href="hashbreaker.html" style="color:#F7931A;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Hashbreaker</a>
+    <a href="bubbles.html" style="color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Bubbles</a>
+  </div>
 </nav>
 <div class="cwrap">
   <canvas id="gc" width="480" height="680"></canvas>
@@ -185,7 +193,8 @@ function buildLevel(lvl){
       const cfg=BLOCK_CFG[ch]||BLOCK_CFG.O;
       const pwrType=cfg.isPower?POWER_TYPES[Math.floor(Math.random()*POWER_TYPES.length)]:null;
       blocks.push({x:sx+ci*(BW+BGAP),y:BTOP+ri*(BH+BGAP),w:BW,h:BH,
-        type:ch,hp:cfg.hp,maxHp:cfg.hp,sat:cfg.sat,pwrType:pwrType,hitFlash:0,cracked:false});
+        type:ch,hp:cfg.hp,maxHp:cfg.hp,sat:cfg.sat,pwrType:pwrType,hitFlash:0,cracked:false,
+        crackFlash:0,crackLines:null});
     }
   });
 }
@@ -193,14 +202,40 @@ function buildLevel(lvl){
 // ── STATE ────────────────────────────────────────────────────────────────────
 let gameState='INTRO';
 let score=0,hiScore=0,lives=3,level=1,combo=0,multiplier=1;
-let balls=[],blocks=[],particles=[],powerUps=[],activePowers=[],floats=[];
+let balls=[],blocks=[],particles=[],powerUps=[],activePowers=[],floats=[],shockwaves=[];
 let paddle,lastTs=0,bgOffset=0,paddleTarget=W/2;
 let levelClearTimer=0,deadTimer=0;
+let hexCanvas=null;
+
+// ── HEX GRID BACKDROP ────────────────────────────────────────────────────────
+function buildHexGrid(){
+  const side=30;
+  const hw=Math.sqrt(3)*side;
+  const vSpace=side*1.5;
+  const cw=Math.ceil(W+hw*2),ch=Math.ceil(H+vSpace*2);
+  hexCanvas=document.createElement('canvas');
+  hexCanvas.width=cw;hexCanvas.height=ch;
+  const hx=hexCanvas.getContext('2d');
+  hx.strokeStyle='rgba(247,147,26,0.05)';hx.lineWidth=1;
+  for(let row=0,ry=0;ry<ch+side;row++,ry+=vSpace){
+    const offset=(row%2===0)?0:hw/2;
+    for(let cx=-hw;cx<cw+hw;cx+=hw){
+      const ccx=cx+offset;
+      hx.beginPath();
+      for(let i=0;i<6;i++){
+        const ang=Math.PI/180*(60*i-30);
+        const px=ccx+side*Math.cos(ang),py=ry+side*Math.sin(ang);
+        if(i===0)hx.moveTo(px,py);else hx.lineTo(px,py);
+      }
+      hx.closePath();hx.stroke();
+    }
+  }
+}
 
 // ── INIT ─────────────────────────────────────────────────────────────────────
 function initGame(){
   score=0;lives=3;level=1;combo=0;multiplier=1;
-  activePowers=[];powerUps=[];particles=[];floats=[];
+  activePowers=[];powerUps=[];particles=[];floats=[];shockwaves=[];
   paddle={x:W/2-45,y:638,w:90,h:14};
   paddleTarget=W/2;
   document.getElementById('intro').classList.add('hidden');
@@ -220,8 +255,17 @@ function launchBall(){
 }
 
 // ── POWER-UPS ────────────────────────────────────────────────────────────────
-function collectPower(type){
+function collectPower(type,bx,by){
   sndPower();
+  // Collect burst — ring shockwave + spark particles
+  if(typeof bx==='number'){
+    shockwaves.push({x:bx,y:by,t:0});
+    const col=POWER_COLS[type]||'#FFD700';
+    for(let i=0;i<8;i++){
+      const ang=(Math.PI*2/8)*i,spd=2.5+Math.random()*2;
+      particles.push({x:bx,y:by,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,life:30+Math.random()*15,maxLife:45,r:2+Math.random()*2.5,color:col});
+    }
+  }
   if(type==='LIGHTNING'){
     const src=balls[0]||{x:W/2,y:H/2,vx:2,vy:-3,speed:4.5};
     for(let i=0;i<2;i++){
@@ -274,6 +318,11 @@ function rr(cx,x,y,w,h,r){
 // ── DRAW BACKGROUND ──────────────────────────────────────────────────────────
 function drawBackground(){
   ctx.save();
+  // Drifting blockchain hex grid
+  if(hexCanvas){
+    const now=Date.now();
+    ctx.drawImage(hexCanvas,-(now*0.003)%60,-(now*0.003)%52);
+  }
   ctx.strokeStyle='rgba(247,147,26,.04)';ctx.lineWidth=1;
   const sz=40,off=bgOffset%sz;
   for(let x=-sz+(off%sz);x<W+sz;x+=sz){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
@@ -309,6 +358,19 @@ function drawBlocks(){
       ctx.beginPath();ctx.moveTo(b.x+b.w*.3,b.y+2);ctx.lineTo(b.x+b.w*.5,b.y+b.h*.6);ctx.lineTo(b.x+b.w*.7,b.y+b.h-2);ctx.stroke();
       ctx.beginPath();ctx.moveTo(b.x+b.w*.5,b.y+b.h*.6);ctx.lineTo(b.x+b.w*.35,b.y+b.h-2);ctx.stroke();
     }
+    // Transient crack burst on damage
+    if(b.crackFlash&&b.crackLines){
+      const age=Date.now()-b.crackFlash;
+      if(age<200){
+        const fade=(1-age/200)*0.6;
+        ctx.strokeStyle='rgba(255,255,255,'+fade+')';ctx.lineWidth=1;
+        const cx=b.x+b.w/2,cy=b.y+b.h/2;
+        b.crackLines.forEach(function(cl){
+          ctx.beginPath();ctx.moveTo(cx,cy);
+          ctx.lineTo(cx+Math.cos(cl.a)*cl.l,cy+Math.sin(cl.a)*cl.l);ctx.stroke();
+        });
+      }
+    }
     ctx.restore();
   });
 }
@@ -319,6 +381,18 @@ function drawParticles(){
     const a=p.life/p.maxLife;ctx.save();ctx.globalAlpha=a;
     ctx.fillStyle=p.color;ctx.shadowColor=p.color;ctx.shadowBlur=6;
     ctx.beginPath();ctx.arc(p.x,p.y,p.r*a,0,Math.PI*2);ctx.fill();ctx.restore();
+  });
+}
+
+// ── DRAW SHOCKWAVES ──────────────────────────────────────────────────────────
+function drawShockwaves(){
+  shockwaves.forEach(function(sw){
+    const f=sw.t/300,r=f*50;
+    ctx.save();ctx.globalAlpha=(1-f)*.8;
+    ctx.strokeStyle='#FFD700';ctx.lineWidth=3-f*2.5;
+    ctx.shadowColor='#FFD700';ctx.shadowBlur=12;
+    ctx.beginPath();ctx.arc(sw.x,sw.y,r,0,Math.PI*2);ctx.stroke();
+    ctx.restore();
   });
 }
 
@@ -336,7 +410,18 @@ function drawPowerUps(){
 
 // ── DRAW PADDLE ──────────────────────────────────────────────────────────────
 function drawPaddle(){
-  ctx.save();ctx.shadowColor='rgba(247,147,26,.7)';ctx.shadowBlur=18;
+  ctx.save();
+  // Mining-rig exhaust glow — 3 pulsing thrusters below the paddle
+  const ey=paddle.y+paddle.h+3;
+  const eb=18+Math.sin(Date.now()*.01)*6;
+  const exhaust=[paddle.x+paddle.w*.18,paddle.x+paddle.w*.5,paddle.x+paddle.w*.82];
+  ctx.fillStyle='#F7931A';
+  exhaust.forEach(function(ex){
+    ctx.shadowColor='#F7931A';ctx.shadowBlur=eb;
+    ctx.beginPath();ctx.arc(ex,ey,3,0,Math.PI*2);ctx.fill();
+  });
+  ctx.shadowBlur=0;
+  ctx.shadowColor='rgba(247,147,26,.7)';ctx.shadowBlur=18;
   const g=ctx.createLinearGradient(paddle.x,paddle.y,paddle.x,paddle.y+paddle.h);
   g.addColorStop(0,'#FFB347');g.addColorStop(.5,'#F7931A');g.addColorStop(1,'#C0651A');
   ctx.fillStyle=g;rr(ctx,paddle.x,paddle.y,paddle.w,paddle.h,5);ctx.fill();
@@ -352,11 +437,32 @@ function drawPaddle(){
 // ── DRAW BALLS ───────────────────────────────────────────────────────────────
 function drawBalls(){
   balls.forEach(function(ball){
+    // Trail color shifts with speed: slow=orange, fast=gold, very fast=white
+    let trailCol;
+    if(ball.ghost){
+      trailCol='#00FFFF';
+    }else{
+      const sp=Math.sqrt(ball.vx*ball.vx+ball.vy*ball.vy);
+      const f=Math.max(0,Math.min(1,sp/8));
+      let r,g,bch;
+      if(f<.5){
+        const u=f/.5; // orange -> gold
+        r=Math.round(247+(255-247)*u);
+        g=Math.round(147+(215-147)*u);
+        bch=Math.round(26+(0-26)*u);
+      }else{
+        const u=(f-.5)/.5; // gold -> white
+        r=255;
+        g=Math.round(215+(255-215)*u);
+        bch=Math.round(0+(255-0)*u);
+      }
+      trailCol='rgb('+r+','+g+','+bch+')';
+    }
     ball.trail.forEach(function(pt,i){
       const t=i/ball.trail.length,r=8*t*.6;if(r<=0)return;
       ctx.save();ctx.globalAlpha=t*.4;
-      ctx.fillStyle=ball.ghost?'#00FFFF':'#F7931A';
-      ctx.shadowColor=ball.ghost?'#00FFFF':'#F7931A';ctx.shadowBlur=8;
+      ctx.fillStyle=trailCol;
+      ctx.shadowColor=trailCol;ctx.shadowBlur=8;
       ctx.beginPath();ctx.arc(pt.x,pt.y,r,0,Math.PI*2);ctx.fill();ctx.restore();
     });
     ctx.save();
@@ -428,7 +534,7 @@ function drawActivePowerBar(){
 // ── MASTER DRAW ──────────────────────────────────────────────────────────────
 function draw(){
   ctx.fillStyle='#060610';ctx.fillRect(0,0,W,H);
-  drawBackground();drawBlocks();drawParticles();drawPowerUps();
+  drawBackground();drawBlocks();drawParticles();drawShockwaves();drawPowerUps();
   drawPaddle();drawBalls();drawFloats();drawHUD();drawActivePowerBar();
   if(gameState==='LAUNCH'){
     const pulse=.6+.4*Math.sin(Date.now()*.005);
@@ -468,10 +574,14 @@ function update(dt){
     const p=particles[i];p.x+=p.vx*dtn;p.y+=p.vy*dtn;p.vy+=.15*dtn;p.life-=dtn;
     if(p.life<=0)particles.splice(i,1);
   }
+  for(let i=shockwaves.length-1;i>=0;i--){
+    shockwaves[i].t+=dt;
+    if(shockwaves[i].t>=300)shockwaves.splice(i,1);
+  }
   for(let i=powerUps.length-1;i>=0;i--){
     const pu=powerUps[i];pu.y+=pu.vy*dtn;pu.bob=(pu.bob||0)+dtn*.1;
     if(pu.y+pu.h>=paddle.y&&pu.y<=paddle.y+paddle.h&&pu.x+pu.w>=paddle.x&&pu.x<=paddle.x+paddle.w){
-      collectPower(pu.type);powerUps.splice(i,1);continue;
+      collectPower(pu.type,pu.x+pu.w/2,pu.y+pu.h/2);powerUps.splice(i,1);continue;
     }
     if(pu.y>H+20)powerUps.splice(i,1);
   }
@@ -526,6 +636,16 @@ function updateBall(ball,dtn){
     }
 
     b.hp--;b.hitFlash=1;
+    if(b.hp>0){
+      // Block damaged but alive — spawn a transient crack pattern
+      b.crackFlash=Date.now();
+      const cx=b.x+b.w/2,cy=b.y+b.h/2,n=2+Math.floor(Math.random()*2);
+      b.crackLines=[];
+      for(let k=0;k<n;k++){
+        const ang=Math.random()*Math.PI*2,len=4+Math.random()*8;
+        b.crackLines.push({a:ang,l:len});
+      }
+    }
     if(b.hp===1&&b.maxHp===2){b.cracked=true;sndHodl1();}
     else if(b.hp<=0){
       const cfg=BLOCK_CFG[b.type];
