@@ -250,12 +250,13 @@ function loop(ts){
 }
 
 function update(dt){
+  const dtn = dt / 16;
   // Screen shake
   if(shakeM>.5){shakeX=(Math.random()-.5)*shakeM;shakeY=(Math.random()-.5)*shakeM;shakeM*=.75;}
   else{shakeX=0;shakeY=0;shakeM=0;}
 
   // Player movement
-  const spd = player.speed * (dt/16);
+  const spd = player.speed * dtn;
   if(keys['ArrowLeft']||keys['left']) player.x = Math.max(player.w/2+2, player.x - spd);
   if(keys['ArrowRight']||keys['right']) player.x = Math.min(W-player.w/2-2, player.x + spd);
 
@@ -291,16 +292,16 @@ function update(dt){
     mystery={x:-40, y:28, vx:2.2};
   }
   if(mystery){
-    mystery.x+=mystery.vx;
+    mystery.x+=mystery.vx*dtn;
     if(mystery.x>W+50) mystery=null;
   }
 
   // Move bullets
-  bullets=bullets.filter(b=>{b.y-=12;return b.y>0;});
+  bullets=bullets.filter(b=>{b.y-=12*dtn;return b.y>0;});
 
   // Move bombs
   bombs=bombs.filter(b=>{
-    b.y+=b.vy;
+    b.y+=b.vy*dtn;
     // Bomb vs shield
     shields.forEach(s=>{
       if(s.hp>0&&b.x>s.x&&b.x<s.x+s.w&&b.y>s.y&&b.y<s.y+s.h){
