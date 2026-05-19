@@ -105,14 +105,15 @@ const H = canvas.height; // 620
 let state = 'menu'; // menu | playing | gameover
 let score = 0;      // distance in meters
 let sats = 0;       // collected sats
-let speed = 3;
-let baseSpeed = 3;
+let speed = 2;
+let baseSpeed = 2;
 let maxSpeed = 10;
 let speedMultiplier = 1;
 let best = parseInt(localStorage.getItem('runner_best') || '0');
 let bestSats = parseInt(localStorage.getItem('runner_best_sats') || '0');
 let frameCount = 0;
 let shakeX = 0, shakeY = 0;
+let elapsed = 0, lastTs = 0, dtn = 1;
 
 // ─── PLAYER ───────────────────────────────────────────
 const player = {
@@ -186,6 +187,7 @@ function init() {
   speed = baseSpeed;
   speedMultiplier = 1;
   frameCount = 0;
+  elapsed = 0;
   obstacles = [];
   collectibles = [];
   particles = [];
@@ -236,27 +238,29 @@ function emitParticles(x, y, color, count, spread) {
 }
 
 // ─── UPDATE ──────────────────────────────────────────
-function update() {
+function update(dt) {
   if (state !== 'playing') return;
+  dtn = dt / 16.667;
+  elapsed += dt;
   frameCount++;
 
-  // Speed increases over time
-  speed = baseSpeed + frameCount * 0.002;
+  // Speed increases over time (time-based, frame-rate independent)
+  speed = baseSpeed + elapsed * 0.00012;
   if (speed > maxSpeed) speed = maxSpeed;
   if (speedMultiplier > 1) {
-    speedMultiplier -= 0.005;
+    speedMultiplier -= 0.005 * dtn;
     if (speedMultiplier < 1) speedMultiplier = 1;
   }
 
   // Score
-  score += speed * 0.05 * speedMultiplier;
+  score += speed * 0.05 * speedMultiplier * dtn;
 
   // Ground scroll
-  groundOffset += speed * speedMultiplier;
+  groundOffset += speed * speedMultiplier * dtn;
 
   // Player physics
-  player.vy += player.gravity;
-  player.y += player.vy;
+  player.vy += player.gravity * dtn;
+  player.y += player.vy * dtn;
   if (player.y >= player.groundY - player.h) {
     player.y = player.groundY - player.h;
     player.vy = 0;
@@ -270,34 +274,34 @@ function update() {
     player.trail.push({ x: player.x, y: player.y + player.h / 2, a: 1 });
   }
   player.trail = player.trail.filter(t => {
-    t.x -= speed * speedMultiplier * 0.5;
-    t.a -= 0.05;
+    t.x -= speed * speedMultiplier * 0.5 * dtn;
+    t.a -= 0.05 * dtn;
     return t.a > 0;
   });
 
   // Invincibility timer
-  if (player.invincible > 0) player.invincible--;
+  if (player.invincible > 0) player.invincible -= dtn;
 
-  // Spawn obstacles
-  spawnTimer++;
-  let spawnInterval = Math.max(40, 90 - frameCount * 0.03);
-  if (spawnTimer >= spawnInterval) {
+  // Spawn obstacles (ms-based timers)
+  spawnTimer += dt;
+  let spawnMs = Math.max(667, 1500 - elapsed * 0.03);
+  if (spawnTimer >= spawnMs) {
     spawnObstacle();
     spawnTimer = 0;
   }
 
-  // Spawn collectibles
-  collectTimer++;
-  if (collectTimer >= 60) {
+  // Spawn collectibles every ~1 second
+  collectTimer += dt;
+  if (collectTimer >= 1000) {
     spawnCollectible();
     collectTimer = 0;
   }
 
   // Update obstacles
   obstacles.forEach(o => {
-    o.x -= speed * speedMultiplier;
+    o.x -= speed * speedMultiplier * dtn;
     if (o.flying) {
-      o.flyPhase += 0.05;
+      o.flyPhase += 0.05 * dtn;
       o.y += Math.sin(o.flyPhase) * 0.5;
     }
   });
@@ -305,8 +309,8 @@ function update() {
 
   // Update collectibles
   collectibles.forEach(c => {
-    c.x -= speed * speedMultiplier;
-    c.phase += 0.08;
+    c.x -= speed * speedMultiplier * dtn;
+    c.phase += 0.08 * dtn;
     c.y += Math.sin(c.phase) * 0.3;
   });
   collectibles = collectibles.filter(c => c.x > -50);
@@ -336,10 +340,10 @@ function update() {
 
   // Update particles
   particles.forEach(p => {
-    p.x += p.vx;
-    p.y += p.vy;
-    p.vy += 0.1;
-    p.life -= p.decay;
+    p.x += p.vx * dtn;
+    p.y += p.vy * dtn;
+    p.vy += 0.1 * dtn;
+    p.life -= p.decay * dtn;
   });
   particles = particles.filter(p => p.life > 0);
 
@@ -375,7 +379,7 @@ function draw() {
 
   // Stars
   stars.forEach(s => {
-    s.x -= s.sp * speedMultiplier;
+    s.x -= s.sp * speedMultiplier * dtn;
     if (s.x < 0) { s.x = W; s.y = Math.random() * (H - groundH - 60); }
     ctx.globalAlpha = s.a * (0.5 + 0.5 * Math.sin(frameCount * 0.02 + s.x));
     ctx.fillStyle = '#fff';
@@ -645,8 +649,10 @@ canvas.addEventListener('touchstart', e => {
 }, { passive: false });
 
 // ─── GAME LOOP ───────────────────────────────────────
-function gameLoop() {
-  update();
+function gameLoop(ts) {
+  const dt = Math.min((ts - lastTs) || 16.667, 50);
+  lastTs = ts;
+  update(dt);
   draw();
   requestAnimationFrame(gameLoop);
 }

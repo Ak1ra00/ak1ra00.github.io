@@ -222,6 +222,7 @@ let hiScore   = ScoreManager.get('btc_flappy_hs');
 let frameCount= 0;
 let lastTime  = 0;
 let deltaTime = 0;
+let dtn       = 1;
 let screenShake = 0;
 
 // ─── BACKGROUND HEX GRID (built once to offscreen canvas) ──
@@ -255,7 +256,8 @@ let pipeSpeed    = 4.8;
 let spawnInterval= 300;
 let gapSize      = 520;
 let lastDiffLevel= 0;
-let nextSpawnFrame= 220;
+let spawnTimer   = 0;
+let nextSpawnMs  = 220 * 16.667; // first pipe delay in ms
 
 // ─── PLAYER ──────────────────────────────────────────────────────────────────
 const GRAVITY     = 1.1;
@@ -313,7 +315,7 @@ function getMedal(s){
 function resetGame(){
   player   = { x: PLAYER_X, y: 1000, vy: 0, angle: 0 };
   trail    = []; pipes = []; particles = []; floatTexts = [];
-  score    = 0; frameCount = 0; nextSpawnFrame = 220;
+  score    = 0; frameCount = 0; spawnTimer = 0; nextSpawnMs = 220 * 16.667;
   pipeSpeed = 4.8; spawnInterval = 300; gapSize = 520; lastDiffLevel = 0;
 }
 
@@ -519,7 +521,7 @@ function drawParticles(){
       ctx.restore();
       continue;
     }
-    p.x += p.vx; p.y += p.vy; p.vy += 0.12; p.life -= 0.035;
+    p.x += p.vx*dtn; p.y += p.vy*dtn; p.vy += 0.12*dtn; p.life -= 0.035*dtn;
     if(p.life <= 0){ particles.splice(i,1); continue; }
     ctx.save(); ctx.globalAlpha = p.life; ctx.beginPath();
     ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI*2); ctx.fillStyle = p.color; ctx.fill(); ctx.restore();
@@ -528,7 +530,7 @@ function drawParticles(){
 
 function drawFloatTexts(){
   for(let i=floatTexts.length-1;i>=0;i--){
-    const t = floatTexts[i]; t.y += t.vy; t.life -= 0.02;
+    const t = floatTexts[i]; t.y += t.vy*dtn; t.life -= 0.02*dtn;
     if(t.life <= 0){ floatTexts.splice(i,1); continue; }
     ctx.save(); ctx.globalAlpha = t.life; ctx.font = 'bold 80px Orbitron, monospace';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = t.color;
@@ -561,8 +563,9 @@ function drawGround(){
 }
 
 // ─── GAME LOOP ────────────────────────────────────────────────────────────────
-function update(){
+function update(dt){
   if(state !== 'playing') return;
+  dtn = dt / 16.667;
   frameCount++;
   const diffLevel = Math.floor(score / 5);
   if(diffLevel > lastDiffLevel){
@@ -572,16 +575,17 @@ function update(){
     gapSize       = Math.max(340, gapSize - 8 * steps);
     lastDiffLevel = diffLevel;
   }
-  if(frameCount >= nextSpawnFrame){ spawnPipe(); nextSpawnFrame = frameCount + spawnInterval; }
-  player.vy += GRAVITY;
+  spawnTimer += dt;
+  if(spawnTimer >= nextSpawnMs){ spawnPipe(); nextSpawnMs = spawnInterval * 16.667; spawnTimer = 0; }
+  player.vy += GRAVITY * dtn;
   if(player.vy > 28) player.vy = 28;
-  player.y  += player.vy;
+  player.y  += player.vy * dtn;
   const targetAngle = clamp(player.vy * 0.055, -0.45, 1.0);
   player.angle = lerp(player.angle, targetAngle, 0.18);
   trail.unshift({ x: player.x, y: player.y });
   if(trail.length > 5) trail.pop();
   for(let i=pipes.length-1;i>=0;i--){
-    const p = pipes[i]; p.x -= pipeSpeed;
+    const p = pipes[i]; p.x -= pipeSpeed * dtn;
     if(!p.passed && p.x + PIPE_W/2 < player.x){ p.passed = true; score++; }
     if(!p.bonusCoin.collected){
       const dx = player.x - p.x; const dy = player.y - p.bonusCoin.y;
@@ -611,7 +615,7 @@ function drawSpeedLines(){
     const len = 30 + ((Math.sin(seed) + 1) * 0.5) * 80;
     const y = ((Math.sin(seed*1.7) + 1) * 0.5) * H;
     const baseX = (Math.sin(seed*0.9) + 1) * 0.5 * W;
-    const x = (baseX - (frame * pipeSpeed * 1.5) % (W + 120)) ;
+    const x = (baseX - (frameCount * pipeSpeed * 1.5) % (W + 120)) ;
     const a = alpha * (0.4 + ((Math.sin(seed*2.3) + 1) * 0.5) * 0.6);
     ctx.strokeStyle = `rgba(247,147,26,${a})`;
     ctx.beginPath();
@@ -647,7 +651,7 @@ function gameLoop(timestamp){
   deltaTime = timestamp - lastTime;
   lastTime = timestamp;
   if(deltaTime > 100) deltaTime = 100; // prevent physics explosion on tab-switch
-  update(); render();
+  update(deltaTime); render();
   requestAnimationFrame(gameLoop);
 }
 

@@ -413,6 +413,8 @@ body::after {
   let pauseTimer = 0;
   let pauseDir = 1; // 1 = toward player, -1 = toward AI
   let animId = null;
+  let lastTs = 0;
+  let dtn = 1;
 
   // Visual feel
   let screenShake = 0;
@@ -535,11 +537,11 @@ body::after {
   function updateParticles() {
     for (let i = particles.length - 1; i >= 0; i--) {
       const p = particles[i];
-      p.x += p.vx;
-      p.y += p.vy;
-      p.vy += 0.12;
-      p.vx *= 0.97;
-      p.life -= p.decay;
+      p.x += p.vx * dtn;
+      p.y += p.vy * dtn;
+      p.vy += 0.12 * dtn;
+      p.vx *= Math.pow(0.97, dtn);
+      p.life -= p.decay * dtn;
       if (p.life <= 0) particles.splice(i, 1);
     }
   }
@@ -788,9 +790,9 @@ body::after {
     trail.push({ x: ball.x, y: ball.y });
     if (trail.length > 10) trail.shift();
 
-    ball.x += ball.vx;
-    ball.y += ball.vy;
-    ball.spin += 0.06 * Math.sign(ball.vx);
+    ball.x += ball.vx * dtn;
+    ball.y += ball.vy * dtn;
+    ball.spin += 0.06 * Math.sign(ball.vx) * dtn;
 
     // Wall bounce top/bottom
     if (ball.y - BALL_R <= 0) {
@@ -859,7 +861,7 @@ body::after {
       checkWin();
       if (state === 'playing') {
         state = 'paused';
-        pauseTimer = 60; // 1s at 60fps
+        pauseTimer = 1000; // 1s in ms
         pauseDir = true; // toward player (just scored on by AI)
       }
     }
@@ -877,7 +879,7 @@ body::after {
       checkWin();
       if (state === 'playing') {
         state = 'paused';
-        pauseTimer = 60;
+        pauseTimer = 1000;
         pauseDir = false; // toward AI (player just scored)
       }
     }
@@ -896,7 +898,7 @@ body::after {
     const jitter = (Math.random() - 0.5) * 6;
     const diff = target + jitter - ai.y;
     const move = clamp(diff, -AI_SPEED, AI_SPEED);
-    ai.y += move;
+    ai.y += move * dtn;
     ai.y = clamp(ai.y, 0, H - ai.h);
   }
 
@@ -910,8 +912,8 @@ body::after {
       player.y = clamp(mouseY - player.h / 2, 0, H - player.h);
     }
     // Arrow keys always work
-    if (keys['ArrowUp']   || keys['w'] || mobUpHeld)   player.y -= 8;
-    if (keys['ArrowDown'] || keys['s'] || mobDownHeld) player.y += 8;
+    if (keys['ArrowUp']   || keys['w'] || mobUpHeld)   player.y -= 8 * dtn;
+    if (keys['ArrowDown'] || keys['s'] || mobDownHeld) player.y += 8 * dtn;
     player.y = clamp(player.y, 0, H - player.h);
   }
 
@@ -955,7 +957,7 @@ body::after {
     hideIntro();
     document.getElementById('gameoverOverlay').style.display = 'none';
     state = 'paused';
-    pauseTimer = 60;
+    pauseTimer = 1000;
     pauseDir = true;
     resetBall(pauseDir);
     updateHUD();
@@ -963,8 +965,11 @@ body::after {
 
   // ─── MAIN LOOP ────────────────────────────────────────────────────────────
 
-  function loop() {
+  function loop(ts) {
     animId = requestAnimationFrame(loop);
+    const dt = Math.min((ts - lastTs) || 16.667, 50);
+    lastTs = ts;
+    dtn = dt / 16.667;
 
     ctx.save();
     // Screen shake
@@ -994,16 +999,16 @@ body::after {
       movePlayer();
       if (flashTimer > 0) flashTimer--;
       updateParticles();
-      pauseTimer--;
+      pauseTimer -= dt;
       if (pauseTimer <= 0) {
         state = 'playing';
         resetBall(pauseDir);
       } else {
         // Countdown display
-        const sec = Math.ceil(pauseTimer / 60);
+        const sec = Math.ceil(pauseTimer / 1000);
         ctx.font = '900 64px Orbitron, monospace';
         ctx.textAlign = 'center';
-        ctx.fillStyle = `rgba(247,147,26,${0.4 + 0.6 * (pauseTimer % 20) / 20})`;
+        ctx.fillStyle = `rgba(247,147,26,${0.4 + 0.6 * ((pauseTimer % 333) / 333)})`;
         ctx.fillText(sec, W/2, H/2 + 24);
       }
     }
@@ -1014,8 +1019,8 @@ body::after {
     drawRallyBadge();
 
     // Decay paddle flash
-    if (paddleFlash.player > 0) paddleFlash.player = Math.max(0, paddleFlash.player - 1.5);
-    if (paddleFlash.ai > 0)     paddleFlash.ai     = Math.max(0, paddleFlash.ai - 1.5);
+    if (paddleFlash.player > 0) paddleFlash.player = Math.max(0, paddleFlash.player - 1.5 * dtn);
+    if (paddleFlash.ai > 0)     paddleFlash.ai     = Math.max(0, paddleFlash.ai - 1.5 * dtn);
 
     // Goal screen-wide flash punch
     if (goalFlash > 0) {
