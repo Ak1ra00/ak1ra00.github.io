@@ -25,6 +25,12 @@
 <div id="boot" role="dialog" aria-label="System boot sequence">
   <canvas id="boot-stars" aria-hidden="true"></canvas>
   <div class="boot-glow" aria-hidden="true"></div>
+  <div id="boot-rings" aria-hidden="true">
+    <div class="br br1"><span class="br-dot"></span></div>
+    <div class="br br2"><span class="br-dot"></span></div>
+    <div class="br br3"><span class="br-dot"></span></div>
+  </div>
+  <div id="boot-flash" aria-hidden="true"></div>
   <div class="scan" aria-hidden="true"></div>
   <pre class="boot-ascii" aria-hidden="true"> ___  ____  _____  ___    ___    ___
 | _ )|_ _||_   _|/ __|  / _ \  / __|
@@ -250,114 +256,136 @@ var GAMES = [
 
 /* ─── 1. CINEMATIC BOOT SEQUENCE ─────────────────────────────────────────── */
 (function(){
-  var boot = document.getElementById('boot');
-  var term = document.getElementById('boot-term');
-  var skip = document.getElementById('boot-skip');
+  var boot  = document.getElementById('boot');
+  var term  = document.getElementById('boot-term');
+  var skip  = document.getElementById('boot-skip');
   var enter = document.getElementById('boot-enter');
-  var hint = boot ? boot.querySelector('.boot-hint') : null;
+  var rings = document.getElementById('boot-rings');
+  var hint  = boot ? boot.querySelector('.boot-hint') : null;
   if(!boot) return;
 
+  /* warpFactor shared with star loop — ramps up on portal activate */
+  var warpFactor = 1;
   var done = false;
+
   function finish(){
     if(done) return; done = true;
     boot.classList.add('gone');
     document.body.classList.remove('locked');
-    setTimeout(function(){ boot.style.display='none'; }, 1000);
+    setTimeout(function(){ boot.style.display='none'; }, 1600);
   }
+
   function detonate(){
     if(done) return;
+    /* explode the button, ignite the portal */
     enter.classList.add('explode');
-    setTimeout(finish, 400);
+    boot.classList.add('portal-go');
+    /* ramp warp speed to max over 500ms */
+    var rampStart = performance.now();
+    (function ramp(now){
+      var t = Math.min((now - rampStart) / 500, 1);
+      warpFactor = 1 + t * 28;
+      if(t < 1) requestAnimationFrame(ramp);
+    })(performance.now());
+    setTimeout(finish, 700);
   }
+
   skip.addEventListener('click', finish);
   enter.addEventListener('click', detonate);
   document.addEventListener('keydown', function k(e){
     if(e.key === 'Tab') return;
-    document.removeEventListener('keydown', k); finish();
+    document.removeEventListener('keydown', k);
+    detonate();
   });
 
-  /* Returning visitors skip the cinematic */
-  if(sessionStorage.getItem('atlas_booted') || REDUCED){
-    boot.style.display='none';
-    document.body.classList.remove('locked');
-    return;
-  }
-  sessionStorage.setItem('atlas_booted','1');
+  /* Always show — lock body scroll while boot is active */
   document.body.classList.add('locked');
 
-  /* Warp starfield — 200 dots streaming outward from centre */
+  /* ── Warp starfield — 260 dots streaming outward ─────────────────────── */
   (function bootStars(){
     var cv = document.getElementById('boot-stars');
     if(!cv) return;
     var cx = cv.getContext('2d'), W, H, cxx, cyy, stars;
     function size(){
-      W = cv.width = boot.offsetWidth || innerWidth;
+      W = cv.width  = boot.offsetWidth  || innerWidth;
       H = cv.height = boot.offsetHeight || innerHeight;
       cxx = W/2; cyy = H/2;
       stars = [];
-      for(var i=0;i<200;i++) stars.push(spawn());
+      for(var i=0;i<260;i++) stars.push(spawn(true));
     }
-    function spawn(){
+    function spawn(spread){
       var ang = Math.random()*6.2832;
-      var rad = Math.random()*Math.min(W,H)*0.5;
+      /* spread=true seeds stars at random depth so there's no empty flash on load */
+      var rad = spread ? Math.random()*Math.min(W,H)*0.55 : 0;
+      var col = Math.random();
       return {
         ang: ang, rad: rad,
-        speed: 0.15 + Math.random()*0.55,
-        size: 0.4 + Math.random()*1.4,
-        blue: Math.random() > 0.6
+        speed: 0.12 + Math.random()*0.45,
+        size:  0.5 + Math.random()*1.5,
+        col: col < 0.6 ? 0 : col < 0.8 ? 1 : col < 0.92 ? 2 : 3
+        /* 0=cold-white 1=warm-white 2=gold 3=cyan */
       };
     }
+    var COLS = [
+      'rgba(210,225,255,',
+      'rgba(255,235,200,',
+      'rgba(247,167,60,',
+      'rgba(120,200,255,'
+    ];
     addEventListener('resize', size); size();
     (function loop(){
       if(done) return;
       requestAnimationFrame(loop);
-      cx.clearRect(0,0,W,H);
-      var maxR = Math.hypot(cxx,cyy) + 30;
+      /* motion-blur trail */
+      cx.fillStyle = 'rgba(0,0,0,0.55)';
+      cx.fillRect(0,0,W,H);
+      var maxR = Math.hypot(cxx,cyy) + 40;
       for(var i=0;i<stars.length;i++){
         var s = stars[i];
-        s.rad += s.speed * (1 + s.rad/220);
-        if(s.rad > maxR){ stars[i] = spawn(); continue; }
-        var x = cxx + Math.cos(s.ang)*s.rad;
-        var y = cyy + Math.sin(s.ang)*s.rad;
-        var a = Math.min(0.85, s.rad/maxR + 0.12);
+        var prevRad = s.rad;
+        s.rad += s.speed * (1 + s.rad/180) * warpFactor;
+        if(s.rad > maxR){ stars[i] = spawn(false); continue; }
+        var x  = cxx + Math.cos(s.ang)*s.rad;
+        var y  = cyy + Math.sin(s.ang)*s.rad;
+        var a  = Math.min(0.9, s.rad/maxR*1.4 + 0.08);
+        /* draw a streak line from prev to current position */
+        var px = cxx + Math.cos(s.ang)*prevRad;
+        var py = cyy + Math.sin(s.ang)*prevRad;
         cx.beginPath();
-        cx.fillStyle = s.blue
-          ? 'rgba(140,190,255,'+a.toFixed(3)+')'
-          : 'rgba(225,235,255,'+a.toFixed(3)+')';
-        cx.arc(x, y, s.size*(0.6 + s.rad/maxR*0.9), 0, 6.2832);
-        cx.fill();
+        cx.strokeStyle = COLS[s.col] + a.toFixed(3)+')';
+        cx.lineWidth = s.size * (0.55 + s.rad/maxR * 0.85) * Math.min(warpFactor*0.18, 1.6);
+        cx.moveTo(px, py); cx.lineTo(x, y);
+        cx.stroke();
       }
     })();
   })();
 
+  /* ── Terminal typing sequence ──────────────────────────────────────────── */
   var lines = [
-    {t:'> INITIALIZING BITCOIN DIMENSION', ok:true,  wait:380},
-    {t:'> LOADING 14 GAME MODULES',        ok:true,  wait:340},
-    {t:'> CONNECTING TO BLOCKCHAIN',       ok:true,  wait:360},
-    {t:'> CALIBRATING ARCADE MATRIX',      ok:true,  wait:300},
-    {t:'> <span class="hl">WELCOME, HODLER.</span>', ok:false, wait:520}
+    {t:'> INITIALIZING BITCOIN DIMENSION', ok:true,  wait:350},
+    {t:'> LOADING 14 GAME MODULES',        ok:true,  wait:320},
+    {t:'> CONNECTING TO BLOCKCHAIN',       ok:true,  wait:340},
+    {t:'> CALIBRATING ARCADE MATRIX',      ok:true,  wait:280},
+    {t:'> <span class="hl">WELCOME, HODLER.</span>', ok:false, wait:480}
   ];
   var li = 0;
   function nextLine(){
     if(li >= lines.length){
-      /* terminal complete — reveal the ENTER portal button */
       setTimeout(function(){
         enter.classList.add('show');
-        if(hint) hint.classList.add('show');
-        /* auto-advance 7s after the button appears */
-        setTimeout(finish, 7000);
+        if(rings) rings.classList.add('show');
+        if(hint)  hint.classList.add('show');
+        /* no auto-advance — user must click ENTER */
       }, 300);
       return;
     }
     var L = lines[li++];
     var el = document.createElement('span');
-    el.className = 'line';
-    el.style.opacity = '1';
+    el.className = 'line'; el.style.opacity = '1';
     term.appendChild(el);
     typeLine(el, L, function(){ setTimeout(nextLine, L.wait); });
   }
   function typeLine(el, L, cb){
-    /* type the visible text char-by-char; preserve any markup at the end */
     var raw = L.t;
     var plain = raw.replace(/<[^>]+>/g,'');
     var i = 0;
@@ -366,14 +394,13 @@ var GAMES = [
       i++;
       if(i <= plain.length){
         el.innerHTML = plain.slice(0,i) + cursor;
-        setTimeout(tick, 22 + Math.random()*30);
+        setTimeout(tick, 20 + Math.random()*28);
       } else {
         el.innerHTML = raw + (L.ok ? '<span class="ok">[OK]</span>' : '') + cursor;
         cb();
       }
     })();
   }
-  /* Phase timing: scanline 1.2s, ascii fades at 1.2s, terminal starts ~1.9s */
   setTimeout(nextLine, 1900);
 })();
 
