@@ -615,7 +615,7 @@ function drawSpeedLines(){
     const len = 30 + ((Math.sin(seed) + 1) * 0.5) * 80;
     const y = ((Math.sin(seed*1.7) + 1) * 0.5) * H;
     const baseX = (Math.sin(seed*0.9) + 1) * 0.5 * W;
-    const x = (baseX - (frame * pipeSpeed * 1.5) % (W + 120)) ;
+    const x = (baseX - (frameCount * pipeSpeed * 1.5) % (W + 120)) ;
     const a = alpha * (0.4 + ((Math.sin(seed*2.3) + 1) * 0.5) * 0.6);
     ctx.strokeStyle = `rgba(247,147,26,${a})`;
     ctx.beginPath();
