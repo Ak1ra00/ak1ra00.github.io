@@ -136,12 +136,25 @@ a { color: inherit; }
   50%     { transform: translate(-50%,-50%) scale(1.18); opacity: 1;  }
 }
 
+/* Glass content panel — keeps ASCII/terminal/button readable above the rings */
+.boot-panel {
+  position: relative; z-index: 3;
+  display: flex; flex-direction: column; align-items: center; gap: 18px;
+  width: min(520px, 90vw);
+  background: rgba(0,3,14,0.72);
+  border: 1px solid rgba(247,147,26,0.14);
+  border-radius: 20px;
+  padding: clamp(22px,5vw,38px) clamp(18px,6vw,36px);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+
 /* ENTER THE DIMENSION portal button */
 #boot-enter {
   position: relative; z-index: 3;
   font-family: var(--font-display); font-weight: 900;
-  font-size: 1rem; letter-spacing: .2em;
-  padding: 18px 44px; border-radius: 40px; cursor: pointer;
+  font-size: clamp(0.8rem, 3.8vw, 1rem); letter-spacing: .15em;
+  padding: 16px 32px; border-radius: 40px; cursor: pointer;
+  width: min(320px, 100%);
   background: linear-gradient(135deg, rgba(247,147,26,0.15), rgba(0,240,255,0.08));
   border: 1.5px solid var(--btc); color: var(--btc);
   text-shadow: 0 0 20px rgba(247,147,26,0.6);
@@ -183,18 +196,18 @@ a { color: inherit; }
   transform: translate(-50%, -50%);
 }
 .br1 {
-  width: clamp(200px,38vmin,310px); height: clamp(200px,38vmin,310px);
+  width: clamp(160px,38vmin,300px); height: clamp(160px,38vmin,300px);
   border: 1.5px solid rgba(247,147,26,0.55);
   box-shadow: 0 0 16px rgba(247,147,26,0.1), inset 0 0 16px rgba(247,147,26,0.05);
   animation: brSpin 7s linear infinite;
 }
 .br2 {
-  width: clamp(310px,54vmin,450px); height: clamp(310px,54vmin,450px);
+  width: clamp(230px,52vmin,400px); height: clamp(230px,52vmin,400px);
   border: 1px dashed rgba(0,240,255,0.3);
   animation: brSpin 13s linear infinite reverse;
 }
 .br3 {
-  width: clamp(420px,70vmin,590px); height: clamp(420px,70vmin,590px);
+  width: clamp(300px,66vmin,510px); height: clamp(300px,66vmin,510px);
   border: 1px solid rgba(247,147,26,0.18);
   animation: brSpin 20s linear infinite;
 }
@@ -270,18 +283,20 @@ a { color: inherit; }
     filter: brightness(18) hue-rotate(80deg);
     animation-timing-function: steps(1);
   }
-  /* ── Portal blast open — reveal underneath ── */
+  /* ── Portal blast open ── */
   51% {
-    opacity: 1; transform: scale(1.04);
+    opacity: 1; transform: scale(1.05);
     clip-path: circle(200% at 50% 50%);
     filter: brightness(20) hue-rotate(90deg);
-    animation-timing-function: cubic-bezier(0.1, 0.6, 0.35, 1);
+    animation-timing-function: ease-out;
   }
-  /* ── Smooth fade to reveal site ── */
-  62% { opacity: 0.85; transform: scale(1.02); filter: brightness(4);  }
-  76% { opacity: 0.45; transform: scale(1.01); filter: brightness(1.8); }
-  90% { opacity: 0.12; transform: scale(1);    filter: brightness(1.2); }
-  100%{ opacity: 0;    transform: scale(1);    filter: brightness(1); clip-path: circle(200% at 50% 50%); }
+  /* ── Ripple shockwave — clip boundary oscillates like a wave ── */
+  59% { opacity: 0.95; transform: scale(1.03); clip-path: circle(146% at 50% 50%); filter: brightness(7); }
+  66% { opacity: 0.82; transform: scale(1.01); clip-path: circle(170% at 50% 50%); filter: brightness(3.5); }
+  73% { opacity: 0.60; transform: scale(1);    clip-path: circle(152% at 50% 50%); filter: brightness(2); }
+  80% { opacity: 0.36;                         clip-path: circle(164% at 50% 50%); filter: brightness(1.5); }
+  88% { opacity: 0.14;                         clip-path: circle(156% at 50% 50%); filter: brightness(1.2); }
+  100%{ opacity: 0;                            clip-path: circle(160% at 50% 50%); filter: brightness(1); }
 }
 
 /* Phase 1 — scanline sweep */
@@ -313,7 +328,7 @@ a { color: inherit; }
 .boot-ascii {
   position: relative; z-index: 2;
   font-family: var(--font-mono); font-weight: 700;
-  font-size: clamp(6px, 1.5vw, 11px); line-height: 1.05;
+  font-size: clamp(9.5px, 3vmin, 13px); line-height: 1.05;
   color: var(--btc);
   text-shadow: 0 0 12px rgba(247,147,26,0.7);
   white-space: pre; opacity: 0;
@@ -322,9 +337,9 @@ a { color: inherit; }
 }
 .boot-terminal {
   position: relative; z-index: 2;
-  width: min(560px, 92vw);
+  width: 100%;
   font-family: var(--font-mono); font-weight: 600;
-  font-size: clamp(.8rem, 2.4vw, 1rem);
+  font-size: clamp(.78rem, 3.2vw, 1rem);
   color: var(--cyan);
   text-shadow: 0 0 8px rgba(0,240,255,0.5);
   min-height: 132px;
