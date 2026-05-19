@@ -272,7 +272,7 @@ var GAMES = [
     if(done) return; done = true;
     boot.classList.add('gone');
     document.body.classList.remove('locked');
-    setTimeout(function(){ boot.style.display='none'; }, 1600);
+    setTimeout(function(){ boot.style.display='none'; }, 3200);
   }
 
   function detonate(){
@@ -290,7 +290,7 @@ var GAMES = [
     setTimeout(finish, 700);
   }
 
-  skip.addEventListener('click', finish);
+  skip.addEventListener('click', detonate);
   enter.addEventListener('click', detonate);
   document.addEventListener('keydown', function k(e){
     if(e.key === 'Tab') return;
