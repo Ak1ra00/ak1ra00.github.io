@@ -7,6 +7,11 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Override flex cbgrid with d-pad grid layout */
+        .cbgrid{display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(2,46px);gap:6px;}
+        @media(max-width:767px){.cbgrid{grid-template-columns:repeat(3,52px);grid-template-rows:repeat(2,52px);}}
+    </style>
 
     <!-- SEO and social sharing -->
     <meta name="description" content="Play Bitcoin Pac‑Man: collect BTC coins, dodge ETH/XRP/DOGE/SOL/PEPE ghosts, unlock power-ups, and chase local high scores in Atlas Bitcoin Arcade.">
