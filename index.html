@@ -23,6 +23,8 @@
 
 <!-- ═══ CINEMATIC BOOT SEQUENCE ═══ -->
 <div id="boot" role="dialog" aria-label="System boot sequence">
+  <canvas id="boot-stars" aria-hidden="true"></canvas>
+  <div class="boot-glow" aria-hidden="true"></div>
   <div class="scan" aria-hidden="true"></div>
   <pre class="boot-ascii" aria-hidden="true"> ___  ____  _____  ___    ___    ___
 | _ )|_ _||_   _|/ __|  / _ \  / __|
@@ -30,7 +32,8 @@
 |___/|___|  |_|   \___|  \___/  \___|
        ATLAS  BITCOIN  ARCADE</pre>
   <div class="boot-terminal" id="boot-term" aria-hidden="true"></div>
-  <span class="boot-hint" aria-hidden="true">[ click anywhere or press any key to enter ]</span>
+  <button id="boot-enter" type="button">&#9889; ENTER THE DIMENSION</button>
+  <span class="boot-hint" aria-hidden="true">or press any key</span>
   <button id="boot-skip" type="button">SKIP &rsaquo;</button>
 </div>
 
@@ -250,6 +253,8 @@ var GAMES = [
   var boot = document.getElementById('boot');
   var term = document.getElementById('boot-term');
   var skip = document.getElementById('boot-skip');
+  var enter = document.getElementById('boot-enter');
+  var hint = boot ? boot.querySelector('.boot-hint') : null;
   if(!boot) return;
 
   var done = false;
@@ -259,9 +264,17 @@ var GAMES = [
     document.body.classList.remove('locked');
     setTimeout(function(){ boot.style.display='none'; }, 1000);
   }
+  function detonate(){
+    if(done) return;
+    enter.classList.add('explode');
+    setTimeout(finish, 400);
+  }
   skip.addEventListener('click', finish);
-  boot.addEventListener('click', function(e){ if(e.target!==skip) finish(); });
-  document.addEventListener('keydown', function k(e){ document.removeEventListener('keydown',k); finish(); });
+  enter.addEventListener('click', detonate);
+  document.addEventListener('keydown', function k(e){
+    if(e.key === 'Tab') return;
+    document.removeEventListener('keydown', k); finish();
+  });
 
   /* Returning visitors skip the cinematic */
   if(sessionStorage.getItem('atlas_booted') || REDUCED){
@@ -272,6 +285,51 @@ var GAMES = [
   sessionStorage.setItem('atlas_booted','1');
   document.body.classList.add('locked');
 
+  /* Warp starfield — 200 dots streaming outward from centre */
+  (function bootStars(){
+    var cv = document.getElementById('boot-stars');
+    if(!cv) return;
+    var cx = cv.getContext('2d'), W, H, cxx, cyy, stars;
+    function size(){
+      W = cv.width = boot.offsetWidth || innerWidth;
+      H = cv.height = boot.offsetHeight || innerHeight;
+      cxx = W/2; cyy = H/2;
+      stars = [];
+      for(var i=0;i<200;i++) stars.push(spawn());
+    }
+    function spawn(){
+      var ang = Math.random()*6.2832;
+      var rad = Math.random()*Math.min(W,H)*0.5;
+      return {
+        ang: ang, rad: rad,
+        speed: 0.15 + Math.random()*0.55,
+        size: 0.4 + Math.random()*1.4,
+        blue: Math.random() > 0.6
+      };
+    }
+    addEventListener('resize', size); size();
+    (function loop(){
+      if(done) return;
+      requestAnimationFrame(loop);
+      cx.clearRect(0,0,W,H);
+      var maxR = Math.hypot(cxx,cyy) + 30;
+      for(var i=0;i<stars.length;i++){
+        var s = stars[i];
+        s.rad += s.speed * (1 + s.rad/220);
+        if(s.rad > maxR){ stars[i] = spawn(); continue; }
+        var x = cxx + Math.cos(s.ang)*s.rad;
+        var y = cyy + Math.sin(s.ang)*s.rad;
+        var a = Math.min(0.85, s.rad/maxR + 0.12);
+        cx.beginPath();
+        cx.fillStyle = s.blue
+          ? 'rgba(140,190,255,'+a.toFixed(3)+')'
+          : 'rgba(225,235,255,'+a.toFixed(3)+')';
+        cx.arc(x, y, s.size*(0.6 + s.rad/maxR*0.9), 0, 6.2832);
+        cx.fill();
+      }
+    })();
+  })();
+
   var lines = [
     {t:'> INITIALIZING BITCOIN DIMENSION', ok:true,  wait:380},
     {t:'> LOADING 14 GAME MODULES',        ok:true,  wait:340},
@@ -281,7 +339,16 @@ var GAMES = [
   ];
   var li = 0;
   function nextLine(){
-    if(li >= lines.length){ setTimeout(finish, 480); return; }
+    if(li >= lines.length){
+      /* terminal complete — reveal the ENTER portal button */
+      setTimeout(function(){
+        enter.classList.add('show');
+        if(hint) hint.classList.add('show');
+        /* auto-advance 7s after the button appears */
+        setTimeout(finish, 7000);
+      }, 300);
+      return;
+    }
     var L = lines[li++];
     var el = document.createElement('span');
     el.className = 'line';
@@ -491,35 +558,141 @@ var GAMES = [
   draw();
 })();
 
-/* ─── 8. BACKGROUND: NEURAL CONSTELLATION (preserved + enhanced) ─────────── */
+/* ─── 8. BACKGROUND: GALACTIC SPACE ──────────────────────────────────────── */
 (function(){
   var bg = document.getElementById('bgCanvas');
   if(!bg) return;
   var bx = bg.getContext('2d');
-  var bW=0, bH=0, nodes=[], hexes=[], t=0;
+  var TAU = 6.2831853;
+  var bW=0, bH=0, t=0;
+  var starCanvas=null, starCtx=null;     /* offscreen deep star field */
+  var stars=[], nebulae=[], btcStars=[], galaxies=[], hexes=[], shooters=[];
+  var parallaxY=0;
+
+  /* —— star colour palette (weighted) —— */
+  function starColor(){
+    var r = Math.random();
+    if(r < 0.60) return '200,220,255';   /* cool white */
+    if(r < 0.80) return '255,230,180';   /* warm */
+    if(r < 0.90) return '247,160,60';    /* orange */
+    return '140,180,255';                /* blue */
+  }
+
+  /* —— ₿ glyph as a set of relative star coordinates (0..1 box) —— */
+  var BTC_PTS = [
+    [0.34,0.04],[0.34,0.20],[0.34,0.36],[0.34,0.50],
+    [0.34,0.64],[0.34,0.80],[0.34,0.96],
+    [0.46,0.00],[0.46,1.00],[0.62,0.00],[0.62,1.00],
+    [0.44,0.04],[0.56,0.06],[0.66,0.14],[0.70,0.26],
+    [0.64,0.38],[0.52,0.46],[0.44,0.50],
+    [0.54,0.50],[0.68,0.56],[0.74,0.68],[0.70,0.82],
+    [0.58,0.92],[0.46,0.96],
+    [0.20,0.10],[0.20,0.90],[0.26,0.04],[0.26,0.96],
+    [0.40,0.50],[0.34,0.50]
+  ];
+
   function init(){
     bW = bg.width = innerWidth;
     bH = bg.height = innerHeight;
-    nodes = []; hexes = [];
-    var count = Math.max(34, Math.min(92, Math.floor((bW*bH)/22000)));
-    for(var i=0;i<count;i++){
-      nodes.push({
-        x:Math.random()*bW, y:Math.random()*bH,
-        vx:(Math.random()-0.5)*0.28, vy:(Math.random()-0.5)*0.28,
-        r:1+Math.random()*2, phase:Math.random()*6.2832,
-        pulse:0.4+Math.random()*0.9, orange:Math.random()>0.62
+
+    /* — Layer 1: deep star field rendered once into an offscreen canvas — */
+    stars = [];
+    var sCount = Math.max(600, Math.floor((bW*bH)/2200));
+    for(var i=0;i<sCount;i++){
+      /* bias toward diagonal galactic-arm bands */
+      var x, y;
+      if(Math.random() < 0.55){
+        var band = Math.random()<0.5 ? 0 : 1;
+        var u = Math.random();
+        var spread = (Math.random()-0.5)*0.46;
+        var diag = band ? u : 1-u;
+        x = (diag + spread) * bW;
+        y = u * bH;
+        if(x<0||x>bW){ x = Math.random()*bW; }
+      } else {
+        x = Math.random()*bW; y = Math.random()*bH;
+      }
+      var tier = Math.random();
+      var rad = tier<0.6 ? 0.3+Math.random()*0.3
+              : tier<0.9 ? 0.7+Math.random()*0.5
+              :            1.3+Math.random()*0.9;
+      stars.push({
+        x:x, y:y, r:rad, col:starColor(),
+        base:0.35+Math.random()*0.5,
+        twPhase:Math.random()*TAU, twSpeed:0.6+Math.random()*1.8
       });
     }
-    var hc = Math.max(3, Math.floor(bW/420));
+    /* offscreen base layer (static stars, no twinkle baked in) */
+    starCanvas = document.createElement('canvas');
+    starCanvas.width = bW; starCanvas.height = bH;
+    starCtx = starCanvas.getContext('2d');
+    for(var s=0;s<stars.length;s++){
+      var st = stars[s];
+      starCtx.beginPath();
+      starCtx.fillStyle = 'rgba('+st.col+','+st.base.toFixed(3)+')';
+      starCtx.arc(st.x, st.y, st.r, 0, TAU);
+      starCtx.fill();
+    }
+
+    /* — Layer 2: nebula clouds — */
+    nebulae = [];
+    var nebColors = [
+      [80,30,180,0.06],[80,30,180,0.06],
+      [0,180,200,0.05],[0,180,200,0.05],
+      [247,100,20,0.04],[247,100,20,0.04]
+    ];
+    var nCount = 4 + Math.floor(Math.random()*3);
+    for(var n=0;n<nCount;n++){
+      var c = nebColors[n % nebColors.length];
+      nebulae.push({
+        x:Math.random()*bW, y:Math.random()*bH,
+        r:180+Math.random()*200,
+        col:c,
+        vx:(Math.random()-0.5)*0.12, vy:(Math.random()-0.5)*0.12
+      });
+    }
+
+    /* — Layer 3: BTC constellation, centre-right, ~200px — */
+    btcStars = [];
+    var bcx = bW*0.66, bcy = bH*0.42, bsz = 200;
+    for(var p=0;p<BTC_PTS.length;p++){
+      btcStars.push({
+        x:bcx + BTC_PTS[p][0]*bsz - bsz*0.45,
+        y:bcy + BTC_PTS[p][1]*bsz*1.15 - bsz*0.55,
+        ph:Math.random()*TAU
+      });
+    }
+
+    /* — Layer 4: distant micro-galaxies — */
+    galaxies = [];
+    var gPos = [[0.10,0.18],[0.88,0.78],[0.16,0.86]];
+    var gN = 2 + Math.floor(Math.random()*2);
+    for(var g=0;g<gN;g++){
+      galaxies.push({
+        x:gPos[g][0]*bW, y:gPos[g][1]*bH,
+        r:30+Math.random()*30, rot:Math.random()*TAU,
+        op:0.08+Math.random()*0.06,
+        hue:g%2 ? '200,220,255' : '247,160,60'
+      });
+    }
+
+    /* — Layer 6: faint hex rings (hint of structure) — */
+    hexes = [];
+    var hc = Math.max(2, Math.min(3, Math.floor(bW/520)));
     for(var h=0;h<hc;h++){
       hexes.push({
         x:Math.random()*bW, y:Math.random()*bH,
-        rad:90+Math.random()*220, rot:Math.random()*Math.PI,
-        vr:(Math.random()-0.5)*0.0016
+        rad:120+Math.random()*220, rot:Math.random()*Math.PI,
+        vr:(Math.random()-0.5)*0.0014
       });
     }
+    /* shooting stars persist across resize */
   }
   addEventListener('resize', init); init();
+  addEventListener('scroll', function(){
+    parallaxY = Math.max(0, window.scrollY) * 0.22;
+  }, {passive:true});
+
   function hexPath(cx,cy,rad,rot){
     bx.beginPath();
     for(var i=0;i<6;i++){
@@ -529,52 +702,172 @@ var GAMES = [
     }
     bx.closePath();
   }
+
+  function drawNebulae(){
+    bx.save();
+    bx.filter = 'blur(40px)';
+    for(var i=0;i<nebulae.length;i++){
+      var c = nebulae[i];
+      if(!REDUCED){
+        c.x += c.vx; c.y += c.vy;
+        if(c.x < -c.r) c.x = bW + c.r; if(c.x > bW + c.r) c.x = -c.r;
+        if(c.y < -c.r) c.y = bH + c.r; if(c.y > bH + c.r) c.y = -c.r;
+      }
+      var col = c.col;
+      var grad = bx.createRadialGradient(c.x,c.y,0,c.x,c.y,c.r);
+      grad.addColorStop(0,'rgba('+col[0]+','+col[1]+','+col[2]+','+col[3]+')');
+      grad.addColorStop(1,'rgba('+col[0]+','+col[1]+','+col[2]+',0)');
+      bx.fillStyle = grad;
+      bx.beginPath(); bx.arc(c.x,c.y,c.r,0,TAU); bx.fill();
+    }
+    bx.restore();
+  }
+
+  function drawBtcConstellation(){
+    /* faint connecting lines */
+    bx.strokeStyle = 'rgba(247,147,26,0.03)';
+    bx.lineWidth = 1;
+    bx.beginPath();
+    for(var i=1;i<btcStars.length;i++){
+      var a = btcStars[i-1], b = btcStars[i];
+      bx.moveTo(a.x,a.y); bx.lineTo(b.x,b.y);
+    }
+    bx.stroke();
+    /* gently pulsing stars */
+    for(var s=0;s<btcStars.length;s++){
+      var p = btcStars[s];
+      var pulse = 0.5 + 0.5*Math.sin(t*1.3 + p.ph);
+      bx.beginPath();
+      bx.fillStyle = 'rgba(255,210,140,'+(0.22+pulse*0.5).toFixed(3)+')';
+      bx.arc(p.x,p.y,1.4+pulse*0.9,0,TAU); bx.fill();
+    }
+  }
+
+  function drawGalaxies(){
+    for(var i=0;i<galaxies.length;i++){
+      var g = galaxies[i];
+      if(!REDUCED) g.rot += 0.0003;
+      bx.save();
+      bx.translate(g.x,g.y); bx.rotate(g.rot);
+      bx.strokeStyle = 'rgba('+g.hue+','+g.op.toFixed(3)+')';
+      bx.lineWidth = 1.4;
+      for(var arm=0;arm<2;arm++){
+        bx.beginPath();
+        var off = arm*Math.PI;
+        for(var k=0;k<48;k++){
+          var ka = k/48 * 3.4;
+          var rr = (k/48) * g.r;
+          var ax = Math.cos(ka+off)*rr, ay = Math.sin(ka+off)*rr;
+          k===0 ? bx.moveTo(ax,ay) : bx.lineTo(ax,ay);
+        }
+        bx.stroke();
+      }
+      /* bright core */
+      var cg = bx.createRadialGradient(0,0,0,0,0,g.r*0.4);
+      cg.addColorStop(0,'rgba('+g.hue+','+(g.op*2.4).toFixed(3)+')');
+      cg.addColorStop(1,'rgba('+g.hue+',0)');
+      bx.fillStyle = cg;
+      bx.beginPath(); bx.arc(0,0,g.r*0.4,0,TAU); bx.fill();
+      bx.restore();
+    }
+  }
+
+  function drawHexes(){
+    bx.lineWidth = 1;
+    for(var k=0;k<hexes.length;k++){
+      var hx = hexes[k];
+      if(!REDUCED) hx.rot += hx.vr;
+      bx.strokeStyle = 'rgba(123,47,255,0.04)';
+      hexPath(hx.x,hx.y,hx.rad,hx.rot); bx.stroke();
+      bx.strokeStyle = 'rgba(0,240,255,0.04)';
+      hexPath(hx.x,hx.y,hx.rad*0.62,-hx.rot*1.4); bx.stroke();
+    }
+  }
+
+  function drawStarfield(){
+    /* blit static base, then overlay twinkle highlights */
+    if(starCanvas) bx.drawImage(starCanvas,0,0);
+    if(REDUCED) return;
+    for(var i=0;i<stars.length;i++){
+      var st = stars[i];
+      var tw = Math.sin(t*st.twSpeed + st.twPhase);    /* -1..1 */
+      if(tw <= 0) continue;
+      var extra = st.base * 0.3 * tw;
+      bx.beginPath();
+      bx.fillStyle = 'rgba('+st.col+','+extra.toFixed(3)+')';
+      bx.arc(st.x,st.y,st.r,0,TAU); bx.fill();
+    }
+  }
+
+  function updateShooters(){
+    /* spawn */
+    if(!REDUCED && shooters.length < 3 && Math.random() < 0.003){
+      var edge = Math.random();
+      var sx = edge*bW, sy = -20 - Math.random()*60;
+      var ang = (Math.PI*0.55) + (Math.random()-0.5)*0.6;
+      var spd = 7 + Math.random()*6;
+      var cols = ['255,255,255','170,240,255','255,235,170'];
+      shooters.push({
+        x:sx, y:sy,
+        vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd,
+        life:0, maxLife:40+Math.floor(Math.random()*40),
+        col:cols[(Math.random()*cols.length)|0], trail:[]
+      });
+    }
+    for(var i=shooters.length-1;i>=0;i--){
+      var s = shooters[i];
+      s.x += s.vx; s.y += s.vy; s.life++;
+      s.trail.push({x:s.x,y:s.y});
+      if(s.trail.length > 14) s.trail.shift();
+      if(s.life > s.maxLife || s.y > bH+40 || s.x < -40 || s.x > bW+40){
+        shooters.splice(i,1);
+      }
+    }
+  }
+  function drawShooters(){
+    for(var i=0;i<shooters.length;i++){
+      var s = shooters[i];
+      var fade = 1 - s.life/s.maxLife;
+      if(s.trail.length > 1){
+        var head = s.trail[s.trail.length-1];
+        var tail = s.trail[0];
+        var grad = bx.createLinearGradient(tail.x,tail.y,head.x,head.y);
+        grad.addColorStop(0,'rgba('+s.col+',0)');
+        grad.addColorStop(1,'rgba('+s.col+','+(0.85*fade).toFixed(3)+')');
+        bx.strokeStyle = grad;
+        bx.lineWidth = 2; bx.lineCap = 'round';
+        bx.beginPath();
+        bx.moveTo(tail.x,tail.y);
+        for(var k=1;k<s.trail.length;k++) bx.lineTo(s.trail[k].x,s.trail[k].y);
+        bx.stroke();
+      }
+      bx.beginPath();
+      bx.fillStyle = 'rgba('+s.col+','+fade.toFixed(3)+')';
+      bx.shadowColor = 'rgba('+s.col+','+fade.toFixed(3)+')';
+      bx.shadowBlur = 8;
+      bx.arc(s.x,s.y,1.8,0,TAU); bx.fill();
+      bx.shadowBlur = 0;
+    }
+  }
+
   function draw(){
     requestAnimationFrame(draw);
     t += 0.016;
     bx.clearRect(0,0,bW,bH);
-    /* rotating hex rings */
-    for(var k=0;k<hexes.length;k++){
-      var hx = hexes[k];
-      hx.rot += hx.vr;
-      bx.lineWidth = 1;
-      bx.strokeStyle = 'rgba(123,47,255,0.10)';
-      hexPath(hx.x,hx.y,hx.rad,hx.rot); bx.stroke();
-      bx.strokeStyle = 'rgba(0,240,255,0.07)';
-      hexPath(hx.x,hx.y,hx.rad*0.62,-hx.rot*1.4); bx.stroke();
-    }
-    /* links */
-    var linkD2 = 138*138;
-    for(var i=0;i<nodes.length;i++){
-      var a = nodes[i];
-      for(var j=i+1;j<nodes.length;j++){
-        var b = nodes[j];
-        var dx=a.x-b.x, dy=a.y-b.y, d2=dx*dx+dy*dy;
-        if(d2<linkD2){
-          var o = (1-d2/linkD2)*0.42;
-          bx.strokeStyle = (a.orange||b.orange)
-            ? 'rgba(247,147,26,'+o.toFixed(3)+')'
-            : 'rgba(0,240,255,'+o.toFixed(3)+')';
-          bx.lineWidth = 0.7;
-          bx.beginPath(); bx.moveTo(a.x,a.y); bx.lineTo(b.x,b.y); bx.stroke();
-        }
-      }
-    }
-    /* nodes */
-    for(var n=0;n<nodes.length;n++){
-      var p = nodes[n];
-      if(!REDUCED){ p.x+=p.vx; p.y+=p.vy; }
-      if(p.x<-20)p.x=bW+20; if(p.x>bW+20)p.x=-20;
-      if(p.y<-20)p.y=bH+20; if(p.y>bH+20)p.y=-20;
-      var pulse = 0.55+0.45*Math.sin(t*p.pulse+p.phase);
-      var col = p.orange ? '247,147,26' : '0,240,255';
-      bx.beginPath();
-      bx.fillStyle = 'rgba('+col+','+(0.16*pulse).toFixed(3)+')';
-      bx.arc(p.x,p.y,p.r*4.2*pulse,0,6.2832); bx.fill();
-      bx.beginPath();
-      bx.fillStyle = 'rgba('+col+','+(0.7+0.3*pulse).toFixed(3)+')';
-      bx.arc(p.x,p.y,p.r,0,6.2832); bx.fill();
-    }
+
+    /* parallax: shift the galactic scene with scroll */
+    bx.save();
+    bx.translate(0, -parallaxY);
+    drawStarfield();
+    drawNebulae();
+    drawBtcConstellation();
+    drawGalaxies();
+    drawHexes();
+    bx.restore();
+
+    /* shooting stars in screen-space (no parallax) */
+    updateShooters();
+    drawShooters();
   }
   draw();
 })();

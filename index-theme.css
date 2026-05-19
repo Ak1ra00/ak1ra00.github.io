@@ -83,8 +83,9 @@ body::after {
   position: fixed; inset: 0; z-index: -1;
   width: 100%; height: 100%;
   pointer-events: none;
-  opacity: 0.9;
-  mix-blend-mode: screen;
+  opacity: 0.92;
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 /* Accessibility helpers */
@@ -116,6 +117,56 @@ a { color: inherit; }
   align-items: center; justify-content: center;
   gap: 26px; padding: 24px;
   overflow: hidden;
+}
+
+/* Warp starfield canvas + radial glow behind the ASCII */
+#boot-stars {
+  position: absolute; inset: 0; z-index: 0;
+  width: 100%; height: 100%; pointer-events: none;
+}
+.boot-glow {
+  position: absolute; z-index: 1; pointer-events: none;
+  width: 340px; height: 340px; border-radius: 50%;
+  top: 50%; left: 50%; transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(247,147,26,0.10) 0%, transparent 70%);
+  animation: bootGlowPulse 3s ease-in-out infinite;
+}
+@keyframes bootGlowPulse {
+  0%,100% { transform: translate(-50%,-50%) scale(1);    opacity: .7; }
+  50%     { transform: translate(-50%,-50%) scale(1.18); opacity: 1;  }
+}
+
+/* ENTER THE DIMENSION portal button */
+#boot-enter {
+  position: relative; z-index: 3;
+  font-family: var(--font-display); font-weight: 900;
+  font-size: 1rem; letter-spacing: .2em;
+  padding: 18px 44px; border-radius: 40px; cursor: pointer;
+  background: linear-gradient(135deg, rgba(247,147,26,0.15), rgba(0,240,255,0.08));
+  border: 1.5px solid var(--btc); color: var(--btc);
+  text-shadow: 0 0 20px rgba(247,147,26,0.6);
+  box-shadow: 0 0 40px rgba(247,147,26,0.3), 0 0 0 0 rgba(247,147,26,0.4);
+  opacity: 0; transform: translateY(16px) scale(0.95); pointer-events: none;
+  transition: opacity .5s var(--ease-out), transform .5s var(--ease-out),
+              box-shadow .3s, border-color .3s;
+}
+#boot-enter.show {
+  opacity: 1; transform: translateY(0) scale(1); pointer-events: auto;
+  animation: bootEnterGlow 2.4s ease-in-out infinite;
+}
+#boot-enter:hover {
+  box-shadow: 0 0 60px rgba(247,147,26,0.6), 0 0 0 0 rgba(247,147,26,0.4);
+  border-color: var(--btc-hot); transform: scale(1.03);
+}
+@keyframes bootEnterGlow {
+  0%,100% { box-shadow: 0 0 40px rgba(247,147,26,0.30), 0 0 0 0  rgba(247,147,26,0.5); }
+  50%     { box-shadow: 0 0 60px rgba(247,147,26,0.55), 0 0 0 22px rgba(247,147,26,0); }
+}
+#boot-enter.explode { animation: bootExplode .5s var(--ease-out) forwards; }
+@keyframes bootExplode {
+  0%   { transform: scale(1);  opacity: 1;   }
+  40%  { transform: scale(12); opacity: 0.6; border-radius: 0; }
+  100% { transform: scale(18); opacity: 0;   border-radius: 0; }
 }
 #boot.gone { animation: bootImplode 1s var(--ease-out) forwards; }
 @keyframes bootImplode {
@@ -152,6 +203,7 @@ a { color: inherit; }
 @keyframes crtFlicker { 0%,100%{opacity:.9} 50%{opacity:1} 97%{opacity:.78} }
 
 .boot-ascii {
+  position: relative; z-index: 2;
   font-family: var(--font-mono); font-weight: 700;
   font-size: clamp(6px, 1.5vw, 11px); line-height: 1.05;
   color: var(--btc);
@@ -161,6 +213,7 @@ a { color: inherit; }
   letter-spacing: 1px;
 }
 .boot-terminal {
+  position: relative; z-index: 2;
   width: min(560px, 92vw);
   font-family: var(--font-mono); font-weight: 600;
   font-size: clamp(.8rem, 2.4vw, 1rem);
@@ -181,7 +234,7 @@ a { color: inherit; }
 @keyframes bootFadeIn { to { opacity: 1; } }
 
 #boot-skip {
-  position: absolute; bottom: 28px; right: 28px;
+  position: absolute; top: 28px; right: 28px; z-index: 4;
   background: rgba(0,240,255,0.06);
   border: 1px solid rgba(0,240,255,0.4);
   color: var(--cyan);
@@ -194,11 +247,14 @@ a { color: inherit; }
 #boot-skip:hover { background: rgba(0,240,255,0.16); transform: translateX(-3px); }
 
 #boot .boot-hint {
-  position: absolute; bottom: 30px; left: 28px;
+  position: relative; z-index: 3;
   font-family: var(--font-mono); font-size: .72rem;
   color: var(--ink-faint); letter-spacing: .1em;
-  opacity: 0; animation: bootFadeIn .4s ease 1.4s forwards;
+  text-align: center;
+  opacity: 0; transition: opacity .5s var(--ease-out);
+  margin-top: -8px;
 }
+#boot .boot-hint.show { opacity: 1; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    2. NAVIGATION — THE COMMAND BRIDGE
