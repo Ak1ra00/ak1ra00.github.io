@@ -355,25 +355,35 @@ function resetRun(){
   setLvlBanner(`BLOCK ${block}`, blockSubtitleForBlock(block), false);
   updateHUD();
 }
-function blockNeedToHit(b){ return Math.min(8, b + 2); }
+function blockNeedToHit(b){ return Math.min(10, b + 2); }
 function blockTimeForBlock(b){
   if(b === 1) return 90;
   if(b === 2) return 75;
   if(b === 3) return 65;
-  return Math.max(40, 60 - (b - 3) * 4);
+  return Math.max(30, 60 - (b - 3) * 5);
 }
 function simultaneousTargets(b){
   if(b <= 2) return 1;
   if(b <= 4) return 2;
-  return 3;
+  return Math.min(4, 3 + Math.floor((b - 5) / 3));
+}
+function dangerHoleCount(b){
+  if(b < 3) return 0;
+  return Math.min(10, b - 2);
+}
+function blockGravity(b){
+  return Math.min(1900, GRAVITY * (1 + (b - 1) * 0.06));
+}
+function blockLeverSpeed(b){
+  return Math.max(180, LEVER_SPD - (b - 1) * 14);
 }
 function blockSubtitleForBlock(b){
   if(b === 1) return "Find the wallet. Don't drop the coin.";
   if(b === 2) return "Wallets hide higher. Stay steady.";
-  if(b === 3) return "Two wallets. Choose well.";
-  if(b === 4) return "Watch the fakes. They flash and vanish.";
-  if(b === 5) return "The mempool is getting crowded.";
-  return `Block ${b}. Sats compound. So does difficulty.`;
+  if(b === 3) return "Two wallets. Beware the danger holes — ✕ means death.";
+  if(b === 4) return "Fakes flash and vanish. Danger holes are permanent.";
+  if(b === 5) return `${dangerHoleCount(b)} danger holes. Controls getting heavier.`;
+  return `Block ${b}. ${dangerHoleCount(b)} death traps. ${simultaneousTargets(b)} wallets. NGMI?`;
 }
 
 function resetBall(fullReset){
@@ -389,51 +399,78 @@ function resetBall(fullReset){
   ball = { x: x, y: barYAt(x) - BALL_R - BAR_THICK/2, vx: 0, rot: 0 };
 }
 
-function pickNewTarget(){
-  /* rows allowed: depends on block */
-  let minRow = 0, maxRow = GRID_ROWS - 1;
-  if(block === 1){ minRow = 3; maxRow = 8; }
-  else if(block === 2){ minRow = 1; maxRow = GRID_ROWS - 1; }
+/* ── TARGET / HOLE HELPERS ─────────────────────────────────────────────── */
+function targetRowRange(){
+  if(block === 1) return {minRow:3, maxRow:8};
+  if(block === 2) return {minRow:1, maxRow:GRID_ROWS-1};
+  return {minRow:0, maxRow:GRID_ROWS-1};
+}
+function addMissingTargets(){
+  const {minRow, maxRow} = targetRowRange();
   const want = simultaneousTargets(block);
-  activeHoles = [];
-  const tried = new Set();
-  while(activeHoles.length < want){
-    if(tried.size >= GRID_ROWS * GRID_COLS) break;
+  const real = activeHoles.filter(h => !h.fake && !h.danger).length;
+  let toAdd = want - real, tries = 0;
+  while(toAdd > 0 && tries++ < 300){
     const c = (Math.random() * GRID_COLS) | 0;
     const r = minRow + ((Math.random() * (maxRow - minRow + 1)) | 0);
-    const key = c + ',' + r;
-    if(tried.has(key)) continue;
-    tried.add(key);
     if(activeHoles.some(h => h.col === c && h.row === r)) continue;
-    activeHoles.push({col:c, row:r, fake:false, bornMs:0});
+    activeHoles.push({col:c, row:r, fake:false, danger:false, bornMs:0});
+    toAdd--;
   }
-  /* add a fake from block 4+ */
-  if(block >= 4 && Math.random() < 0.55){
-    let tries = 0;
-    while(tries++ < 30){
-      const c = (Math.random() * GRID_COLS) | 0;
-      const r = (Math.random() * GRID_ROWS) | 0;
-      if(activeHoles.some(h => h.col === c && h.row === r)) continue;
-      activeHoles.push({col:c, row:r, fake:true, bornMs:0, lifeMs:1400 + Math.random()*1200});
-      break;
-    }
+}
+function spawnDangerHoles(){
+  const want = dangerHoleCount(block);
+  const have = activeHoles.filter(h => h.danger).length;
+  let toAdd = want - have, tries = 0;
+  while(toAdd > 0 && tries++ < 300){
+    const c = (Math.random() * GRID_COLS) | 0;
+    const r = (Math.random() * GRID_ROWS) | 0;
+    if(activeHoles.some(h => h.col === c && h.row === r)) continue;
+    activeHoles.push({col:c, row:r, fake:false, danger:true, bornMs:0});
+    toAdd--;
+  }
+}
+function spawnFake(){
+  if(block < 3) return;
+  let tries = 0;
+  while(tries++ < 50){
+    const c = (Math.random() * GRID_COLS) | 0;
+    const r = (Math.random() * GRID_ROWS) | 0;
+    if(activeHoles.some(h => h.col === c && h.row === r)) continue;
+    const life = Math.max(700, 1600 - block * 70) + Math.random() * 700;
+    activeHoles.push({col:c, row:r, fake:true, danger:false, bornMs:0, lifeMs:life});
+    break;
+  }
+}
+function pickNewTarget(){
+  activeHoles = [];
+  addMissingTargets();
+  spawnDangerHoles();
+  /* fakes from block 3, growing chance */
+  if(block >= 3 && Math.random() < Math.min(0.88, 0.3 + block * 0.09)){
+    spawnFake();
   }
 }
 
-function loseLife(){
+function loseLife(msg){
+  if(invincibleMs > 0) return;
   lives--;
   SFX.drop();
   shake(14, 380);
   combo = 1; comboTimer = 0;
   spawnExplosion(ball.x, ball.y);
-  setStatus("Dropped! Re-rack…", 's-bad');
+  setStatus(msg || "Dropped! Re-rack…", 's-bad');
   state = STATE.LIFE_LOST;
   lifeLostMs = LIFE_LOST_MS;
   if(lives <= 0){
-    /* don't respawn — fall through to game over after the brief delay */
     setTimeout(gameOver, LIFE_LOST_MS - 100);
   }
   updateHUD();
+}
+function hitDangerHole(){
+  if(invincibleMs > 0) return;
+  shake(22, 500);
+  loseLife("☠ DANGER HOLE! You fell in!");
 }
 function gameOver(){
   state = STATE.GAME_OVER;
@@ -468,12 +505,18 @@ function onPocket(hole){
   state = STATE.POCKET;
   hudFlashTimer = 320;
   if(hitThisBlock >= needToHit){
-    /* level clear queued after freeze */
     setTimeout(levelClear, POCKET_FREEZE_MS + 60);
   } else {
     setTimeout(() => {
       if(state === STATE.POCKET){
-        pickNewTarget();
+        /* remove ONLY the pocketed hole — keep the others alive */
+        activeHoles = activeHoles.filter(h => !(h.col === hole.col && h.row === hole.row));
+        /* fill back up to the simultaneous-target count */
+        addMissingTargets();
+        /* maybe add a fresh fake */
+        if(block >= 3 && !activeHoles.some(h => h.fake) && Math.random() < Math.min(0.75, 0.25 + block * 0.07)){
+          spawnFake();
+        }
         resetBall(false);
         invincibleMs = 350;
         state = STATE.PLAYING;
@@ -672,18 +715,43 @@ function drawBoard(t){
   for(const h of activeHoles){
     const p = holePos(h.col, h.row);
     const pulse = 0.5 + 0.5 * Math.sin(t * 0.004 + h.col + h.row);
-    if(h.fake){
-      /* fake — red-ish, flickery */
+    if(h.danger){
+      /* danger hole — permanent death trap, dark crimson abyss */
       ctx.save();
-      ctx.shadowColor = 'rgba(255,80,80,0.85)';
-      ctx.shadowBlur = 16 + pulse * 8;
-      ctx.fillStyle = `rgba(255,80,80,${0.18 + pulse * 0.18})`;
+      ctx.shadowColor = 'rgba(200,0,40,0.95)';
+      ctx.shadowBlur = 22 + pulse * 14;
+      const dg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, HOLE_R);
+      dg.addColorStop(0,   'rgba(0,0,0,0.98)');
+      dg.addColorStop(0.55,'rgba(100,0,25,0.80)');
+      dg.addColorStop(1,   'rgba(200,0,50,0.35)');
+      ctx.fillStyle = dg;
       ctx.beginPath(); ctx.arc(p.x, p.y, HOLE_R, 0, Math.PI*2); ctx.fill();
       ctx.shadowBlur = 0;
-      ctx.strokeStyle = 'rgba(255,80,80,0.75)';
+      ctx.strokeStyle = `rgba(240,0,60,${0.55 + pulse * 0.4})`;
+      ctx.lineWidth = 2;
+      drawHexHole(p.x, p.y, HEX_R * 0.95);
+      ctx.stroke();
+      ctx.fillStyle = `rgba(255,90,90,${0.65 + pulse * 0.3})`;
+      ctx.font = '900 ' + Math.floor(HEX_R * 1.1) + 'px Orbitron, sans-serif';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('✕', p.x, p.y + 1);
+      ctx.restore();
+    } else if(h.fake){
+      /* fake — orange-ish flicker, vanishes shortly */
+      ctx.save();
+      ctx.shadowColor = 'rgba(255,120,40,0.85)';
+      ctx.shadowBlur = 16 + pulse * 8;
+      ctx.fillStyle = `rgba(255,120,40,${0.18 + pulse * 0.18})`;
+      ctx.beginPath(); ctx.arc(p.x, p.y, HOLE_R, 0, Math.PI*2); ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = `rgba(255,140,40,${0.55 + pulse * 0.4})`;
       ctx.lineWidth = 1.5;
       drawHexHole(p.x, p.y, HEX_R * 0.95);
       ctx.stroke();
+      ctx.fillStyle = `rgba(255,180,80,${0.5 + pulse * 0.3})`;
+      ctx.font = '900 ' + Math.floor(HEX_R * 0.9) + 'px Orbitron, sans-serif';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('?', p.x, p.y + 1);
       ctx.restore();
     } else {
       ctx.save();
@@ -906,7 +974,7 @@ function drawOverlayText(){
 /* ── PHYSICS / UPDATE ──────────────────────────────────────────────────── */
 function updateInputs(dt){
   /* read keyboard, accumulate into target Y */
-  const step = LEVER_SPD * dt;
+  const step = blockLeverSpeed(block) * dt;
   if(KEYS['q']) leftTargetY -= step;
   if(KEYS['a']) leftTargetY += step;
   if(KEYS['p']) rightTargetY -= step;
@@ -936,40 +1004,30 @@ function updateInputs(dt){
 function updatePhysics(dt){
   if(!ball) return;
   const ang = barAngle();
-  /* gravity along bar */
-  ball.vx += Math.sin(ang) * GRAVITY * dt;
-  /* friction (rolling) — scale per real second */
+  /* gravity scales with block difficulty */
+  ball.vx += Math.sin(ang) * blockGravity(block) * dt;
+  /* friction (rolling) */
   const fric = Math.pow(FRICTION, dt * 60);
   ball.vx *= fric;
-  /* move */
   ball.x += ball.vx * dt;
-  /* update rotation based on horizontal travel */
   ball.rot += (ball.vx * dt) / Math.max(BALL_R, 1) * 1.0;
-  /* bar y */
   ball.y = barYAt(ball.x) - BALL_R - BAR_THICK/2;
 
-  /* did ball leave the bar? — drop */
+  /* ball left the bar */
   if(ball.x < BAR_LEFT_X - 4 || ball.x > BAR_RIGHT_X + 4){
-    /* let the ball fall a moment before counting as dropped */
-    /* immediately tally — physics-faithful: it’s off the bar */
-    if(invincibleMs <= 0){
-      loseLife();
-    }
+    loseLife();
     return;
   }
 
-  /* pocket detection — only active (non-fake) targets */
+  /* hole detection */
+  const catchR = HOLE_R * 0.9;
   for(const h of activeHoles){
-    if(h.fake) continue;
     const p = holePos(h.col, h.row);
     const dx = ball.x - p.x, dy = ball.y - p.y;
-    /* only pocket if the ball is close enough AND the hole y is below the bar
-       at that x — i.e., the ball physically rolled into the hole.
-       Since holes are above the bar in this design, we instead check that
-       the ball center has reached the hole within HOLE_R. */
-    if(dx*dx + dy*dy < (HOLE_R * 0.9) * (HOLE_R * 0.9)){
-      onPocket(h);
-      return;
+    if(dx*dx + dy*dy < catchR * catchR){
+      if(h.fake) continue;          /* fakes are visual only */
+      if(h.danger){ hitDangerHole(); return; }
+      onPocket(h); return;
     }
   }
 }
@@ -989,16 +1047,8 @@ function updateParticles(dt){
     h.bornMs += dt * 1000;
     if(h.fake && h.bornMs > h.lifeMs){
       activeHoles.splice(i, 1);
-      /* maybe spawn a new fake */
-      if(block >= 4 && Math.random() < 0.5){
-        let tries = 0;
-        while(tries++ < 30){
-          const c = (Math.random() * GRID_COLS) | 0;
-          const r = (Math.random() * GRID_ROWS) | 0;
-          if(activeHoles.some(hh => hh.col === c && hh.row === r)) continue;
-          activeHoles.push({col:c, row:r, fake:true, bornMs:0, lifeMs:1400 + Math.random()*1200});
-          break;
-        }
+      if(block >= 3 && Math.random() < Math.min(0.80, 0.3 + block * 0.07)){
+        spawnFake();
       }
     }
   }
