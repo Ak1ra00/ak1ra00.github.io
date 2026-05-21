@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Atlas Bitcoin Arcade — The Bitcoin Dimension</title>
-<meta name="description" content="Enter the Bitcoin Dimension. 14 legendary arcade games — Pac-Man, Snake, Tetris, Chess, Miner, Runner and more. Free to play. Pure skill. Hodl your highscore.">
+<meta name="description" content="Enter the Bitcoin Dimension. 15 legendary arcade games — Pac-Man, Snake, Tetris, Chess, Miner, Runner, Ice Cold ₿ and more. Free to play. Pure skill. Hodl your highscore.">
 <meta name="theme-color" content="#02030B">
 <link rel="canonical" href="https://soufianekh.space/">
 <meta property="og:title" content="Atlas Bitcoin Arcade — The Bitcoin Dimension">
-<meta property="og:description" content="14 Bitcoin-themed arcade games. Free to play. Pure skill.">
+<meta property="og:description" content="15 Bitcoin-themed arcade games. Free to play. Pure skill.">
 <meta property="og:image" content="https://soufianekh.space/logo.svg">
 <meta property="og:type" content="website">
 <link rel="icon" href="logo.svg" type="image/svg+xml">
@@ -58,10 +58,10 @@
     </a>
     <div class="nav-marquee" aria-hidden="true">
       <div class="track">
-        <span><b>&#8383; BTC ARCADE</b> &middot; 14 GAMES &middot; PLAY FREE &middot; HODL HARD &middot; </span>
-        <span><b>&#8383; BTC ARCADE</b> &middot; 14 GAMES &middot; PLAY FREE &middot; HODL HARD &middot; </span>
-        <span><b>&#8383; BTC ARCADE</b> &middot; 14 GAMES &middot; PLAY FREE &middot; HODL HARD &middot; </span>
-        <span><b>&#8383; BTC ARCADE</b> &middot; 14 GAMES &middot; PLAY FREE &middot; HODL HARD &middot; </span>
+        <span><b>&#8383; BTC ARCADE</b> &middot; 15 GAMES &middot; PLAY FREE &middot; HODL HARD &middot; </span>
+        <span><b>&#8383; BTC ARCADE</b> &middot; 15 GAMES &middot; PLAY FREE &middot; HODL HARD &middot; </span>
+        <span><b>&#8383; BTC ARCADE</b> &middot; 15 GAMES &middot; PLAY FREE &middot; HODL HARD &middot; </span>
+        <span><b>&#8383; BTC ARCADE</b> &middot; 15 GAMES &middot; PLAY FREE &middot; HODL HARD &middot; </span>
       </div>
     </div>
     <div class="nav-actions">
@@ -92,6 +92,7 @@
     <a href="bubbles.html">BUBBLES</a>
     <a href="miner.html">MINER</a>
     <a href="runner.html">RUNNER</a>
+    <a href="icecold.html">ICE COLD ₿</a>
   </div>
 </nav>
 
@@ -106,7 +107,7 @@
       <div class="hero-line sm">ENTER THE</div>
       <div class="hero-line big">BITCOIN</div>
       <div class="hero-line mid">DIMENSION</div>
-      <p class="hero-sub">A portal to another universe where Bitcoin is the law of physics. Fourteen legendary games. Zero pay-to-win. Pure skill.</p>
+      <p class="hero-sub">A portal to another universe where Bitcoin is the law of physics. Fifteen legendary games. Zero pay-to-win. Pure skill.</p>
       <div class="hero-cta">
         <a class="btn btn-primary" href="#games">&#9658; PLAY NOW</a>
         <a class="btn btn-ghost" href="#legends">&#128202; LEADERBOARD</a>
@@ -123,7 +124,7 @@
 
     <div class="hero-stats">
       <div class="stat-pill">
-        <div class="num">14</div>
+        <div class="num">15</div>
         <div class="lbl">GAMES</div>
       </div>
       <div class="stat-pill cyan">
@@ -152,7 +153,7 @@
     <div class="section-head reveal">
       <span class="section-eyebrow">// SELECT YOUR MODULE</span>
       <h2 class="section-title">THE <span class="accent">GAME GRID</span></h2>
-      <p class="section-desc">Fourteen arcade cabinets, freshly minted. Insert a virtual coin and play.</p>
+      <p class="section-desc">Fifteen arcade cabinets, freshly minted. Insert a virtual coin and play.</p>
     </div>
     <div class="grid" id="grid">
       <!-- cards injected by JS -->
@@ -196,7 +197,7 @@
         <div class="creed-card reveal">
           <div class="ic">&#127918;</div>
           <h3>PLAY</h3>
-          <p>Fourteen handcrafted games. No ads, no tracking, no nonsense. Just press start.</p>
+          <p>Fifteen handcrafted games. No ads, no tracking, no nonsense. Just press start.</p>
         </div>
         <div class="creed-card reveal">
           <div class="ic">&#129504;</div>
@@ -253,7 +254,8 @@ var GAMES = [
   {href:'hashbreaker.html',name:'HASHBREAKER',tag:'Break the wall',   emoji:'🧱', color:'#00FF00', diff:2, score:'hash_hs'},
   {href:'bubbles.html',    name:'BUBBLES',    tag:'Pop & match',      emoji:'🫗', color:'#FF69B4', diff:1, score:'btc_bubbles_hs'},
   {href:'miner.html',      name:'MINER',      tag:'Idle riches',      emoji:'⛏️', color:'#8B4513', diff:1, score:''},
-  {href:'runner.html',     name:'RUNNER',     tag:'Endless dash',     emoji:'🏃', color:'#F7931A', diff:2, score:''}
+  {href:'runner.html',     name:'RUNNER',     tag:'Endless dash',     emoji:'🏃', color:'#F7931A', diff:2, score:''},
+  {href:'icecold.html',    name:'Ice Cold ₿', tag:'Two-lever physics',emoji:'🍺', color:'#F7931A', diff:3, score:'btc_icecold_hi'}
 ];
 
 /* ─── 1. CINEMATIC BOOT SEQUENCE ─────────────────────────────────────────── */
@@ -365,7 +367,7 @@ var GAMES = [
   /* ── Terminal typing sequence ──────────────────────────────────────────── */
   var lines = [
     {t:'> INITIALIZING BITCOIN DIMENSION', ok:true,  wait:350},
-    {t:'> LOADING 14 GAME MODULES',        ok:true,  wait:320},
+    {t:'> LOADING 15 GAME MODULES',        ok:true,  wait:320},
     {t:'> CONNECTING TO BLOCKCHAIN',       ok:true,  wait:340},
     {t:'> CALIBRATING ARCADE MATRIX',      ok:true,  wait:280},
     {t:'> <span class="hl">WELCOME, HODLER.</span>', ok:false, wait:480}
@@ -459,7 +461,7 @@ var GAMES = [
 (function(){
   var track = document.getElementById('ticker-track');
   if(!track) return;
-  var bits = ['₿ BITCOIN ARCADE','14 LEGENDARY GAMES','0 PAY-TO-WIN','100% FREE',
+  var bits = ['₿ BITCOIN ARCADE','15 LEGENDARY GAMES','0 PAY-TO-WIN','100% FREE',
               'PURE SKILL','HODL YOUR HIGHSCORE','SATOSHI APPROVED'];
   var chunk = bits.join('<span class="dot">&#9670;</span>');
   track.innerHTML = chunk + '<span class="dot">&#9670;</span>' + chunk + '<span class="dot">&#9670;</span>';
