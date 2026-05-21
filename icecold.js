@@ -101,6 +101,20 @@ const HEX_DY     = HEX_R * 1.5;
 const GRID_OFFX  = (W - (GRID_COLS - 1) * HEX_DX - HEX_DX/2) / 2;
 const HOLE_R     = HEX_R * 0.72;             // pocket radius (catch radius)
 
+/* 10 fixed bitcoin positions: #1 low (easy) → #10 near top (hard) */
+const BITCOIN_PATH = [
+  {col:4, row:10},
+  {col:6, row:9},
+  {col:3, row:8},
+  {col:7, row:7},
+  {col:5, row:6},
+  {col:2, row:5},
+  {col:8, row:4},
+  {col:4, row:3},
+  {col:6, row:2},
+  {col:5, row:1},
+];
+
 /* Bar travel: covers most of the grid so player can reach any row.
    Top travel = just below grid top + ball clearance.
    Bottom rest = near canvas bottom. */
@@ -137,8 +151,8 @@ let score       = 0;
 let hiScore     = 0;
 let combo       = 1;
 let comboTimer  = 0;          // ms
-let needToHit   = 3;          // pockets remaining this block
-let hitThisBlock= 0;
+let bitcoinIdx  = 0;          // which of the 10 bitcoins we're targeting (0-9)
+let claimedPositions = [];    // collected positions → become danger holes
 let blockTime   = 90;         // seconds remaining
 let blockTimeTotal = 90;
 let invincibleMs= 0;          // mercy after life lost
@@ -344,32 +358,23 @@ bindZone(tzRight, tzhRight, false);
 function resetRun(){
   block = 1; lives = 3; score = 0;
   combo = 1; comboTimer = 0;
-  hitThisBlock = 0;
-  needToHit = blockNeedToHit(block);
+  bitcoinIdx = 0;
+  claimedPositions = [];
   blockTimeTotal = blockTimeForBlock(block);
   blockTime = blockTimeTotal;
   particles = [];
   pocketedFlashes = [];
   activeHoles = [];
-  pickNewTarget();
+  setActiveHoles();
   resetBall(true);
   setLvlBanner(`BLOCK ${block}`, blockSubtitleForBlock(block), false);
   updateHUD();
 }
-function blockNeedToHit(b){ return Math.min(10, b + 2); }
 function blockTimeForBlock(b){
-  if(b === 1) return 90;
-  if(b === 2) return 75;
-  if(b === 3) return 65;
-  return Math.max(30, 60 - (b - 3) * 5);
-}
-function simultaneousTargets(b){
-  if(b <= 2) return 1;
-  if(b <= 4) return 2;
-  return Math.min(4, 3 + Math.floor((b - 5) / 3));
-}
-function dangerHoleCount(b){
-  return Math.min(12, b);
+  if(b === 1) return 120;
+  if(b === 2) return 100;
+  if(b === 3) return 85;
+  return Math.max(50, 80 - (b - 3) * 6);
 }
 function blockGravity(b){
   return Math.min(1900, GRAVITY * (1 + (b - 1) * 0.06));
@@ -378,12 +383,10 @@ function blockLeverSpeed(b){
   return Math.max(180, LEVER_SPD - (b - 1) * 14);
 }
 function blockSubtitleForBlock(b){
-  if(b === 1) return "Find the wallet. Don't drop the coin.";
-  if(b === 2) return "Wallets hide higher. Stay steady.";
-  if(b === 3) return "Two wallets. Beware the danger holes — ✕ means death.";
-  if(b === 4) return "Fakes flash and vanish. Danger holes are permanent.";
-  if(b === 5) return `${dangerHoleCount(b)} danger holes. Controls getting heavier.`;
-  return `Block ${b}. ${dangerHoleCount(b)} death traps. ${simultaneousTargets(b)} wallets. NGMI?`;
+  if(b === 1) return "Collect all 10 ₿ from bottom to top. Claimed holes become traps!";
+  if(b === 2) return "Faster gravity. Every claimed hole will kill you. Stay focused.";
+  if(b === 3) return "10 bitcoins, 9 death traps by the end. Controls heavier.";
+  return `Block ${b}. 10 ₿ to collect. Claimed holes are permanent death. NGMI?`;
 }
 
 function resetBall(fullReset){
@@ -401,54 +404,15 @@ function resetBall(fullReset){
 }
 
 /* ── TARGET / HOLE HELPERS ─────────────────────────────────────────────── */
-function targetRowRange(){
-  if(block === 1) return {minRow:3, maxRow:8};
-  if(block === 2) return {minRow:1, maxRow:GRID_ROWS-1};
-  return {minRow:0, maxRow:GRID_ROWS-1};
-}
-function addMissingTargets(){
-  const {minRow, maxRow} = targetRowRange();
-  const want = simultaneousTargets(block);
-  const real = activeHoles.filter(h => !h.fake && !h.danger).length;
-  let toAdd = want - real, tries = 0;
-  while(toAdd > 0 && tries++ < 300){
-    const c = (Math.random() * GRID_COLS) | 0;
-    const r = minRow + ((Math.random() * (maxRow - minRow + 1)) | 0);
-    if(activeHoles.some(h => h.col === c && h.row === r)) continue;
-    activeHoles.push({col:c, row:r, fake:false, danger:false, bornMs:0});
-    toAdd--;
-  }
-}
-function spawnDangerHoles(){
-  const want = dangerHoleCount(block);
-  const have = activeHoles.filter(h => h.danger).length;
-  let toAdd = want - have, tries = 0;
-  while(toAdd > 0 && tries++ < 300){
-    const c = (Math.random() * GRID_COLS) | 0;
-    const r = (Math.random() * GRID_ROWS) | 0;
-    if(activeHoles.some(h => h.col === c && h.row === r)) continue;
-    activeHoles.push({col:c, row:r, fake:false, danger:true, bornMs:0});
-    toAdd--;
-  }
-}
-function spawnFake(){
-  let tries = 0;
-  while(tries++ < 50){
-    const c = (Math.random() * GRID_COLS) | 0;
-    const r = (Math.random() * GRID_ROWS) | 0;
-    if(activeHoles.some(h => h.col === c && h.row === r)) continue;
-    const life = Math.max(700, 1600 - block * 70) + Math.random() * 700;
-    activeHoles.push({col:c, row:r, fake:true, danger:false, bornMs:0, lifeMs:life});
-    break;
-  }
-}
-function pickNewTarget(){
+function setActiveHoles(){
   activeHoles = [];
-  addMissingTargets();
-  spawnDangerHoles();
-  /* fakes from block 1, growing chance */
-  if(Math.random() < Math.min(0.90, 0.15 + block * 0.09)){
-    spawnFake();
+  if(bitcoinIdx < BITCOIN_PATH.length){
+    const pos = BITCOIN_PATH[bitcoinIdx];
+    activeHoles.push({col:pos.col, row:pos.row, fake:false, danger:false, bornMs:0});
+  }
+  /* previously claimed bitcoins become permanent danger holes */
+  for(const p of claimedPositions){
+    activeHoles.push({col:p.col, row:p.row, fake:false, danger:true, bornMs:0});
   }
 }
 
@@ -486,38 +450,35 @@ function gameOver(){
 }
 
 function onPocket(hole){
-  const remaining = Math.max(0, blockTime);
-  const base = 1000;
-  const timeBonus = Math.floor(remaining * 100);
+  const base = 200 + bitcoinIdx * 200;   // ₿#1=200, ₿#10=2000
   const mult = combo;
-  const gained = (base + timeBonus) * mult;
+  const gained = base * mult;
   score += gained;
-  hitThisBlock++;
-  /* combo */
   combo = Math.min(8, combo + 1);
   comboTimer = COMBO_WIN_MS;
   pocketedFlashes.push({col:hole.col, row:hole.row, ms:0, maxMs:420});
   spawnPocketBurst(hole);
   SFX.pocket();
   if(combo >= 3) SFX.combo();
-  setStatus(`+${gained.toLocaleString()} sats · ×${mult} combo`, 's-gold');
+  claimedPositions.push({col:hole.col, row:hole.row});
+  bitcoinIdx++;
+  const left = BITCOIN_PATH.length - bitcoinIdx;
+  setStatus(
+    left > 0
+      ? `₿ #${bitcoinIdx} claimed! +${gained.toLocaleString()} sats · ${left} left`
+      : `ALL 10 ₿ CLAIMED! +${gained.toLocaleString()} sats 🎉`,
+    's-gold'
+  );
   pocketFreezeMs = POCKET_FREEZE_MS;
   state = STATE.POCKET;
   hudFlashTimer = 320;
-  if(hitThisBlock >= needToHit){
+  if(bitcoinIdx >= BITCOIN_PATH.length){
     setTimeout(levelClear, POCKET_FREEZE_MS + 60);
   } else {
     setTimeout(() => {
       if(state === STATE.POCKET){
-        /* remove ONLY the pocketed hole — keep the others alive */
-        activeHoles = activeHoles.filter(h => !(h.col === hole.col && h.row === hole.row));
-        /* fill back up to the simultaneous-target count */
-        addMissingTargets();
-        /* maybe add a fresh fake */
-        if(!activeHoles.some(h => h.fake) && Math.random() < Math.min(0.75, 0.15 + block * 0.07)){
-          spawnFake();
-        }
-        resetBall(true);   /* reset bar to bottom after each pocket */
+        setActiveHoles();
+        resetBall(true);
         invincibleMs = 350;
         state = STATE.PLAYING;
       }
@@ -529,19 +490,18 @@ function onPocket(hole){
 function levelClear(){
   state = STATE.LEVEL_CLEAR;
   SFX.level();
-  /* time bonus for finishing block */
   const tBonus = Math.floor(Math.max(0, blockTime) * 200);
   score += tBonus;
   block++;
-  hitThisBlock = 0;
-  needToHit = blockNeedToHit(block);
+  bitcoinIdx = 0;
+  claimedPositions = [];
   blockTimeTotal = blockTimeForBlock(block);
   blockTime = blockTimeTotal;
-  setLvlBanner('BLOCK CONFIRMED ✓', `+${tBonus.toLocaleString()} sats · Block ${block} loading`, true);
+  setLvlBanner('ALL 10 ₿ CONFIRMED ✓', `+${tBonus.toLocaleString()} sats · Block ${block} incoming`, true);
   setTimeout(() => {
     setLvlBanner(`BLOCK ${block}`, blockSubtitleForBlock(block), false);
     setTimeout(() => {
-      pickNewTarget();
+      setActiveHoles();
       resetBall(true);
       state = STATE.PLAYING;
       updateHUD();
@@ -591,9 +551,9 @@ function updateHUD(){
   hCombo.classList.toggle('y', combo > 1);
   hHi.textContent = hiScore.toLocaleString();
   introHi.textContent = 'Best: ' + hiScore.toLocaleString() + ' sats';
-  const pct = Math.min(100, (hitThisBlock / needToHit) * 100);
+  const pct = Math.min(100, (bitcoinIdx / BITCOIN_PATH.length) * 100);
   progFill.style.width = pct + '%';
-  progVal.textContent = hitThisBlock + ' / ' + needToHit;
+  progVal.textContent = bitcoinIdx + ' / ' + BITCOIN_PATH.length;
   /* time colour */
   if(blockTime < 10){ hTime.classList.remove('g'); hTime.classList.add('r'); }
   else { hTime.classList.add('g'); hTime.classList.remove('r'); }
@@ -777,7 +737,11 @@ function drawBoard(t){
       ctx.fillStyle = `rgba(255,235,160,${0.7 + pulse * 0.3})`;
       ctx.font = '900 ' + Math.floor(HEX_R * 1.1) + 'px Orbitron, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText('₿', p.x, p.y + 1);
+      ctx.fillText('₿', p.x, p.y - HEX_R * 0.08);
+      /* number badge */
+      ctx.font = '700 ' + Math.floor(HEX_R * 0.42) + 'px Orbitron, sans-serif';
+      ctx.fillStyle = `rgba(255,255,255,${0.8 + pulse * 0.2})`;
+      ctx.fillText('#' + (bitcoinIdx + 1), p.x, p.y + HEX_R * 0.76);
       ctx.restore();
     }
   }
@@ -1075,17 +1039,6 @@ function updateParticles(dt){
     p.life -= p.decay * dt;
     if(p.life <= 0) particles.splice(i, 1);
   }
-  /* trim active fake holes */
-  for(let i = activeHoles.length - 1; i >= 0; i--){
-    const h = activeHoles[i];
-    h.bornMs += dt * 1000;
-    if(h.fake && h.bornMs > h.lifeMs){
-      activeHoles.splice(i, 1);
-      if(Math.random() < Math.min(0.80, 0.15 + block * 0.07)){
-        spawnFake();
-      }
-    }
-  }
   /* pocket flashes */
   for(let i = pocketedFlashes.length - 1; i >= 0; i--){
     pocketedFlashes[i].ms += dt * 1000;
@@ -1135,7 +1088,7 @@ function updateTimers(dt){
   if(statusTimer > 0){
     statusTimer -= dt * 1000;
     if(statusTimer <= 0){
-      setStatus('🎮 Steady the bar. Find the glowing wallet.', 's-ok');
+      setStatus(`🎮 Steady the bar. Target ₿ #${bitcoinIdx + 1} of 10 — aim for the glow!`, 's-ok');
       statusTimer = -1;
     }
   }
