@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Ice Cold Bitcoin – Atlas Bitcoin Arcade</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <meta name="description" content="Ice Cold Bitcoin: a Bitcoin-themed Ice Cold Beer remix. Tilt the blockchain bar, roll the ₿ coin into glowing wallet pockets, stack sats.">
+  <meta property="og:title" content="Ice Cold Bitcoin – Atlas Bitcoin Arcade">
+  <meta property="og:description" content="Two-lever physics arcade. Roll the Bitcoin coin into wallet pockets without dropping it. Pure skill.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://soufianekh.space/icecold.html">
+  <meta property="og:image" content="https://soufianekh.space/logo.svg">
+  <style>
+    /* ── ICE COLD BITCOIN — game-specific tweaks ── */
+    #gc{background:#05080f;cursor:none;}
+    /* mobile touch zones (visible) */
+    #tzWrap{
+      width:100%;max-width:800px;display:none;
+      grid-template-columns:1fr 1fr;gap:10px;margin-top:4px;
+    }
+    @media(max-width:767px){
+      #tzWrap{display:grid;}
+    }
+    .tz{
+      position:relative;height:120px;border-radius:14px;
+      background:linear-gradient(180deg,rgba(247,147,26,0.05),rgba(247,147,26,0.12));
+      border:2px solid rgba(247,147,26,0.35);
+      touch-action:none;user-select:none;
+      display:flex;align-items:center;justify-content:center;
+      overflow:hidden;
+    }
+    .tz-lbl{
+      font-family:'Orbitron',monospace;font-size:.82rem;
+      color:var(--btc);letter-spacing:.12em;opacity:.85;
+      text-shadow:0 0 8px var(--btc-glow);pointer-events:none;
+      z-index:2;text-align:center;line-height:1.4;
+    }
+    .tz-handle{
+      position:absolute;left:8px;right:8px;height:18px;
+      background:linear-gradient(180deg,#FFD700,#F7931A);
+      border-radius:6px;pointer-events:none;
+      box-shadow:0 0 14px rgba(247,147,26,.7),inset 0 1px 0 rgba(255,255,255,.55);
+      transform:translateY(0);transition:transform .04s linear;
+    }
+    .tz-rail{
+      position:absolute;left:50%;top:8px;bottom:8px;width:2px;
+      background:rgba(247,147,26,.18);transform:translateX(-50%);
+    }
+    /* idle ticker */
+    #idleTicker{
+      width:100%;max-width:800px;
+      background:var(--panel);border:1px solid var(--border);border-radius:10px;
+      padding:7px 14px;font-size:.78rem;color:#9ca3af;
+      font-family:'Rajdhani',sans-serif;letter-spacing:.04em;
+      text-align:center;backdrop-filter:blur(14px);
+      min-height:30px;
+    }
+    #idleTicker b{color:var(--btc);font-family:'Orbitron',monospace;font-size:.72rem;letter-spacing:.1em;}
+    /* level banner specialization */
+    .lvl-num.confirmed{color:var(--green);text-shadow:0 0 50px rgba(0,255,136,.8),0 0 100px rgba(0,255,136,.4);}
+    .lvl-sub.confirmed{color:var(--green);}
+    /* game-over flavour */
+    .gopanel.show{display:block;animation:goFade .4s ease;}
+    @keyframes goFade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+    /* keyboard tip strip */
+    .key-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:4px;}
+    .key{
+      font-family:'Orbitron',monospace;font-size:.65rem;color:#9ca3af;
+      background:rgba(8,8,24,.65);border:1px solid var(--border);
+      border-radius:6px;padding:4px 9px;letter-spacing:.06em;
+    }
+    .key b{color:var(--btc);font-weight:700;}
+    /* lives row */
+    .lives-row{display:inline-flex;gap:4px;font-size:1rem;}
+    .life-coin{
+      display:inline-block;color:var(--gold);
+      text-shadow:0 0 8px rgba(255,215,0,.5);
+      animation:lifeSpin 4s linear infinite;
+    }
+    @keyframes lifeSpin{0%{transform:rotateY(0);}100%{transform:rotateY(360deg);}}
+  </style>
+</head>
+<script src="auth.js"></script>
+<body>
+  <div class="scanlines"></div>
+
+  <nav style="position:relative;z-index:10;width:100%;max-width:900px;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(247,147,26,0.2);margin:0 auto 4px;" aria-label="Primary navigation">
+    <a href="index.html" style="font-family:'Orbitron',monospace;font-size:1rem;color:#F7931A;text-decoration:none;letter-spacing:.06em;text-shadow:0 0 12px rgba(247,147,26,.55);">₿ ATLAS ARCADE</a>
+    <div class="nav-links" style="display:flex;gap:12px;flex-wrap:wrap;">
+      <a href="pacman.html" style="color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Pac-Man</a>
+      <a href="snake.html" style="color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Snake</a>
+      <a href="pong.html" style="color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Pong</a>
+      <a href="invaders.html" style="color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Invaders</a>
+      <a href="flappy.html" style="color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Flappy</a>
+      <a href="tetris.html" style="color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Tetris</a>
+      <a href="hashbreaker.html" style="color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Hashbreaker</a>
+      <a href="bubbles.html" style="color:#6b7280;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Bubbles</a>
+      <a href="icecold.html" style="color:#F7931A;text-decoration:none;font-size:.72rem;font-family:'Orbitron',monospace;letter-spacing:.06em;">Ice Cold ₿</a>
+    </div>
+  </nav>
+
+  <canvas id="bgCanvas"></canvas>
+
+  <!-- INTRO OVERLAY -->
+  <div id="intro" role="dialog" aria-modal="true" aria-labelledby="introTitle" aria-describedby="introDesc">
+    <div class="intro-logo">🍺</div>
+    <div class="intro-title" id="introTitle">ICE COLD ₿</div>
+    <div class="intro-sub" id="introDesc">
+      Tilt the <b style="color:var(--btc)">BLOCKCHAIN BAR</b> with two independent levers.
+      Roll the ₿ coin into the <b style="color:var(--gold)">glowing wallet</b> — without dropping it.
+      <br><br>Brutal physics. Pure skill. Stack sats.
+    </div>
+    <div class="key-row">
+      <span class="key"><b>Q</b> / <b>A</b> &nbsp;left lever up / down</span>
+      <span class="key"><b>P</b> / <b>L</b> &nbsp;right lever up / down</span>
+      <span class="key"><b>←</b> / <b>→</b> &nbsp;tilt</span>
+    </div>
+    <div class="intro-hiscore" id="introHi">Best: 0 sats</div>
+    <div class="intro-start">▶ TAP OR PRESS ANY KEY TO START ◀</div>
+  </div>
+
+  <!-- LEVEL BANNER -->
+  <div id="lvlBanner">
+    <div class="lvl-num" id="lvlNum">BLOCK 1</div>
+    <div class="lvl-sub" id="lvlSub">Find the wallet. Don't drop the coin.</div>
+  </div>
+
+  <div class="gw">
+    <div class="hdr">
+      <h1>🍺 ICE COLD ₿</h1>
+      <p>Two levers · One coin · A grid of wallets · Don't. Drop. The. ₿.</p>
+    </div>
+
+    <div class="cwrap" id="cwrap">
+      <canvas
+        id="gc"
+        width="600"
+        height="700"
+        aria-label="Ice Cold Bitcoin: tilt the blockchain bar with two independent levers to roll the Bitcoin coin into glowing wallet pockets without dropping it."
+      ></canvas>
+      <div id="pauseOverlay">
+        <div class="pause-title">⏸ PAUSED</div>
+        <div class="pause-sub">Press ⏸ or [P] to resume</div>
+      </div>
+    </div>
+
+    <div class="hud">
+      <div class="hcard"><div class="hlbl">Sats</div><div class="hval" id="hScore">0</div></div>
+      <div class="hcard"><div class="hlbl">Lives</div><div class="hval y" id="hLives"><span class="lives-row">₿₿₿</span></div></div>
+      <div class="hcard"><div class="hlbl">Block</div><div class="hval c" id="hBlock">1</div></div>
+      <div class="hcard"><div class="hlbl">Time</div><div class="hval g" id="hTime">90</div></div>
+      <div class="hcard"><div class="hlbl">Combo</div><div class="hval y" id="hCombo">×1</div></div>
+      <div class="hcard"><div class="hlbl">Hi-Score</div><div class="hval y" id="hHi">0</div></div>
+    </div>
+
+    <div class="sbar-wrap">
+      <div class="sbar-row">
+        <span>⛓ Block Progress</span>
+        <span id="progVal">0 / 3</span>
+      </div>
+      <div class="sbar-track"><div class="sbar-fill" id="progFill"></div></div>
+    </div>
+
+    <div id="idleTicker"><b>SATOSHI SAYS:</b> Loading the blockchain…</div>
+
+    <div id="tzWrap">
+      <div class="tz" id="tzLeft">
+        <div class="tz-rail"></div>
+        <div class="tz-handle" id="tzhLeft"></div>
+        <div class="tz-lbl">LEFT<br>▲ ▼</div>
+      </div>
+      <div class="tz" id="tzRight">
+        <div class="tz-rail"></div>
+        <div class="tz-handle" id="tzhRight"></div>
+        <div class="tz-lbl">RIGHT<br>▲ ▼</div>
+      </div>
+    </div>
+
+    <div id="gstat" class="gstatus s-ok" role="status" aria-live="polite">
+      🎮 Steady the bar. Find the glowing wallet.
+    </div>
+
+    <div id="gop" class="gopanel">
+      <div class="poo">💀</div>
+      <div class="gotitle">REKT — NGMI</div>
+      <div class="gosub">Final Stack</div>
+      <div class="goscore" id="gofinal">0 sats</div>
+      <div id="goRecap" style="color:#9ca3af;font-size:.85rem;margin-bottom:8px;"></div>
+      <button class="rbtn" id="playAgain">⚡ TRY AGAIN</button>
+    </div>
+
+    <div class="ctrl">
+      <div class="ctrl-left">
+        <button class="pause-btn" id="pauseBtn">⏸ PAUSE</button>
+        <button class="snd-btn" id="sndBtn">🔊 SFX</button>
+        <p class="ctrl-hint">Q/A = left · P/L = right · ←/→ = tilt · [P] pause</p>
+      </div>
+    </div>
+
+    <div class="credits">Made for Atlas Bitcoin Arcade · Inspired by Ice Cold Beer (Taito, 1983)</div>
+  </div>
+
+  <script src="icecold.js"></script>
+</body>
+</html>
