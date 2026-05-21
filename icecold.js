@@ -368,8 +368,7 @@ function simultaneousTargets(b){
   return Math.min(4, 3 + Math.floor((b - 5) / 3));
 }
 function dangerHoleCount(b){
-  if(b < 3) return 0;
-  return Math.min(10, b - 2);
+  return Math.min(12, b);
 }
 function blockGravity(b){
   return Math.min(1900, GRAVITY * (1 + (b - 1) * 0.06));
@@ -431,7 +430,6 @@ function spawnDangerHoles(){
   }
 }
 function spawnFake(){
-  if(block < 3) return;
   let tries = 0;
   while(tries++ < 50){
     const c = (Math.random() * GRID_COLS) | 0;
@@ -446,8 +444,8 @@ function pickNewTarget(){
   activeHoles = [];
   addMissingTargets();
   spawnDangerHoles();
-  /* fakes from block 3, growing chance */
-  if(block >= 3 && Math.random() < Math.min(0.88, 0.3 + block * 0.09)){
+  /* fakes from block 1, growing chance */
+  if(Math.random() < Math.min(0.90, 0.15 + block * 0.09)){
     spawnFake();
   }
 }
@@ -514,10 +512,10 @@ function onPocket(hole){
         /* fill back up to the simultaneous-target count */
         addMissingTargets();
         /* maybe add a fresh fake */
-        if(block >= 3 && !activeHoles.some(h => h.fake) && Math.random() < Math.min(0.75, 0.25 + block * 0.07)){
+        if(!activeHoles.some(h => h.fake) && Math.random() < Math.min(0.75, 0.15 + block * 0.07)){
           spawnFake();
         }
-        resetBall(false);
+        resetBall(true);   /* reset bar to bottom after each pocket */
         invincibleMs = 350;
         state = STATE.PLAYING;
       }
@@ -1047,7 +1045,7 @@ function updateParticles(dt){
     h.bornMs += dt * 1000;
     if(h.fake && h.bornMs > h.lifeMs){
       activeHoles.splice(i, 1);
-      if(block >= 3 && Math.random() < Math.min(0.80, 0.3 + block * 0.07)){
+      if(Math.random() < Math.min(0.80, 0.15 + block * 0.07)){
         spawnFake();
       }
     }
