@@ -115,6 +115,22 @@ const BITCOIN_PATH = [
   {col:5, row:1},
 ];
 
+/* Fixed danger holes — sparse obstacles on the pegboard (none overlap bitcoin path).
+   These create the navigable maze; the rest of the board is solid/safe. */
+const FIXED_DANGERS = [
+  {col:1, row:10}, {col:7, row:10},           // flanking ₿#1
+  {col:3, row:9},  {col:8, row:9},            // flanking ₿#2
+  {col:6, row:8},  {col:9, row:8},            // flanking ₿#3
+  {col:2, row:7},  {col:9, row:7},            // flanking ₿#4
+  {col:1, row:6},  {col:8, row:6},            // flanking ₿#5
+  {col:5, row:5},  {col:9, row:5},            // flanking ₿#6
+  {col:0, row:4},  {col:1, row:4}, {col:5, row:4}, // flanking ₿#7
+  {col:1, row:3},  {col:7, row:3},            // flanking ₿#8
+  {col:2, row:2},  {col:9, row:2},            // flanking ₿#9
+  {col:1, row:1},  {col:8, row:1},            // flanking ₿#10
+  {col:2, row:0},  {col:5, row:0}, {col:8, row:0}, // top-row obstacles
+];
+
 /* Bar travel: covers most of the grid so player can reach any row.
    Top travel = just below grid top + ball clearance.
    Bottom rest = near canvas bottom. */
@@ -405,7 +421,17 @@ function resetBall(fullReset){
 
 /* ── TARGET / HOLE HELPERS ─────────────────────────────────────────────── */
 function setActiveHoles(){
-  activeHoles = []; /* rendering and physics now use direct grid scan */
+  activeHoles = [];
+  if(bitcoinIdx < BITCOIN_PATH.length){
+    const p = BITCOIN_PATH[bitcoinIdx];
+    activeHoles.push({col:p.col, row:p.row, danger:false, claimed:false});
+  }
+  for(const d of FIXED_DANGERS){
+    activeHoles.push({col:d.col, row:d.row, danger:true, claimed:false});
+  }
+  for(const c of claimedPositions){
+    activeHoles.push({col:c.col, row:c.row, danger:true, claimed:true});
+  }
 }
 
 function loseLife(msg){
@@ -642,41 +668,46 @@ function drawBoard(t){
   ctx.fillStyle = 'rgba(247,147,26,0.012)';
   for(let y=0; y<H; y+=3){ ctx.fillRect(0, y, W, 1); }
 
-  /* hex grid — every hole rendered: target=gold, claimed=red ✕, rest=dark danger */
+  /* ── Pegboard: solid amber cells with SPARSE holes punched through ── */
   const _target = bitcoinIdx < BITCOIN_PATH.length ? BITCOIN_PATH[bitcoinIdx] : null;
-  ctx.lineWidth = 1;
+
+  /* Build lookup sets for O(1) checks inside the render loop */
+  const _claimedKey = new Set(claimedPositions.map(c => c.col + ',' + c.row));
+  const _dangerKey  = new Set(FIXED_DANGERS.map(d => d.col + ',' + d.row));
+
   for(let row=0; row<GRID_ROWS; row++){
     for(let col=0; col<GRID_COLS; col++){
-      const p = holePos(col, row);
+      const p    = holePos(col, row);
+      const key  = col + ',' + row;
       const pulse = 0.5 + 0.5 * Math.sin(t * 0.004 + col + row);
 
       const isTarget  = _target && col === _target.col && row === _target.row;
-      const isClaimed = claimedPositions.some(cp => cp.col === col && cp.row === row);
+      const isClaimed = _claimedKey.has(key);
+      const isDanger  = _dangerKey.has(key);
+      const isHole    = isTarget || isClaimed || isDanger;
 
-      /* ── Pegboard cell fill — gives each hex a warm "board" colour ── */
-      ctx.fillStyle = isTarget
-        ? 'rgba(120,60,0,0.70)'         // neutral warm so gold overlay dominates
-        : isClaimed
-          ? 'rgba(90,0,10,0.80)'        // dark crimson board around claimed holes
-          : 'rgba(55,22,2,0.88)';       // warm amber-brown — classic pegboard look
+      /* ── Cell background (amber for solid, crimson tint for claimed) ── */
+      ctx.fillStyle = isClaimed ? 'rgba(80,0,8,0.92)' : 'rgba(58,24,2,0.92)';
       drawHexHole(p.x, p.y, HEX_R * 0.95);
       ctx.fill();
 
       /* ── Hex outline ── */
       ctx.strokeStyle = isTarget
-        ? `rgba(255,215,0,${0.65 + pulse * 0.3})`
+        ? `rgba(255,215,0,${0.70 + pulse * 0.28})`
         : isClaimed
-          ? `rgba(220,0,50,${0.50 + pulse * 0.35})`
-          : 'rgba(247,147,26,0.30)';
+          ? `rgba(220,0,50,${0.55 + pulse * 0.35})`
+          : 'rgba(247,147,26,0.28)';
       ctx.lineWidth = isTarget ? 2 : 1;
       drawHexHole(p.x, p.y, HEX_R * 0.95);
       ctx.stroke();
 
-      /* ── Black pit — visibly darker than the amber board ── */
-      ctx.beginPath();
-      ctx.fillStyle = 'rgba(0,0,0,0.90)';
-      ctx.arc(p.x, p.y, HOLE_R * 0.84, 0, Math.PI*2);
-      ctx.fill();
+      /* ── Black pit only where there's an actual hole ── */
+      if(isHole){
+        ctx.beginPath();
+        ctx.fillStyle = 'rgba(0,0,0,0.92)';
+        ctx.arc(p.x, p.y, HOLE_R * 0.84, 0, Math.PI*2);
+        ctx.fill();
+      }
 
       /* ── Type-specific overlay ── */
       if(isTarget){
@@ -703,7 +734,7 @@ function drawBoard(t){
       } else if(isClaimed){
         ctx.save();
         ctx.shadowColor = 'rgba(200,0,40,0.85)';
-        ctx.shadowBlur = 12 + pulse * 8;
+        ctx.shadowBlur = 10 + pulse * 8;
         const dg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, HOLE_R);
         dg.addColorStop(0,   'rgba(0,0,0,0.95)');
         dg.addColorStop(0.5, 'rgba(130,0,30,0.70)');
@@ -716,8 +747,19 @@ function drawBoard(t){
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText('✕', p.x, p.y + 1);
         ctx.restore();
+      } else if(isDanger){
+        /* fixed danger hole: dark abyss with subtle red rim — clearly open */
+        ctx.save();
+        ctx.shadowColor = 'rgba(160,0,20,0.6)';
+        ctx.shadowBlur = 8 + pulse * 6;
+        const dg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, HOLE_R);
+        dg.addColorStop(0,   'rgba(0,0,0,0.95)');
+        dg.addColorStop(0.6, 'rgba(80,0,12,0.55)');
+        dg.addColorStop(1,   'rgba(150,0,20,0.20)');
+        ctx.fillStyle = dg;
+        ctx.beginPath(); ctx.arc(p.x, p.y, HOLE_R, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
       }
-      /* regular danger holes: black pit on amber board is enough visual signal */
     }
   }
 
@@ -989,22 +1031,15 @@ function updatePhysics(dt){
     return;
   }
 
-  /* ── Hole detection — every hole is lethal except the lit target ── */
+  /* ── Hole detection — only sparse active holes, not the full grid ── */
   const catchR = HOLE_R * 0.9;
-  const _tgt = bitcoinIdx < BITCOIN_PATH.length ? BITCOIN_PATH[bitcoinIdx] : null;
-  outer:
-  for(let row = 0; row < GRID_ROWS; row++){
-    for(let col = 0; col < GRID_COLS; col++){
-      const p  = holePos(col, row);
-      const dx = ball.x - p.x, dy = ball.y - p.y;
-      if(dx*dx + dy*dy < catchR * catchR){
-        if(_tgt && col === _tgt.col && row === _tgt.row){
-          onPocket({col, row});
-        } else {
-          hitDangerHole();
-        }
-        break outer;
-      }
+  for(const h of activeHoles){
+    const p  = holePos(h.col, h.row);
+    const dx = ball.x - p.x, dy = ball.y - p.y;
+    if(dx*dx + dy*dy < catchR * catchR){
+      if(!h.danger){ onPocket({col:h.col, row:h.row}); }
+      else { hitDangerHole(); }
+      return;
     }
   }
 }
