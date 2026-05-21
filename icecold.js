@@ -405,15 +405,7 @@ function resetBall(fullReset){
 
 /* ── TARGET / HOLE HELPERS ─────────────────────────────────────────────── */
 function setActiveHoles(){
-  activeHoles = [];
-  if(bitcoinIdx < BITCOIN_PATH.length){
-    const pos = BITCOIN_PATH[bitcoinIdx];
-    activeHoles.push({col:pos.col, row:pos.row, fake:false, danger:false, bornMs:0});
-  }
-  /* previously claimed bitcoins become permanent danger holes */
-  for(const p of claimedPositions){
-    activeHoles.push({col:p.col, row:p.row, fake:false, danger:true, bornMs:0});
-  }
+  activeHoles = []; /* rendering and physics now use direct grid scan */
 }
 
 function loseLife(msg){
@@ -650,99 +642,76 @@ function drawBoard(t){
   ctx.fillStyle = 'rgba(247,147,26,0.012)';
   for(let y=0; y<H; y+=3){ ctx.fillRect(0, y, W, 1); }
 
-  /* hex grid backdrop */
+  /* hex grid — every hole rendered: target=gold, claimed=red ✕, rest=dark danger */
+  const _target = bitcoinIdx < BITCOIN_PATH.length ? BITCOIN_PATH[bitcoinIdx] : null;
   ctx.lineWidth = 1;
   for(let row=0; row<GRID_ROWS; row++){
     for(let col=0; col<GRID_COLS; col++){
       const p = holePos(col, row);
-      /* closed hole — hex outline */
-      ctx.strokeStyle = 'rgba(247,147,26,0.10)';
-      drawHexHole(p.x, p.y, HEX_R * 0.95);
-      ctx.stroke();
-      /* inner dark cavity */
-      ctx.beginPath();
-      ctx.fillStyle = 'rgba(0,0,0,0.55)';
-      ctx.arc(p.x, p.y, HOLE_R * 0.85, 0, Math.PI*2);
-      ctx.fill();
-      /* subtle hex tint */
-      ctx.fillStyle = 'rgba(247,147,26,0.04)';
-      drawHexHole(p.x, p.y, HEX_R * 0.95);
-      ctx.fill();
-    }
-  }
+      const pulse = 0.5 + 0.5 * Math.sin(t * 0.004 + col + row);
 
-  /* active targets — glowing wallets */
-  for(const h of activeHoles){
-    const p = holePos(h.col, h.row);
-    const pulse = 0.5 + 0.5 * Math.sin(t * 0.004 + h.col + h.row);
-    if(h.danger){
-      /* danger hole — permanent death trap, dark crimson abyss */
-      ctx.save();
-      ctx.shadowColor = 'rgba(200,0,40,0.95)';
-      ctx.shadowBlur = 22 + pulse * 14;
-      const dg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, HOLE_R);
-      dg.addColorStop(0,   'rgba(0,0,0,0.98)');
-      dg.addColorStop(0.55,'rgba(100,0,25,0.80)');
-      dg.addColorStop(1,   'rgba(200,0,50,0.35)');
-      ctx.fillStyle = dg;
-      ctx.beginPath(); ctx.arc(p.x, p.y, HOLE_R, 0, Math.PI*2); ctx.fill();
-      ctx.shadowBlur = 0;
-      ctx.strokeStyle = `rgba(240,0,60,${0.55 + pulse * 0.4})`;
-      ctx.lineWidth = 2;
+      const isTarget  = _target && col === _target.col && row === _target.row;
+      const isClaimed = claimedPositions.some(cp => cp.col === col && cp.row === row);
+
+      /* hex outline for all holes */
+      ctx.strokeStyle = isTarget
+        ? `rgba(255,215,0,${0.65 + pulse * 0.3})`
+        : isClaimed
+          ? `rgba(240,0,60,${0.55 + pulse * 0.4})`
+          : 'rgba(160,0,20,0.22)';
+      ctx.lineWidth = isTarget ? 2 : 1;
       drawHexHole(p.x, p.y, HEX_R * 0.95);
       ctx.stroke();
-      ctx.fillStyle = `rgba(255,90,90,${0.65 + pulse * 0.3})`;
-      ctx.font = '900 ' + Math.floor(HEX_R * 1.1) + 'px Orbitron, sans-serif';
-      ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText('✕', p.x, p.y + 1);
-      ctx.restore();
-    } else if(h.fake){
-      /* fake — orange-ish flicker, vanishes shortly */
-      ctx.save();
-      ctx.shadowColor = 'rgba(255,120,40,0.85)';
-      ctx.shadowBlur = 16 + pulse * 8;
-      ctx.fillStyle = `rgba(255,120,40,${0.18 + pulse * 0.18})`;
-      ctx.beginPath(); ctx.arc(p.x, p.y, HOLE_R, 0, Math.PI*2); ctx.fill();
-      ctx.shadowBlur = 0;
-      ctx.strokeStyle = `rgba(255,140,40,${0.55 + pulse * 0.4})`;
-      ctx.lineWidth = 1.5;
-      drawHexHole(p.x, p.y, HEX_R * 0.95);
-      ctx.stroke();
-      ctx.fillStyle = `rgba(255,180,80,${0.5 + pulse * 0.3})`;
-      ctx.font = '900 ' + Math.floor(HEX_R * 0.9) + 'px Orbitron, sans-serif';
-      ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText('?', p.x, p.y + 1);
-      ctx.restore();
-    } else {
-      ctx.save();
-      ctx.shadowColor = 'rgba(247,147,26,0.95)';
-      ctx.shadowBlur = 22 + pulse * 16;
-      /* glow halo */
-      const rg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, HOLE_R * 1.6);
-      rg.addColorStop(0, `rgba(255,215,0,${0.55 + pulse * 0.25})`);
-      rg.addColorStop(0.45, `rgba(247,147,26,${0.35 + pulse * 0.18})`);
-      rg.addColorStop(1, 'rgba(247,147,26,0)');
-      ctx.fillStyle = rg;
-      ctx.beginPath(); ctx.arc(p.x, p.y, HOLE_R * 1.6, 0, Math.PI*2); ctx.fill();
-      ctx.shadowBlur = 0;
-      /* pocket inside */
-      ctx.fillStyle = `rgba(247,147,26,${0.32 + pulse * 0.18})`;
-      ctx.beginPath(); ctx.arc(p.x, p.y, HOLE_R * 0.9, 0, Math.PI*2); ctx.fill();
-      /* hex outline */
-      ctx.strokeStyle = `rgba(255,215,0,${0.65 + pulse * 0.3})`;
-      ctx.lineWidth = 2;
-      drawHexHole(p.x, p.y, HEX_R * 0.95);
-      ctx.stroke();
-      /* ₿ glyph */
-      ctx.fillStyle = `rgba(255,235,160,${0.7 + pulse * 0.3})`;
-      ctx.font = '900 ' + Math.floor(HEX_R * 1.1) + 'px Orbitron, sans-serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText('₿', p.x, p.y - HEX_R * 0.08);
-      /* number badge */
-      ctx.font = '700 ' + Math.floor(HEX_R * 0.42) + 'px Orbitron, sans-serif';
-      ctx.fillStyle = `rgba(255,255,255,${0.8 + pulse * 0.2})`;
-      ctx.fillText('#' + (bitcoinIdx + 1), p.x, p.y + HEX_R * 0.76);
-      ctx.restore();
+
+      if(isTarget){
+        ctx.save();
+        ctx.shadowColor = 'rgba(247,147,26,0.95)';
+        ctx.shadowBlur = 22 + pulse * 16;
+        const rg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, HOLE_R * 1.6);
+        rg.addColorStop(0, `rgba(255,215,0,${0.55 + pulse * 0.25})`);
+        rg.addColorStop(0.45, `rgba(247,147,26,${0.35 + pulse * 0.18})`);
+        rg.addColorStop(1, 'rgba(247,147,26,0)');
+        ctx.fillStyle = rg;
+        ctx.beginPath(); ctx.arc(p.x, p.y, HOLE_R * 1.6, 0, Math.PI*2); ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = `rgba(247,147,26,${0.32 + pulse * 0.18})`;
+        ctx.beginPath(); ctx.arc(p.x, p.y, HOLE_R * 0.9, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = `rgba(255,235,160,${0.7 + pulse * 0.3})`;
+        ctx.font = '900 ' + Math.floor(HEX_R * 1.1) + 'px Orbitron, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('₿', p.x, p.y - HEX_R * 0.08);
+        ctx.font = '700 ' + Math.floor(HEX_R * 0.42) + 'px Orbitron, sans-serif';
+        ctx.fillStyle = `rgba(255,255,255,${0.8 + pulse * 0.2})`;
+        ctx.fillText('#' + (bitcoinIdx + 1), p.x, p.y + HEX_R * 0.76);
+        ctx.restore();
+      } else if(isClaimed){
+        /* claimed: crimson abyss with ✕ — shows history */
+        ctx.save();
+        ctx.shadowColor = 'rgba(200,0,40,0.95)';
+        ctx.shadowBlur = 18 + pulse * 10;
+        const dg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, HOLE_R);
+        dg.addColorStop(0,   'rgba(0,0,0,0.98)');
+        dg.addColorStop(0.55,'rgba(100,0,25,0.80)');
+        dg.addColorStop(1,   'rgba(200,0,50,0.35)');
+        ctx.fillStyle = dg;
+        ctx.beginPath(); ctx.arc(p.x, p.y, HOLE_R, 0, Math.PI*2); ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = `rgba(255,70,70,${0.55 + pulse * 0.3})`;
+        ctx.font = '900 ' + Math.floor(HEX_R * 0.9) + 'px Orbitron, sans-serif';
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText('✕', p.x, p.y + 1);
+        ctx.restore();
+      } else {
+        /* all other holes: dark abyss — danger from the very start */
+        ctx.save();
+        const dg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, HOLE_R);
+        dg.addColorStop(0,   'rgba(0,0,0,0.96)');
+        dg.addColorStop(0.65,'rgba(50,0,8,0.65)');
+        dg.addColorStop(1,   'rgba(100,0,15,0.18)');
+        ctx.fillStyle = dg;
+        ctx.beginPath(); ctx.arc(p.x, p.y, HOLE_R, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
     }
   }
 
@@ -1014,18 +983,22 @@ function updatePhysics(dt){
     return;
   }
 
-  /* ── Hole detection ── */
+  /* ── Hole detection — every hole is lethal except the lit target ── */
   const catchR = HOLE_R * 0.9;
-  for(const h of activeHoles){
-    const p  = holePos(h.col, h.row);
-    const dx = ball.x - p.x, dy = ball.y - p.y;
-    if(dx*dx + dy*dy < catchR * catchR){
-      if(h.fake){
-        setStatus('💨 DECOY! The ? is a fake — it vanishes shortly.', 's-bad');
-        continue;
+  const _tgt = bitcoinIdx < BITCOIN_PATH.length ? BITCOIN_PATH[bitcoinIdx] : null;
+  outer:
+  for(let row = 0; row < GRID_ROWS; row++){
+    for(let col = 0; col < GRID_COLS; col++){
+      const p  = holePos(col, row);
+      const dx = ball.x - p.x, dy = ball.y - p.y;
+      if(dx*dx + dy*dy < catchR * catchR){
+        if(_tgt && col === _tgt.col && row === _tgt.row){
+          onPocket({col, row});
+        } else {
+          hitDangerHole();
+        }
+        break outer;
       }
-      if(h.danger){ hitDangerHole(); return; }
-      onPocket(h); return;
     }
   }
 }
