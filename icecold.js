@@ -653,16 +653,32 @@ function drawBoard(t){
       const isTarget  = _target && col === _target.col && row === _target.row;
       const isClaimed = claimedPositions.some(cp => cp.col === col && cp.row === row);
 
-      /* hex outline for all holes */
+      /* ── Pegboard cell fill — gives each hex a warm "board" colour ── */
+      ctx.fillStyle = isTarget
+        ? 'rgba(120,60,0,0.70)'         // neutral warm so gold overlay dominates
+        : isClaimed
+          ? 'rgba(90,0,10,0.80)'        // dark crimson board around claimed holes
+          : 'rgba(55,22,2,0.88)';       // warm amber-brown — classic pegboard look
+      drawHexHole(p.x, p.y, HEX_R * 0.95);
+      ctx.fill();
+
+      /* ── Hex outline ── */
       ctx.strokeStyle = isTarget
         ? `rgba(255,215,0,${0.65 + pulse * 0.3})`
         : isClaimed
-          ? `rgba(240,0,60,${0.55 + pulse * 0.4})`
-          : 'rgba(160,0,20,0.22)';
+          ? `rgba(220,0,50,${0.50 + pulse * 0.35})`
+          : 'rgba(247,147,26,0.30)';
       ctx.lineWidth = isTarget ? 2 : 1;
       drawHexHole(p.x, p.y, HEX_R * 0.95);
       ctx.stroke();
 
+      /* ── Black pit — visibly darker than the amber board ── */
+      ctx.beginPath();
+      ctx.fillStyle = 'rgba(0,0,0,0.90)';
+      ctx.arc(p.x, p.y, HOLE_R * 0.84, 0, Math.PI*2);
+      ctx.fill();
+
+      /* ── Type-specific overlay ── */
       if(isTarget){
         ctx.save();
         ctx.shadowColor = 'rgba(247,147,26,0.95)';
@@ -685,33 +701,23 @@ function drawBoard(t){
         ctx.fillText('#' + (bitcoinIdx + 1), p.x, p.y + HEX_R * 0.76);
         ctx.restore();
       } else if(isClaimed){
-        /* claimed: crimson abyss with ✕ — shows history */
         ctx.save();
-        ctx.shadowColor = 'rgba(200,0,40,0.95)';
-        ctx.shadowBlur = 18 + pulse * 10;
+        ctx.shadowColor = 'rgba(200,0,40,0.85)';
+        ctx.shadowBlur = 12 + pulse * 8;
         const dg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, HOLE_R);
-        dg.addColorStop(0,   'rgba(0,0,0,0.98)');
-        dg.addColorStop(0.55,'rgba(100,0,25,0.80)');
-        dg.addColorStop(1,   'rgba(200,0,50,0.35)');
+        dg.addColorStop(0,   'rgba(0,0,0,0.95)');
+        dg.addColorStop(0.5, 'rgba(130,0,30,0.70)');
+        dg.addColorStop(1,   'rgba(200,0,50,0.25)');
         ctx.fillStyle = dg;
         ctx.beginPath(); ctx.arc(p.x, p.y, HOLE_R, 0, Math.PI*2); ctx.fill();
         ctx.shadowBlur = 0;
-        ctx.fillStyle = `rgba(255,70,70,${0.55 + pulse * 0.3})`;
+        ctx.fillStyle = `rgba(255,60,60,${0.60 + pulse * 0.28})`;
         ctx.font = '900 ' + Math.floor(HEX_R * 0.9) + 'px Orbitron, sans-serif';
-        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText('✕', p.x, p.y + 1);
         ctx.restore();
-      } else {
-        /* all other holes: dark abyss — danger from the very start */
-        ctx.save();
-        const dg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, HOLE_R);
-        dg.addColorStop(0,   'rgba(0,0,0,0.96)');
-        dg.addColorStop(0.65,'rgba(50,0,8,0.65)');
-        dg.addColorStop(1,   'rgba(100,0,15,0.18)');
-        ctx.fillStyle = dg;
-        ctx.beginPath(); ctx.arc(p.x, p.y, HOLE_R, 0, Math.PI*2); ctx.fill();
-        ctx.restore();
       }
+      /* regular danger holes: black pit on amber board is enough visual signal */
     }
   }
 
