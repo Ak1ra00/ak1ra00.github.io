@@ -118,17 +118,30 @@ const BITCOIN_PATH = [
 /* Fixed danger holes — sparse obstacles on the pegboard (none overlap bitcoin path).
    These create the navigable maze; the rest of the board is solid/safe. */
 const FIXED_DANGERS = [
-  {col:1, row:10}, {col:7, row:10},           // flanking ₿#1
-  {col:3, row:9},  {col:8, row:9},            // flanking ₿#2
-  {col:6, row:8},  {col:9, row:8},            // flanking ₿#3
-  {col:2, row:7},  {col:9, row:7},            // flanking ₿#4
-  {col:1, row:6},  {col:8, row:6},            // flanking ₿#5
-  {col:5, row:5},  {col:9, row:5},            // flanking ₿#6
-  {col:0, row:4},  {col:1, row:4}, {col:5, row:4}, // flanking ₿#7
-  {col:1, row:3},  {col:7, row:3},            // flanking ₿#8
-  {col:2, row:2},  {col:9, row:2},            // flanking ₿#9
-  {col:1, row:1},  {col:8, row:1},            // flanking ₿#10
-  {col:2, row:0},  {col:5, row:0}, {col:8, row:0}, // top-row obstacles
+  // Bottom entry — forces careful initial approach
+  {col:3, row:11}, {col:6, row:11},
+  // Row 10 — tighter path to ₿#1 (col4)
+  {col:1, row:10}, {col:5, row:10}, {col:7, row:10},
+  // Row 9 — denser around ₿#2 (col6)
+  {col:1, row:9},  {col:3, row:9},  {col:4, row:9},  {col:8, row:9},
+  // Row 8 — more pressure around ₿#3 (col3)
+  {col:0, row:8},  {col:6, row:8},  {col:9, row:8},
+  // Row 7 — squeeze around ₿#4 (col7)
+  {col:2, row:7},  {col:4, row:7},  {col:5, row:7},  {col:9, row:7},
+  // Row 6 — narrowed around ₿#5 (col5)
+  {col:1, row:6},  {col:3, row:6},  {col:7, row:6},  {col:8, row:6},
+  // Row 5 — flanking ₿#6 (col2)
+  {col:4, row:5},  {col:5, row:5},  {col:7, row:5},  {col:9, row:5},
+  // Row 4 — dense around ₿#7 (col8)
+  {col:0, row:4},  {col:1, row:4},  {col:3, row:4},  {col:5, row:4},
+  // Row 3 — flanking ₿#8 (col4)
+  {col:0, row:3},  {col:1, row:3},  {col:7, row:3},
+  // Row 2 — around ₿#9 (col6)
+  {col:0, row:2},  {col:2, row:2},  {col:4, row:2},  {col:9, row:2},
+  // Row 1 — tight approach to ₿#10 (col5)
+  {col:1, row:1},  {col:3, row:1},  {col:8, row:1},
+  // Top row — gauntlet
+  {col:0, row:0},  {col:2, row:0},  {col:5, row:0},  {col:6, row:0},  {col:8, row:0},
 ];
 
 /* Bar travel: covers most of the grid so player can reach any row.
