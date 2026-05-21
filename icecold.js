@@ -147,6 +147,7 @@ let lifeLostMs  = 0;
 let lvlBannerMs = 0;
 let lastSec     = -1;
 
+let prevBarMidY  = BAR_CTR_Y; // for bar vertical-velocity detection
 let activeHoles = [];         // [{col,row,fake?:bool,bornMs}]
 let pocketedFlashes = [];     // [{col,row,ms,maxMs}]
 
@@ -395,7 +396,8 @@ function resetBall(fullReset){
     rightTargetY= BAR_CTR_Y;
   }
   const x = W/2;
-  ball = { x: x, y: barYAt(x) - BALL_R - BAR_THICK/2, vx: 0, rot: 0 };
+  ball = { x: x, y: barYAt(x) - BALL_R - BAR_THICK/2, vx: 0, vy: 0, onBar: true, rot: 0 };
+  prevBarMidY = (leftY + rightY) / 2;
 }
 
 /* ── TARGET / HOLE HELPERS ─────────────────────────────────────────────── */
@@ -1001,29 +1003,63 @@ function updateInputs(dt){
 
 function updatePhysics(dt){
   if(!ball) return;
-  const ang = barAngle();
-  /* gravity scales with block difficulty */
-  ball.vx += Math.sin(ang) * blockGravity(block) * dt;
-  /* friction (rolling) */
-  const fric = Math.pow(FRICTION, dt * 60);
-  ball.vx *= fric;
-  ball.x += ball.vx * dt;
-  ball.rot += (ball.vx * dt) / Math.max(BALL_R, 1) * 1.0;
-  ball.y = barYAt(ball.x) - BALL_R - BAR_THICK/2;
 
-  /* ball left the bar */
+  /* ── Horizontal rolling ── */
+  const ang = barAngle();
+  ball.vx += Math.sin(ang) * blockGravity(block) * dt;
+  ball.vx *= Math.pow(FRICTION, dt * 60);
+  ball.x  += ball.vx * dt;
+  ball.rot += (ball.vx * dt) / Math.max(BALL_R, 1);
+
+  /* ── Detect bar vertical velocity (mid-point of bar) ── */
+  const barMidY = (leftY + rightY) / 2;
+  const barVY   = dt > 0 ? (barMidY - prevBarMidY) / dt : 0;
+  prevBarMidY   = barMidY;
+
+  const barSurface = barYAt(ball.x) - BALL_R - BAR_THICK / 2;
+
+  /* ── Vertical physics ── */
+  if(ball.onBar){
+    if(barVY > 480){
+      /* bar dropped fast — ball separates (inertia keeps it up) */
+      ball.vy   = -barVY * 0.06;
+      ball.onBar = false;
+    } else if(barVY < -620){
+      /* bar pushed up hard — launches ball */
+      ball.vy   = barVY * 0.32;
+      ball.onBar = false;
+    } else {
+      /* stick to bar surface */
+      ball.y  = barSurface;
+      ball.vy = 0;
+    }
+  }
+  if(!ball.onBar){
+    ball.vy += 3200 * dt;          /* intense gravity, snaps back fast */
+    ball.y  += ball.vy * dt;
+    if(ball.y >= barSurface && ball.vy >= 0){
+      ball.y  = barSurface;
+      ball.vy = 0;
+      ball.onBar = true;
+    }
+  }
+
+  /* ── Ball left the bar horizontally ── */
   if(ball.x < BAR_LEFT_X - 4 || ball.x > BAR_RIGHT_X + 4){
     loseLife();
     return;
   }
 
-  /* hole detection */
+  /* ── Hole detection ── */
   const catchR = HOLE_R * 0.9;
   for(const h of activeHoles){
-    const p = holePos(h.col, h.row);
+    const p  = holePos(h.col, h.row);
     const dx = ball.x - p.x, dy = ball.y - p.y;
     if(dx*dx + dy*dy < catchR * catchR){
-      if(h.fake) continue;          /* fakes are visual only */
+      if(h.fake){
+        setStatus('💨 DECOY! The ? is a fake — it vanishes shortly.', 's-bad');
+        continue;
+      }
       if(h.danger){ hitDangerHole(); return; }
       onPocket(h); return;
     }
