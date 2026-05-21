@@ -700,79 +700,63 @@ function drawBoard(t){
       const isDanger  = _dangerKey.has(key);
       const isHole    = isTarget || isClaimed || isDanger;
 
-      /* ── Cell background (amber for solid, crimson tint for claimed) ── */
-      ctx.fillStyle = isClaimed ? 'rgba(80,0,8,0.92)' : 'rgba(58,24,2,0.92)';
-      drawHexHole(p.x, p.y, HEX_R * 0.95);
+      /* ── 1. Bright amber hex face (solid board surface) ── */
+      ctx.fillStyle = isClaimed ? '#5a0008' : isTarget ? '#7a3800' : '#b84a05';
+      drawHexHole(p.x, p.y, HEX_R * 0.93);
       ctx.fill();
 
-      /* ── Hex outline ── */
+      /* ── 2. Hex border ── */
       ctx.strokeStyle = isTarget
-        ? `rgba(255,215,0,${0.70 + pulse * 0.28})`
-        : isClaimed
-          ? `rgba(220,0,50,${0.55 + pulse * 0.35})`
-          : 'rgba(247,147,26,0.28)';
-      ctx.lineWidth = isTarget ? 2 : 1;
-      drawHexHole(p.x, p.y, HEX_R * 0.95);
+        ? `rgba(255,215,0,${0.85 + pulse * 0.15})`
+        : isClaimed ? `rgba(255,40,40,${0.65 + pulse * 0.25})`
+        : 'rgba(255,120,20,0.55)';
+      ctx.lineWidth = isTarget ? 2.5 : 1.2;
+      drawHexHole(p.x, p.y, HEX_R * 0.93);
       ctx.stroke();
 
-      /* ── Black pit only where there's an actual hole ── */
-      if(isHole){
+      /* ── 3. Safe cells get a bright centre highlight so they read as SOLID ── */
+      if(!isHole){
+        ctx.fillStyle = 'rgba(255,130,25,0.22)';
         ctx.beginPath();
-        ctx.fillStyle = 'rgba(0,0,0,0.92)';
-        ctx.arc(p.x, p.y, HOLE_R * 0.84, 0, Math.PI*2);
+        ctx.ellipse(p.x, p.y - HEX_R * 0.12, HEX_R * 0.42, HEX_R * 0.28, 0, 0, Math.PI * 2);
         ctx.fill();
       }
 
-      /* ── Type-specific overlay ── */
+      /* ── 4. Deep black pit for every hole — no shadow bleed ── */
+      if(isHole){
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, HOLE_R * 0.86, 0, Math.PI * 2);
+        ctx.fill();
+        /* thin coloured rim inside the pit */
+        ctx.strokeStyle = isClaimed
+          ? `rgba(220,30,30,${0.55 + pulse * 0.30})`
+          : isTarget ? `rgba(255,200,0,${0.60 + pulse * 0.30})`
+          : `rgba(160,0,15,${0.35 + pulse * 0.20})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, HOLE_R * 0.86, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      /* ── 5. Target: gold fill + ₿ text, NO wide shadow blur ── */
       if(isTarget){
-        ctx.save();
-        ctx.shadowColor = 'rgba(247,147,26,0.95)';
-        ctx.shadowBlur = 22 + pulse * 16;
-        const rg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, HOLE_R * 1.6);
-        rg.addColorStop(0, `rgba(255,215,0,${0.55 + pulse * 0.25})`);
-        rg.addColorStop(0.45, `rgba(247,147,26,${0.35 + pulse * 0.18})`);
-        rg.addColorStop(1, 'rgba(247,147,26,0)');
-        ctx.fillStyle = rg;
-        ctx.beginPath(); ctx.arc(p.x, p.y, HOLE_R * 1.6, 0, Math.PI*2); ctx.fill();
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = `rgba(247,147,26,${0.32 + pulse * 0.18})`;
-        ctx.beginPath(); ctx.arc(p.x, p.y, HOLE_R * 0.9, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = `rgba(255,235,160,${0.7 + pulse * 0.3})`;
-        ctx.font = '900 ' + Math.floor(HEX_R * 1.1) + 'px Orbitron, sans-serif';
+        ctx.fillStyle = `rgba(255,210,0,${0.70 + pulse * 0.28})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, HOLE_R * 0.78, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#3a1800';
+        ctx.font = '900 ' + Math.floor(HEX_R * 1.0) + 'px Orbitron,sans-serif';
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText('₿', p.x, p.y - HEX_R * 0.08);
-        ctx.font = '700 ' + Math.floor(HEX_R * 0.42) + 'px Orbitron, sans-serif';
-        ctx.fillStyle = `rgba(255,255,255,${0.8 + pulse * 0.2})`;
-        ctx.fillText('#' + (bitcoinIdx + 1), p.x, p.y + HEX_R * 0.76);
-        ctx.restore();
+        ctx.fillText('₿', p.x, p.y - HEX_R * 0.06);
+        ctx.font = '700 ' + Math.floor(HEX_R * 0.38) + 'px Orbitron,sans-serif';
+        ctx.fillStyle = `rgba(0,0,0,${0.75 + pulse * 0.15})`;
+        ctx.fillText('#' + (bitcoinIdx + 1), p.x, p.y + HEX_R * 0.72);
       } else if(isClaimed){
-        ctx.save();
-        ctx.shadowColor = 'rgba(200,0,40,0.85)';
-        ctx.shadowBlur = 10 + pulse * 8;
-        const dg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, HOLE_R);
-        dg.addColorStop(0,   'rgba(0,0,0,0.95)');
-        dg.addColorStop(0.5, 'rgba(130,0,30,0.70)');
-        dg.addColorStop(1,   'rgba(200,0,50,0.25)');
-        ctx.fillStyle = dg;
-        ctx.beginPath(); ctx.arc(p.x, p.y, HOLE_R, 0, Math.PI*2); ctx.fill();
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = `rgba(255,60,60,${0.60 + pulse * 0.28})`;
-        ctx.font = '900 ' + Math.floor(HEX_R * 0.9) + 'px Orbitron, sans-serif';
+        ctx.fillStyle = `rgba(255,50,50,${0.70 + pulse * 0.25})`;
+        ctx.font = '900 ' + Math.floor(HEX_R * 0.85) + 'px Orbitron,sans-serif';
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText('✕', p.x, p.y + 1);
-        ctx.restore();
-      } else if(isDanger){
-        /* fixed danger hole: dark abyss with subtle red rim — clearly open */
-        ctx.save();
-        ctx.shadowColor = 'rgba(160,0,20,0.6)';
-        ctx.shadowBlur = 8 + pulse * 6;
-        const dg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, HOLE_R);
-        dg.addColorStop(0,   'rgba(0,0,0,0.95)');
-        dg.addColorStop(0.6, 'rgba(80,0,12,0.55)');
-        dg.addColorStop(1,   'rgba(150,0,20,0.20)');
-        ctx.fillStyle = dg;
-        ctx.beginPath(); ctx.arc(p.x, p.y, HOLE_R, 0, Math.PI*2); ctx.fill();
-        ctx.restore();
       }
     }
   }
