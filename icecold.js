@@ -966,7 +966,7 @@ function updateInputs(dt){
   const step = blockLeverSpeed(block) * dt;
   if(KEYS['q']) leftTargetY -= step;
   if(KEYS['a']) leftTargetY += step;
-  if(KEYS['p']) rightTargetY -= step;
+  if(KEYS['o']) rightTargetY -= step;
   if(KEYS['l']) rightTargetY += step;
   /* arrows = tilt */
   if(KEYS['ArrowLeft']){  leftTargetY -= step; rightTargetY += step; }
