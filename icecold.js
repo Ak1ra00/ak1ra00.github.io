@@ -118,30 +118,41 @@ const BITCOIN_PATH = [
 /* Fixed danger holes — each row leaves only a narrow corridor around its bitcoin target.
    Open columns per row shown in comments; everything else is a hole. */
 const FIXED_DANGERS = [
-  // Row 11 — open entry, two wide hazards
+  // Row 11 — entry gate: 2 holes, very open (₿#1 only crosses 2 rows)
   {col:2, row:11}, {col:7, row:11},
-  // Row 10 — ₿#1 col4, flanking hazards far left and far right
-  {col:1, row:10}, {col:8, row:10},
-  // Row 9 — ₿#2 col6, two hazards away from target
-  {col:2, row:9},  {col:9, row:9},
-  // Row 8 — ₿#3 col3, hazards on the right side
-  {col:6, row:8},  {col:9, row:8},
-  // Row 7 — ₿#4 col7, three hazards, corridor through 5-7-8
-  {col:1, row:7},  {col:4, row:7},  {col:9, row:7},
-  // Row 6 — ₿#5 col5, three hazards flanking
-  {col:1, row:6},  {col:3, row:6},  {col:8, row:6},
-  // Row 5 — ₿#6 col2, hazards on the right
-  {col:4, row:5},  {col:7, row:5},  {col:9, row:5},
-  // Row 4 — ₿#7 col8, hazards on the left
-  {col:1, row:4},  {col:3, row:4},  {col:5, row:4},
-  // Row 3 — ₿#8 col4, three spread hazards
-  {col:0, row:3},  {col:6, row:3},  {col:9, row:3},
-  // Row 2 — ₿#9 col6, hazards away from target
-  {col:0, row:2},  {col:2, row:2},  {col:8, row:2},
-  // Row 1 — ₿#10 col5, hazards flanking
-  {col:0, row:1},  {col:2, row:1},  {col:8, row:1},
-  // Row 0 — top decoration only
-  {col:2, row:0},  {col:5, row:0},  {col:8, row:0},
+
+  // Row 10 — ₿#1 col4: 2 holes at edges, huge corridor to target
+  {col:0, row:10}, {col:9, row:10},
+
+  // Row 9 — ₿#2 col6: 2 holes, still generous
+  {col:1, row:9},  {col:9, row:9},
+
+  // Row 8 — ₿#3 col3: 3 holes, right side blocked, left corridor open
+  {col:5, row:8},  {col:7, row:8},  {col:9, row:8},
+
+  // Row 7 — ₿#4 col7: 3 holes, corridor through cols 5-8
+  {col:0, row:7},  {col:3, row:7},  {col:9, row:7},
+
+  // Row 6 — ₿#5 col5: 3 holes flanking target on both sides
+  {col:0, row:6},  {col:2, row:6},  {col:8, row:6},
+
+  // Row 5 — ₿#6 col2: 4 holes, right side heavy, left corridor cols 0-3
+  {col:4, row:5},  {col:6, row:5},  {col:8, row:5},  {col:9, row:5},
+
+  // Row 4 — ₿#7 col8: 4 holes, left side blocked, right corridor cols 7-9
+  {col:0, row:4},  {col:2, row:4},  {col:4, row:4},  {col:6, row:4},
+
+  // Row 3 — ₿#8 col4: 4 holes, corridor narrowed to cols 3-5
+  {col:0, row:3},  {col:2, row:3},  {col:6, row:3},  {col:9, row:3},
+
+  // Row 2 — ₿#9 col6: 5 holes, tight 3-col corridor (cols 5-7)
+  {col:0, row:2},  {col:2, row:2},  {col:4, row:2},  {col:8, row:2},  {col:9, row:2},
+
+  // Row 1 — ₿#10 col5: 5 holes, gauntlet — corridor cols 3-6
+  {col:0, row:1},  {col:2, row:1},  {col:7, row:1},  {col:8, row:1},  {col:9, row:1},
+
+  // Row 0 — top cap: 3 decorative holes
+  {col:1, row:0},  {col:5, row:0},  {col:8, row:0},
 ];
 
 /* Bar travel: covers most of the grid so player can reach any row.
