@@ -129,6 +129,7 @@ canvas {
   <div class="hcard"><div class="hlbl">Mult</div><div class="hval y" id="hMult">×1</div></div>
   <div class="hcard"><div class="hlbl">Lives</div><div class="hval" id="hLives">❤️❤️❤️</div></div>
   <div class="hcard"><div class="hlbl">Coins</div><div class="hval g" id="hCoins">0</div></div>
+  <div class="hcard"><div class="hlbl">Level</div><div class="hval" id="hLevel">1</div></div>
   <div class="hcard"><div class="hlbl">Best</div><div class="hval y" id="hHi">0</div></div>
 </div>
 
@@ -143,9 +144,12 @@ canvas {
     <button class="cbtn" id="bD">⬇️</button>
     <button class="cbtn" id="bR">➡️</button>
   </div>
-  <span class="ctrl-hint">Arrow keys to move<br>Grow by collecting ₿</span>
+  <button class="cbtn" id="pauseBtn" style="padding:0 14px;font-size:.75rem;font-family:'Orbitron',monospace;letter-spacing:.04em;">⏸</button>
+  <span class="ctrl-hint">Arrow keys to move<br>Grow by collecting ₿ · [Esc] pause</span>
 </div>
 
+<script src="ui.js"></script>
+<script src="music.js"></script>
 <script>
 'use strict';
 const canvas = document.getElementById('gc');
@@ -354,6 +358,7 @@ function updateHUD() {
   scoreEl.textContent = score.toLocaleString();
   document.getElementById('hMult').textContent = '×' + mult;
   document.getElementById('hCoins').textContent = coins;
+  document.getElementById('hLevel').textContent = Math.floor(coins / 5) + 1;
   document.getElementById('hHi').textContent = hiScore.toLocaleString();
   const h = [0,1,2].map(i => i < lives ? '❤️' : '🖤').join('');
   document.getElementById('hLives').textContent = h;
@@ -621,8 +626,10 @@ document.addEventListener('keydown', e => {
     case 'ArrowLeft':  e.preventDefault(); setDir(-1,0); break;
     case 'ArrowRight': e.preventDefault(); setDir(1,0);  break;
     case 'p': case 'P': paused = !paused; break;
+    case 'Escape': if(gameActive) paused = !paused; break;
   }
 });
+document.getElementById('pauseBtn').addEventListener('click', () => { if(gameActive) paused = !paused; });
 
 // Touch buttons
 document.getElementById('bU').addEventListener('touchstart', e => {e.preventDefault(); setDir(0,-1);}, {passive:false});
