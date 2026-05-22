@@ -182,9 +182,18 @@ canvas { display: block; width: 100%; height: 100%; image-rendering: auto; -webk
       <div class="overlay-divider"></div>
       <div class="tap-to-start">TAP TO PLAY AGAIN</div>
     </div>
+    <!-- pause overlay -->
+    <div class="overlay hidden" id="flappyPauseOverlay" style="background:rgba(6,6,22,.82);backdrop-filter:blur(8px);">
+      <div style="font-size:2.5rem;">⏸</div>
+      <div class="overlay-title" style="font-size:clamp(1.2rem,4vw,1.8rem);">PAUSED</div>
+      <div class="tap-to-start">TAP OR [ESC] TO RESUME</div>
+    </div>
+    <!-- pause button -->
+    <button id="flappyPauseBtn" style="position:absolute;top:8px;right:8px;z-index:50;background:rgba(6,6,22,.75);border:1px solid rgba(247,147,26,.5);color:#F7931A;border-radius:7px;padding:5px 10px;font-size:.7rem;font-family:'Orbitron',monospace;cursor:pointer;letter-spacing:.04em;">⏸</button>
   </div>
 </div>
 
+<script src="ui.js"></script>
 <script src="music.js"></script>
 <script>
 (function(){
@@ -672,7 +681,13 @@ function killPlayer(){
 }
 
 // ─── UNIFIED INPUT HANDLER ───────────────────────────────────────────────────
+let prevState = 'intro';
+function togglePause(){
+  if(state === 'playing'){ prevState = state; state = 'paused'; document.getElementById('flappyPauseOverlay').classList.remove('hidden'); }
+  else if(state === 'paused'){ state = prevState; document.getElementById('flappyPauseOverlay').classList.add('hidden'); }
+}
 function handleInput(){
+  if(state === 'paused'){ togglePause(); return; }
   if(state === 'intro'){
     introOverlay.classList.add('hidden'); resetGame(); state = 'playing'; player.vy = FLAP_VEL;
   } else if(state === 'playing'){
@@ -683,8 +698,10 @@ function handleInput(){
 }
 
 document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape' || e.key === 'p' || e.key === 'P'){ if(state==='playing'||state==='paused') togglePause(); return; }
   if(e.code === 'Space'){ e.preventDefault(); handleInput(); }
 });
+document.getElementById('flappyPauseBtn').addEventListener('click', () => { if(state==='playing'||state==='paused') togglePause(); });
 
 const gameArea = document.querySelector('.canvas-container');
 gameArea.addEventListener('pointerdown', (e)=>{

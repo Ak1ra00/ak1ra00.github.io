@@ -597,8 +597,13 @@ function updateHUD(){
   progFill.style.width = pct + '%';
   progVal.textContent = bitcoinIdx + ' / ' + BITCOIN_PATH.length;
   /* time colour */
-  if(blockTime < 10){ hTime.classList.remove('g'); hTime.classList.add('r'); }
-  else { hTime.classList.add('g'); hTime.classList.remove('r'); }
+  if(blockTime < 10){
+    hTime.classList.remove('g'); hTime.classList.add('r');
+    document.getElementById('cwrap').classList.add('low-time');
+  } else {
+    hTime.classList.add('g'); hTime.classList.remove('r');
+    document.getElementById('cwrap').classList.remove('low-time');
+  }
 }
 let statusTimer = 0;
 function setStatus(txt, cls){
