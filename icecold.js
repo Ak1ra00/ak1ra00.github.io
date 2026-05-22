@@ -284,7 +284,7 @@ document.addEventListener('keydown', e => {
     startGame();
     return;
   }
-  if(k === 'p' || k === 'P'){
+  if(k === 'Escape'){
     if(state === STATE.PAUSED){
       state = prevState;
       pauseOverlay.classList.remove('on');
