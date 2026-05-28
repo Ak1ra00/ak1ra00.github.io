@@ -534,12 +534,15 @@ a { color: inherit; }
 }
 .hero-line.big {
   font-size: clamp(3.4rem, 10vw, 7.4rem);
-  background: linear-gradient(135deg, var(--btc-hot) 0%, var(--btc) 40%, var(--btc-deep) 100%);
+  background: linear-gradient(110deg, var(--btc-deep) 0%, var(--btc) 26%, var(--btc-hot) 42%, #fff5e0 50%, var(--btc-hot) 58%, var(--btc) 74%, var(--btc-deep) 100%);
+  background-size: 240% auto;
   -webkit-background-clip: text; background-clip: text;
   color: transparent;
   filter: drop-shadow(0 0 32px rgba(247,147,26,0.45));
   margin: 4px 0;
+  animation: heroShine 7s linear infinite;
 }
+@keyframes heroShine { to { background-position: 240% center; } }
 .hero-line.mid {
   font-size: clamp(2rem, 5.6vw, 3.9rem);
   color: var(--ink); letter-spacing: .06em;
@@ -552,6 +555,7 @@ a { color: inherit; }
 .hero-cta { display: flex; gap: 14px; justify-content: flex-end; margin-top: 28px; flex-wrap: wrap; }
 
 .btn {
+  position: relative; overflow: hidden;
   font-family: var(--font-display); font-weight: 700;
   font-size: .82rem; letter-spacing: .08em;
   padding: 15px 26px; border-radius: 12px;
@@ -560,6 +564,14 @@ a { color: inherit; }
   transition: transform .2s var(--ease-out), box-shadow .25s, background .2s;
   border: 1px solid transparent;
 }
+.btn::after {
+  content: ''; position: absolute; top: 0; left: 0;
+  width: 55%; height: 100%; pointer-events: none;
+  background: linear-gradient(105deg, transparent, rgba(255,255,255,0.45), transparent);
+  transform: translateX(-180%);
+}
+.btn:hover::after { animation: btnSheen .9s var(--ease-out); }
+@keyframes btnSheen { to { transform: translateX(320%); } }
 .btn-primary {
   background: linear-gradient(135deg, var(--btc-hot), var(--btc));
   color: #1a0d00;
@@ -788,7 +800,14 @@ a { color: inherit; }
   font-size: .74rem; color: var(--ink-dim);
   letter-spacing: .04em;
 }
-.card-score.has { color: var(--gold); text-shadow: 0 0 10px rgba(255,215,0,0.5); }
+.card-score.has {
+  color: var(--gold);
+  background: rgba(255,215,0,0.08);
+  border: 1px solid rgba(255,215,0,0.35);
+  border-radius: 7px; padding: 3px 9px;
+  text-shadow: 0 0 10px rgba(255,215,0,0.5);
+  box-shadow: 0 0 14px rgba(255,215,0,0.12);
+}
 .card-coin {
   margin-top: 14px; text-align: center;
   font-family: var(--font-display); font-weight: 700;
@@ -805,18 +824,22 @@ a { color: inherit; }
 .legends-wrap { position: relative; }
 .legends {
   width: 100%; border-collapse: collapse;
-  background: var(--panel-glass);
-  border: 1px solid var(--line);
+  background:
+    linear-gradient(180deg, rgba(20,16,8,0.4), transparent 30%),
+    var(--panel-glass);
+  border: 1px solid rgba(247,147,26,0.28);
   border-radius: 16px; overflow: hidden;
   -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  box-shadow: 0 0 40px rgba(247,147,26,0.08), inset 0 0 60px rgba(0,0,0,0.4);
 }
 .legends thead th {
-  font-family: var(--font-display); font-weight: 700;
-  font-size: .68rem; letter-spacing: .14em;
-  color: var(--cyan); text-align: left;
+  font-family: var(--font-display); font-weight: 900;
+  font-size: .66rem; letter-spacing: .18em;
+  color: var(--gold); text-align: left;
   padding: 16px 20px;
-  background: rgba(0,240,255,0.05);
-  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(247,147,26,0.12), rgba(247,147,26,0.04));
+  border-bottom: 1px solid rgba(247,147,26,0.3);
+  text-shadow: 0 0 12px rgba(255,215,0,0.35);
 }
 .legends tbody td {
   font-family: var(--font-mono); font-weight: 600;
@@ -824,8 +847,15 @@ a { color: inherit; }
   padding: 15px 20px;
   border-bottom: 1px solid var(--line-soft);
 }
+.legends tbody tr { transition: background .2s; }
+.legends tbody tr:nth-child(even) td { background: rgba(255,255,255,0.015); }
+.legends tbody tr:hover td { background: rgba(247,147,26,0.05); }
 .legends tbody tr:last-child td { border-bottom: none; }
-.legends tbody .rank { color: var(--gold); font-family: var(--font-display); font-weight: 900; }
+.legends tbody .rank { color: var(--gold); font-family: var(--font-display); font-weight: 900; text-shadow: 0 0 10px rgba(255,215,0,0.4); }
+/* podium glow for the top three ranks */
+.legends tbody tr:nth-child(1) .rank { color: #FFE36E; text-shadow: 0 0 16px rgba(255,215,0,0.7); }
+.legends tbody tr:nth-child(2) .rank { color: #D7DCE8; text-shadow: 0 0 12px rgba(215,220,232,0.6); }
+.legends tbody tr:nth-child(3) .rank { color: #E3A66B; text-shadow: 0 0 12px rgba(227,166,107,0.6); }
 .legends-overlay {
   position: absolute; inset: 0;
   display: grid; place-items: center;
