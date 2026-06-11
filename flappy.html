@@ -13,8 +13,8 @@
   --bg:#060610; --panel:rgba(12,14,32,0.85);
   --border:rgba(247,147,26,0.18); --border-bright:rgba(247,147,26,0.45);
   --ink:#E8EDF8; --ink-dim:#8A94B8; --ink-faint:#4A5270;
-  --glow-btc:0 0 20px rgba(247,147,26,0.5), 0 0 40px rgba(247,147,26,0.2);
-  --glow-green:0 0 16px rgba(0,255,136,0.4);
+  --glow-btc:0 0 20px rgba(247,147,26,0.9),0 0 60px rgba(247,147,26,0.5),0 0 120px rgba(247,147,26,0.2);
+  --glow-green:0 0 16px rgba(0,255,136,0.8),0 0 40px rgba(0,255,136,0.4);
   --glow-cyan:0 0 18px rgba(0,240,255,0.4);
   --ease-out:cubic-bezier(0.16,1,0.3,1);
   --ease-spring:cubic-bezier(0.34,1.56,0.64,1);
@@ -77,23 +77,27 @@ body::after {
   width: 100%; max-width: 480px; margin: 0 auto;
 }
 /* ── CANVAS CONTAINER — THE ARCADE SCREEN ── */
+@keyframes screenGlow{
+  0%,100%{border-color:rgba(247,147,26,0.4);box-shadow:0 0 0 1px rgba(247,147,26,0.15),0 0 0 4px rgba(4,4,16,0.95),0 0 60px rgba(247,147,26,0.35),0 0 140px rgba(247,147,26,0.15),0 30px 80px rgba(0,0,0,0.9),inset 0 1px 0 rgba(247,147,26,0.2);}
+  50%{border-color:rgba(247,147,26,0.75);box-shadow:0 0 0 1px rgba(247,147,26,0.3),0 0 0 4px rgba(4,4,16,0.95),0 0 100px rgba(247,147,26,0.6),0 0 220px rgba(247,147,26,0.25),0 30px 80px rgba(0,0,0,0.9),inset 0 1px 0 rgba(247,147,26,0.35);}
+}
 .canvas-container {
   position: relative;
   width: 100%; max-width: 480px;
   aspect-ratio: 960 / 1200;
   background: #02020e;
-  border: 1px solid rgba(247,147,26,0.25);
+  border: 1px solid rgba(247,147,26,0.4);
   border-radius: 16px;
   box-shadow:
-    0 0 0 1px rgba(247,147,26,0.08),
+    0 0 0 1px rgba(247,147,26,0.15),
     0 0 0 4px rgba(4,4,16,0.95),
-    0 0 60px rgba(247,147,26,0.18),
-    0 0 120px rgba(247,147,26,0.08),
+    0 0 80px rgba(247,147,26,0.4),
+    0 0 160px rgba(247,147,26,0.15),
     0 30px 80px rgba(0,0,0,0.9),
-    inset 0 1px 0 rgba(247,147,26,0.12);
+    inset 0 1px 0 rgba(247,147,26,0.2);
   overflow: hidden;
   user-select: none; -webkit-user-select: none;
-  transition: box-shadow .4s;
+  animation: screenGlow 3s ease-in-out infinite;
 }
 canvas { display: block; width: 100%; height: 100%; image-rendering: auto; -webkit-font-smoothing: antialiased; }
 /* screen glass: top sheen + ambient vignette */
@@ -141,7 +145,7 @@ canvas { display: block; width: 100%; height: 100%; image-rendering: auto; -webk
 .overlay-rekt {
   font-family: var(--font-display); font-weight: 900;
   font-size: 2.2rem; color: var(--red);
-  text-shadow: 0 0 24px rgba(255,51,85,0.6); letter-spacing: .08em;
+  text-shadow: 0 0 24px rgba(255,51,85,0.9),0 0 60px rgba(255,51,85,0.5),0 0 100px rgba(255,51,85,0.3); letter-spacing: .08em;
 }
 .overlay-medal { font-size: 2.8rem; line-height: 1; filter: drop-shadow(0 0 18px rgba(255,215,0,0.5)); }
 .overlay-score-label {
