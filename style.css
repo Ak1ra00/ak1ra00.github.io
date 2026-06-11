@@ -211,6 +211,19 @@ body{
     position:relative;overflow:hidden;
     transition:transform .2s var(--ease-spring), border-color .2s, box-shadow .2s;
     box-shadow:0 4px 16px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+    animation:holoCard 4s ease-in-out infinite;
+}
+@keyframes holoCard {
+  0%,100% { box-shadow: 0 4px 16px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05), 0 0 0 rgba(0,240,255,0); }
+  50% { box-shadow: 0 4px 16px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08), 0 0 20px rgba(0,240,255,0.1); }
+}
+@keyframes hudFloat {
+  0%,100% { transform: translateY(0px) perspective(500px) rotateX(0deg); }
+  50% { transform: translateY(-2px) perspective(500px) rotateX(0.5deg); }
+}
+@media(min-width:768px) {
+  .hcard:nth-child(odd) { animation: hudFloat 6s ease-in-out infinite; }
+  .hcard:nth-child(even) { animation: hudFloat 6s ease-in-out infinite; animation-delay: -3s; }
 }
 /* shimmer sweep on hover */
 .hcard::before{

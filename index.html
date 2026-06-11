@@ -229,6 +229,16 @@
 
 </main>
 
+<div class="mv-space" aria-hidden="true">
+  <span class="mv-orb o1">&#8383;</span>
+  <span class="mv-orb o2">&#8383;</span>
+  <span class="mv-orb o3">&#8383;</span>
+  <span class="mv-orb o4">&#8383;</span>
+  <span class="mv-cube cu1"></span>
+  <span class="mv-cube cu2"></span>
+  <span class="mv-cube cu3"></span>
+</div>
+
 <button id="to-top" type="button" aria-label="Back to top">&#9650;</button>
 
 <script>
@@ -955,5 +965,30 @@ var GAMES = [
 })();
 </script>
 <script src="auth.js" defer></script>
+<script>
+/* ─── METAVERSE 3D CARD TILT ─────────────────────────────────────────────── */
+(function(){
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.querySelectorAll('.card').forEach(function(card){
+    var holo = document.createElement('span');
+    holo.className = 'card-holo';
+    card.appendChild(holo);
+    card.addEventListener('mousemove', function(e){
+      card.style.transition = 'box-shadow .35s, border-color .35s';
+      var r = card.getBoundingClientRect();
+      var x = (e.clientX - r.left) / r.width - 0.5;
+      var y = (e.clientY - r.top) / r.height - 0.5;
+      card.style.transform = 'perspective(900px) rotateY(' + (x*22) + 'deg) rotateX(' + (-y*22) + 'deg) translateZ(20px) scale(1.03)';
+      holo.style.backgroundImage = 'radial-gradient(circle at '+(( x+0.5)*100)+'% '+((y+0.5)*100)+'%, rgba(255,255,255,0.12) 0%, rgba(0,240,255,0.06) 35%, transparent 70%)';
+      holo.style.opacity = '1';
+    });
+    card.addEventListener('mouseleave', function(){
+      card.style.transition = 'transform .6s cubic-bezier(0.34,1.56,0.64,1), box-shadow .35s, border-color .35s';
+      card.style.transform = '';
+      holo.style.opacity = '0';
+    });
+  });
+})();
+</script>
 </body>
 </html>
